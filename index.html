@@ -17,6 +17,10 @@
 <title>Novel Dots</title>
 <style>
 :root{
+  /* Portrait-mode chrome sizes. Kept here (not inline) because the JS that
+     positions the floating page/zoom badges reads them too. */
+  --rail-w:56px;
+  --strip-h:172px;
   --canvas:#ECECEC;
   --canvas-beige:#EDE6D6;
   --chrome-bg:#FAFAFA;
@@ -142,35 +146,36 @@ input,select,textarea{font-family:inherit;}
 #landingPage{position:fixed; inset:0; background:var(--chrome-bg); display:flex; flex-direction:column; z-index:5;}
 #landingPage.hidden{display:none;}
 .landing-topbar{height:56px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-bottom:1px solid var(--chrome-line);}
-.landing-body{flex:1; overflow-y:auto; padding:48px 40px 60px; max-width:920px; margin:0 auto; width:100%;}
-.landing-new-row{margin-bottom:44px;}
-.new-project-tile{
-  width:150px; background:none; border:none; padding:0; display:flex; flex-direction:column; align-items:center; gap:10px;
-  color:var(--text-chrome); position:relative;
+.landing-split{flex:1; display:flex; min-height:0;}
+/* The sidebar itself must NOT scroll — only the project list below the
+   button does, so "Blank Script" stays pinned at the top no matter how
+   many projects the user has. */
+.landing-sidebar{width:264px; flex:none; display:flex; flex-direction:column; min-height:0; padding:20px 14px; border-right:1px solid var(--chrome-line); overflow:hidden;}
+.new-project-row{
+  display:flex; align-items:center; gap:8px; flex:none; margin-bottom:14px; padding:10px 12px; border-radius:8px;
+  background:var(--accent); color:#fff; font-size:13px; font-weight:600; border:none;
 }
-.tile-doc{width:104px; height:130px; filter:drop-shadow(0 8px 18px rgba(0,0,0,.14)); transition:transform .15s;}
-.new-project-tile:hover .tile-doc{transform:translateY(-2px);}
-.tile-plus{
-  position:absolute; top:44px; left:50%; transform:translateX(-50%); width:34px; height:34px; border-radius:50%;
-  background:var(--accent); color:#fff; font-size:20px; line-height:34px; text-align:center; box-shadow:0 4px 10px rgba(43,108,222,.4);
-}
-.tile-label{font-size:13px; color:var(--text-chrome);}
-.landing-projects-title{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-chrome-dim); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--chrome-line);}
-.landing-projects-list{display:flex; flex-direction:column;}
+.new-project-row:hover{background:var(--accent-bright);}
+.new-project-row .npr-plus{font-size:15px; line-height:1;}
+.landing-projects-list{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:2px;}
 .project-row{
-  display:flex; align-items:center; gap:12px; padding:11px 8px; border-radius:6px; cursor:pointer; color:var(--text-chrome);
+  display:flex; flex-direction:column; gap:2px; padding:9px 10px; border-radius:7px; cursor:pointer; color:var(--text-chrome);
 }
 .project-row:hover{background:var(--chrome-bg-soft);}
-.project-row .pr-icon{width:26px; height:32px; flex:none; background:#fff; border:1px solid var(--chrome-line-strong); border-radius:2px; position:relative;}
-.project-row .pr-icon::before{content:""; position:absolute; left:5px; right:5px; top:8px; height:2px; background:var(--paper-edge);}
-.project-row .pr-icon::after{content:""; position:absolute; left:5px; right:9px; top:14px; height:2px; background:var(--paper-edge);}
-.project-row .pr-title{flex:1; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.project-row .pr-date{font-size:11.5px; color:var(--text-chrome-dim); flex:none;}
-.project-row .pr-delete{opacity:0; width:26px; height:26px; flex:none; border-radius:5px; background:none; border:none; color:var(--text-chrome-dim); display:flex; align-items:center; justify-content:center;}
-.project-row:hover .pr-delete{opacity:1;}
-.project-row .pr-delete:hover{background:#FBE7E7; color:var(--danger);}
-.project-row .pr-delete svg{width:14px; height:14px;}
+.project-row.selected{background:var(--accent-tint);}
+.project-row .pr-title{font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.project-row.selected .pr-title{color:var(--accent-dim); font-weight:600;}
+.project-row .pr-date{font-size:11px; color:var(--text-chrome-dim);}
 .landing-empty{color:var(--text-chrome-dim); font-size:13px; padding:6px 8px;}
+.landing-preview{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:40px;}
+.preview-doc{width:104px; height:130px; filter:drop-shadow(0 8px 18px rgba(0,0,0,.14));}
+.preview-title{font-family:var(--serif); font-size:18px; color:var(--text-chrome); max-width:420px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.preview-meta{font-size:12px; color:var(--text-chrome-dim);}
+.preview-actions{display:flex; gap:10px; margin-top:4px;}
+.modal-btn.danger-outline{color:var(--danger);}
+.modal-btn.danger-outline:hover{background:#FBE7E7; border-color:var(--danger);}
+.preview-empty{display:flex; flex-direction:column; align-items:center; gap:14px; opacity:.6;}
+.preview-empty-text{font-size:13px; color:var(--text-chrome-dim);}
 
 .tb-sep{width:1px; align-self:stretch; margin:10px 2px; background:var(--chrome-line);}
 .tb-group{display:flex; align-items:center; gap:4px;}
@@ -322,6 +327,12 @@ body.note-select-mode .note-select-check{display:block;}
 body.note-select-mode .note-wrap{cursor:pointer;}
 body.note-select-mode .note-card, body.note-select-mode .note-card *{cursor:pointer !important;}
 body.note-select-mode .dot-marker{cursor:pointer;}
+/* Selection Mode is for selecting notes, not editing/reading the script — the
+   script is already made non-editable (contentEditable=false) in this mode
+   via setNoteSelectMode(); this additionally stops click-and-drag from
+   highlighting script text, so a drag started over the page can't turn into
+   a text selection instead of (or underneath) a note-selection action. */
+body.note-select-mode #screenplayContent, body.note-select-mode #screenplayContent *{ user-select:none; -webkit-user-select:none; }
 
 .tabbar{display:flex; align-items:center; gap:2px; padding:8px 8px 0; border-bottom:1px solid var(--chrome-line); flex:none;}
 .tab-btn{
@@ -469,7 +480,15 @@ body.note-select-mode .dot-marker{cursor:pointer;}
    (see renderPageDecorContinuous) rather than sitting in the empty gap
    between two discrete pages, so it needs to clear the text column's own
    right edge -- moved right, into the open margin outside the text. */
-.page-number-continuous{right:48px;}
+.page-number-continuous{right:48px; line-height:16px;}
+/* Continuous Page View only: a hairline across the full sheet at each spot
+   that was a page boundary before the pages were merged into one strip.
+   Deliberately faint -- it's a reference mark on the paper, not a border,
+   and it has to sit under running script text without competing with it. */
+.page-break-rule{
+  position:absolute; left:0; width:816px; height:1px; background:var(--paper-edge);
+  pointer-events:none;
+}
 
 #screenplayContent{
   position:relative; z-index:2; width:816px; padding:96px 96px 120px 144px;
@@ -759,6 +778,88 @@ body.note-dragging, body.note-dragging *{cursor:grabbing !important;}
 }
 .tl-milestone:hover .tl-tip{opacity:1;}
 
+/* ---------- iPad portrait: rotated chrome ----------
+   In portrait the three chrome panels rotate one position:
+     left sidebar (Screenwriting) -> top toolbar
+     right sidebar (On-Set)       -> bottom toolbar
+     Living Script timeline       -> left rail
+   Everything is keyed off #app.portrait-mode, which JS sets from a single
+   matchMedia query, so CSS and JS can never disagree about which layout is
+   live (renderTimeline() needs to know too, to place milestones down the
+   rail instead of across the bar).
+   -------------------------------------------------- */
+#app.portrait-mode{
+  display:grid; grid-template-columns:var(--rail-w) minmax(0,1fr); grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"topbar topbar" "rail main";
+}
+#app.portrait-mode #topbar{grid-area:topbar;}
+#app.portrait-mode #timeline{grid-area:rail;}
+#app.portrait-mode #mainArea{grid-area:main;}
+
+#app.portrait-mode #mainArea{
+  display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"top" "canvas" "bottom";
+}
+#app.portrait-mode #leftSidebar{grid-area:top;}
+#app.portrait-mode #canvasViewport{grid-area:canvas; min-height:0;}
+#app.portrait-mode #rightSidebar{grid-area:bottom;}
+
+/* The panels themselves: a fixed-height strip, header and tabs sharing one
+   row so the scrollable content keeps as much of the strip as possible. */
+#app.portrait-mode .sidebar{
+  position:static; transform:none; width:auto; height:var(--strip-h); min-height:0; overflow:hidden;
+  display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"head tabs" "content content";
+  transition:height .22s ease, opacity .22s ease;
+}
+#app.portrait-mode #leftSidebar{border-right:none; border-bottom:1px solid var(--chrome-line);}
+#app.portrait-mode #rightSidebar{border-left:none; border-top:1px solid var(--chrome-line);}
+#app.portrait-mode .sidebar.hidden-panel{height:0; margin:0; opacity:0; pointer-events:none;}
+#app.portrait-mode #leftSidebar.hidden-panel,
+#app.portrait-mode #rightSidebar.hidden-panel{transform:none; margin:0;}
+#app.portrait-mode .sidebar-topbar{grid-area:head; border-bottom:none; padding:6px 4px 6px 12px;}
+#app.portrait-mode .tabbar{grid-area:tabs; padding:6px 8px; border-bottom:none; overflow-x:auto; justify-content:flex-end;}
+#app.portrait-mode .right-topbar{padding:6px 12px 6px 4px;}
+/* The collapse chevrons point along the axis the panel actually leaves on. */
+#app.portrait-mode #btnCollapseLeft svg,
+#app.portrait-mode #btnCollapseRight svg{transform:rotate(90deg);}
+
+/* Content scrolls SIDEWAYS, and document order (scene 1, 2, 3 ... shot 1, 2,
+   3 ...) runs left to right -- lowest number nearest the left edge. */
+#app.portrait-mode .sidebar-content{
+  grid-area:content; min-width:0; min-height:0;
+  display:flex; flex-direction:row; align-items:stretch; gap:10px;
+  overflow-x:auto; overflow-y:hidden; padding:10px 12px;
+  border-top:1px solid var(--chrome-line);
+  -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+}
+#app.portrait-mode .sidebar-content > *{flex:0 0 auto; max-width:min(62vw, 300px);}
+#app.portrait-mode .sidebar-content::-webkit-scrollbar{width:auto; height:8px;}
+#app.portrait-mode .scene-head,
+#app.portrait-mode .shot-item{white-space:nowrap;}
+#app.portrait-mode .shot-scene-group{display:flex; flex-direction:column; min-height:0; max-height:100%;}
+#app.portrait-mode .shot-scene-group .shot-list{overflow-y:auto; min-height:0; flex:1;}
+#app.portrait-mode .module-empty{white-space:normal; width:220px;}
+
+/* Living Script rail. Milestones run oldest at the top, newest at the
+   bottom -- the same chronological direction as the reading order of the
+   script itself. */
+#app.portrait-mode #timeline{
+  height:auto; width:var(--rail-w); flex-direction:column; padding:14px 0; gap:12px;
+  border-top:none; border-right:1px solid var(--chrome-line);
+}
+#app.portrait-mode #timeline.hidden-panel{margin-bottom:0; margin-left:calc(var(--rail-w) * -1);}
+#app.portrait-mode .tl-label{writing-mode:vertical-rl; text-orientation:mixed;}
+#app.portrait-mode #tlTrack{flex:1; width:2px; height:auto; margin:8px 0;}
+#app.portrait-mode .tl-milestone{left:50%;}
+#app.portrait-mode .tl-milestone .tl-tip{bottom:auto; top:50%; left:18px; transform:translateY(-50%) rotate(-45deg);}
+
+/* Edge tabs reappear on the edge the panel left from. */
+#app.portrait-mode .edge-tab{top:auto; bottom:auto; left:50%; right:auto; width:40px; height:16px;}
+#app.portrait-mode #leftEdgeTab{top:0; border-radius:0 0 8px 8px; border:1px solid var(--chrome-line-strong); border-top:none;}
+#app.portrait-mode #rightEdgeTab{bottom:0; border-radius:8px 8px 0 0; border:1px solid var(--chrome-line-strong); border-bottom:none;}
+#app.portrait-mode .edge-tab svg{transform:rotate(90deg);}
+
 /* ---------- responsive ---------- */
 @media (max-width:980px){
   .sidebar{position:absolute; top:0; bottom:0; height:100%;}
@@ -923,24 +1024,21 @@ body.note-dragging, body.note-dragging *{cursor:grabbing !important;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
     </button>
   </div>
-  <div class="landing-body">
-    <div class="landing-new-row">
-      <button class="new-project-tile" id="btnBlankScript">
-        <svg class="tile-doc" viewBox="0 0 64 80" fill="none"><rect x="1" y="1" width="62" height="78" rx="3" fill="#fff" stroke="var(--chrome-line-strong)"/><line x1="12" y1="20" x2="44" y2="20" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="30" x2="52" y2="30" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="40" x2="52" y2="40" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="50" x2="38" y2="50" stroke="var(--paper-edge)" stroke-width="2"/></svg>
-        <span class="tile-plus">+</span>
-        <span class="tile-label">Blank Script</span>
+  <div class="landing-split">
+    <div class="landing-sidebar">
+      <button class="new-project-row" id="btnBlankScript">
+        <span class="npr-plus">+</span>
+        <span class="npr-label">Blank Script</span>
       </button>
-    </div>
-    <div class="landing-projects">
-      <div class="landing-projects-title">My Projects</div>
       <div class="landing-projects-list" id="projectsList"></div>
     </div>
+    <div class="landing-preview" id="landingPreview"></div>
   </div>
 </div>
 <div class="context-menu hidden" id="contextMenu"></div>
 <div class="modal-overlay hidden" id="modalRoot"></div>
 <div class="toast" id="toast"></div>
-<input type="file" id="fileInput" accept=".json,.txt,.docx,.pdf" style="display:none">
+<input type="file" id="fileInput" accept=".json,.txt,.docx,.pdf,.fountain,.fdx" style="display:none">
 <datalist id="shotNumbersList"></datalist>
 
 <script>
@@ -1133,6 +1231,51 @@ function initScreenplay(lines){
    TITLE" / "Author Name") whenever empty, and it disappears the instant
    the field is focused OR typing starts — not just on typing — and reappears
    if the line is blurred (or emptied back out) while still empty. */
+/* The Title Page's title field and the project title (top bar, left sidebar
+   row, landing-page list) are two views of one thing, but nothing connected
+   them: state.projectTitle only ever changed from the top-bar field, so
+   typing a title on the Title Page left the sidebar showing "[Untitled
+   Screenplay]" no matter how many times it was retyped. Kept in sync both
+   ways now -- the Title Page is the document's own title, and renaming from
+   the top bar writes back onto the page rather than quietly diverging. */
+const DEFAULT_PROJECT_TITLE='Untitled Screenplay';
+function titlePageTitleBlock(){
+  return content.querySelector('.line-block[data-title-role="title"]');
+}
+function titleFromTitlePage(){
+  const el=titlePageTitleBlock();
+  return el ? (el.textContent||'').replace(/\s+/g,' ').trim() : '';
+}
+function applyProjectTitle(val, opts){
+  const title=(val||'').trim() || DEFAULT_PROJECT_TITLE;
+  if(title===state.projectTitle) return false;
+  state.projectTitle=title;
+  const topEl=document.getElementById('projectTitle');
+  // Don't rewrite the top-bar field while the user is mid-edit inside it.
+  if(topEl && document.activeElement!==topEl) topEl.textContent=title;
+  if(state.activeTab.left==='scenes') renderSidebar('left');
+  if(!opts || !opts.silent) scheduleAutosave();
+  return true;
+}
+function syncProjectTitleFromTitlePage(){
+  if(!titlePageTitleBlock()) return; // project has no title page
+  applyProjectTitle(titleFromTitlePage());
+}
+/* On open, decide which side is authoritative rather than letting whichever
+   one happens to be edited first win: a Title Page that already carries a
+   title is the document's own answer, and an empty one is filled in from the
+   stored project title so the two never start out disagreeing. */
+function reconcileTitleOnOpen(){
+  const el=titlePageTitleBlock();
+  if(!el) return;
+  const fromPage=titleFromTitlePage();
+  if(fromPage){
+    applyProjectTitle(fromPage, {silent:true});
+  } else if(state.projectTitle && state.projectTitle!==DEFAULT_PROJECT_TITLE){
+    el.textContent=state.projectTitle;
+  }
+  updateTitlePagePlaceholders();
+}
 function updateTitlePagePlaceholders(){
   content.querySelectorAll('.line-block[data-title-role]').forEach(el=>{
     const empty = el.textContent.trim()==='';
@@ -1248,6 +1391,110 @@ function placeCaretAtEnd(el){
   r.collapse(false);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
 }
+/* =========================================================
+   PARAGRAPH-LEVEL COMMANDS OVER A SELECTION
+
+   Word's rule, and now this app's: a paragraph-level command (element
+   type, alignment) applies to EVERY paragraph the selection touches, not
+   just the one the caret happens to be parked in. Previously each of
+   these acted on a single block -- the toolbar popover on lastActiveBlock,
+   the Ctrl+number shortcuts and Tab on getCurrentBlock() -- so selecting
+   five paragraphs and picking "Dialogue" retyped only the last one.
+
+   Two things are needed to make that work end to end:
+     * resolve the target set from the live selection (below), and
+     * stop the toolbar from destroying the selection before the command
+       runs -- see the mousedown preventDefault on elementTypeBtn and the
+       popover items. Without that the selection is already collapsed by
+       the time the click handler fires, and no amount of correct logic
+       downstream can recover it.
+   ========================================================= */
+function blockContainingNode(node){
+  if(!node) return null;
+  const el = node.nodeType===1 ? node : node.parentElement;
+  const block = el && el.closest ? el.closest('.line-block') : null;
+  return (block && content.contains(block)) ? block : null;
+}
+function blocksForParagraphCommand(fallbackBlock){
+  let touched=linesTouchedBySelection();
+  // Range.intersectsNode() counts a paragraph the selection merely *touches*
+  // at a boundary. Dragging down to the very start of the next paragraph
+  // selects none of its text, and Word does not restyle it -- so drop a
+  // leading/trailing paragraph that contributes no selected characters.
+  if(touched.length>1){
+    const sel=window.getSelection();
+    if(sel && sel.rangeCount){
+      const r=sel.getRangeAt(0);
+      const last=touched[touched.length-1];
+      if(blockContainingNode(r.endContainer)===last && flatOffsetInBlock(last, r.endContainer, r.endOffset)===0){
+        touched=touched.slice(0,-1);
+      }
+      const first=touched[0];
+      if(touched.length>1 && blockContainingNode(r.startContainer)===first &&
+         flatOffsetInBlock(first, r.startContainer, r.startOffset)>=first.textContent.length){
+        touched=touched.slice(1);
+      }
+    }
+  }
+  if(touched.length) return touched;
+  const block=fallbackBlock || lastActiveBlock;
+  return block && content.contains(block) ? [block] : [];
+}
+/* Selection is stored as block id + flat text offset rather than as a live
+   Range, because these commands can rewrite a block's text underneath it
+   (setBlockType wrapping a Parenthetical in brackets), which would leave a
+   Range pointing at a detached text node. Offsets are clamped on the way
+   back in for the same reason. */
+function captureSelectionAcrossBlocks(){
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !content.contains(sel.anchorNode)) return null;
+  const r=sel.getRangeAt(0);
+  const sb=blockContainingNode(r.startContainer), eb=blockContainingNode(r.endContainer);
+  if(!sb || !eb) return null;
+  return {
+    startId:sb.dataset.id, startOffset:flatOffsetInBlock(sb, r.startContainer, r.startOffset),
+    endId:eb.dataset.id,   endOffset:flatOffsetInBlock(eb, r.endContainer, r.endOffset)
+  };
+}
+function restoreSelectionAcrossBlocks(snap){
+  if(!snap) return false;
+  const sb=content.querySelector('[data-id="'+snap.startId+'"]');
+  const eb=content.querySelector('[data-id="'+snap.endId+'"]');
+  if(!sb || !eb) return false;
+  try{
+    const s=textOffsetToNodeOffset(sb, clamp(snap.startOffset, 0, sb.textContent.length));
+    const e=textOffsetToNodeOffset(eb, clamp(snap.endOffset, 0, eb.textContent.length));
+    const r=document.createRange();
+    r.setStart(s.node, s.offset); r.setEnd(e.node, e.offset);
+    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    return true;
+  }catch(err){ return false; }
+}
+function applyBlockTypeToSelection(type, fallbackBlock){
+  const blocks=blocksForParagraphCommand(fallbackBlock);
+  if(!blocks.length) return [];
+  const snap=captureSelectionAcrossBlocks();
+  blocks.forEach(b=>setBlockType(b, type));
+  scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
+  lastActiveBlock=blocks[blocks.length-1];
+  // Word keeps the selection after retyping paragraphs, so the writer can
+  // immediately apply a second command to the same range. Restore it before
+  // refreshing the toolbar, which reads the live selection to decide whether
+  // to show one type or blank out for a mixed one.
+  if(!restoreSelectionAcrossBlocks(snap)) placeCaretAt(lastActiveBlock, lastActiveBlock.textContent.length);
+  refreshToolbarForBlock(lastActiveBlock);
+  return blocks;
+}
+/* The element-type label, and the popover's tick, describe the selection as
+   a whole: a single type when every touched paragraph agrees, nothing when
+   they don't -- again matching Word, which blanks the style box on a mixed
+   selection rather than showing whichever one the caret landed on. */
+function selectionElementType(){
+  const blocks=blocksForParagraphCommand(lastActiveBlock);
+  if(!blocks.length) return null;
+  const first=blocks[0].dataset.type;
+  return blocks.every(b=>b.dataset.type===first) ? first : null;
+}
 function setBlockType(block,type){
   block.dataset.type=type; block.dataset.label=TYPE_LABELS[type];
   block.className='line-block type-'+type;
@@ -1263,8 +1510,15 @@ function setBlockType(block,type){
   }
 }
 function cycleType(block,dir){
-  const idx=TYPES.indexOf(block.dataset.type);
+  // Cycles from the FIRST selected paragraph's type and lands every
+  // selected paragraph on that same result, rather than advancing each one
+  // independently -- otherwise a mixed selection stays mixed forever and
+  // Tab becomes unpredictable.
+  const blocks=blocksForParagraphCommand(block);
+  const from=(blocks[0]||block).dataset.type;
+  const idx=TYPES.indexOf(from);
   const next=TYPES[(idx+dir+TYPES.length)%TYPES.length];
+  if(blocks.length>1){ applyBlockTypeToSelection(next, block); return; }
   setBlockType(block,next);
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
 }
@@ -1598,14 +1852,14 @@ content.addEventListener('keydown', function(e){
   }
   if(mod && NUMBER_TYPE_MAP[e.key] && !e.shiftKey){
     e.preventDefault();
-    setBlockType(block, NUMBER_TYPE_MAP[e.key]);
-    scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); ensureCaretVisible();
+    applyBlockTypeToSelection(NUMBER_TYPE_MAP[e.key], block);
+    ensureCaretVisible();
     return;
   }
   if(mod && e.shiftKey && SHIFT_NUMBER_TYPE_MAP[e.key]){
     e.preventDefault();
-    setBlockType(block, SHIFT_NUMBER_TYPE_MAP[e.key]);
-    scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); ensureCaretVisible();
+    applyBlockTypeToSelection(SHIFT_NUMBER_TYPE_MAP[e.key], block);
+    ensureCaretVisible();
     return;
   }
   if(mod && !e.shiftKey && (e.key==='b'||e.key==='B')){ e.preventDefault(); applyInlineFormat('bold'); return; }
@@ -1720,7 +1974,13 @@ content.addEventListener('input', function(){
   const block=sel && sel.rangeCount ? getCurrentBlock(sel) : null;
   if(block){
     autoDetectSceneHeading(block);
-    if(block.dataset.titleRole) updateTitlePagePlaceholders();
+    if(block.dataset.titleRole){
+      updateTitlePagePlaceholders();
+      // Live, per-keystroke: the sidebar row and top bar track the Title
+      // Page as it's typed, including back down to empty (which restores
+      // the default name rather than leaving the old title stuck).
+      if(block.dataset.titleRole==='title') syncProjectTitleFromTitlePage();
+    }
     if(block.dataset.type==='character'){ autoSpaceBeforeExtension(block); autoCloseCharacterExtension(block); }
   }
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
@@ -2096,7 +2356,13 @@ function recomputePaginationContinuous(blocks){
   const cumulativeY=[]; { let acc=0; for(let i=0;i<heights.length;i++){ cumulativeY.push(acc); acc+=heights[i]; } }
 
   let used=0, pageStart=0;
-  const bodyBoundaries=[]; // {y, padTop} relative to the body's own start -- where a new notional page begins within the body
+  // {y, padTop, lineId} -- y is the cumulative-height offset used for page
+  // *mapping* (currentPhysicalPage), lineId is the block that starts the
+  // page, used for *drawing* (see renderPageDecorContinuous). They are not
+  // the same coordinate space and must not be confused: cumulativeY starts
+  // at the first block, while pageDecor's origin is the sheet corner, a
+  // content padding-top (96px) higher.
+  const bodyBoundaries=[];
   for(let i=0;i<bodyBlocks.length;i++){
     used+=heights[i];
     const heightBreak=used>BUDGET && i>pageStart;
@@ -2104,12 +2370,12 @@ function recomputePaginationContinuous(blocks){
     if(heightBreak){
       let breakIdx=i;
       if(bodyBlocks[i-1] && bodyBlocks[i-1].dataset.type==='character' && breakIdx-1>pageStart){ breakIdx=i-1; }
-      bodyBoundaries.push({y:cumulativeY[breakIdx], padTop:padTops[breakIdx]});
+      bodyBoundaries.push({y:cumulativeY[breakIdx], padTop:padTops[breakIdx], lineId:bodyBlocks[breakIdx].dataset.id});
       pageStart=breakIdx;
       used=0;
       i=breakIdx-1;
     } else if(forcedBreak){
-      bodyBoundaries.push({y:cumulativeY[i+1], padTop:padTops[i+1]});
+      bodyBoundaries.push({y:cumulativeY[i+1], padTop:padTops[i+1], lineId:bodyBlocks[i+1].dataset.id});
       pageStart=i+1;
       used=0;
     }
@@ -2122,7 +2388,8 @@ function recomputePaginationContinuous(blocks){
   // boundary-crossing at a time; every subsequent entry is a real
   // body-internal page break, offset into document-absolute Y.
   continuousPageBoundaries = hasTitlePage
-    ? [{y:bodyStartY, padTop:padTops[0]||0}, ...bodyBoundaries.map(b=>({y:b.y+bodyStartY, padTop:b.padTop}))]
+    ? [{y:bodyStartY, padTop:padTops[0]||0, lineId:(bodyBlocks[0]&&bodyBlocks[0].dataset.id)||null},
+       ...bodyBoundaries.map(b=>({y:b.y+bodyStartY, padTop:b.padTop, lineId:b.lineId}))]
     : bodyBoundaries;
   totalPageCount=continuousPageBoundaries.length+1;
 
@@ -2161,8 +2428,11 @@ function recomputePaginationContinuous(blocks){
   renderPageDecorContinuous(continuousPageBoundaries, hasTitlePage, bodyStartY);
   updatePageIndicator();
 }
-function renderPageDecorContinuous(boundaries, hasTitlePage, bodyStartY){
-  pageDecor.innerHTML='';
+// How far above the first sentence's glyphs the page-break rule sits. Small
+// enough to read as "the boundary of this page", big enough that it never
+// touches a Dialogue/Parenthetical block, which has no padding of its own.
+const RULE_LIFT=10;
+function renderPageDecorContinuous(boundaries, hasTitlePage, bodyStartY){  pageDecor.innerHTML='';
   bodyStartY=bodyStartY||0;
   if(hasTitlePage){
     // The title page keeps the exact same fixed-size .page-sheet normal
@@ -2183,25 +2453,67 @@ function renderPageDecorContinuous(boundaries, hasTitlePage, bodyStartY){
   const skipPages=hasTitlePage?2:1; // title (unnumbered) + first script page (unnumbered)
   boundaries.forEach((b,idx)=>{
     const pageIndex=idx+1; // boundaries[0] marks the start of physical page 1 (0-based index 1)
+    // Measure where that page's first paragraph ACTUALLY is, rather than
+    // deriving it from b.y. b.y is a cumulative-height offset counted from
+    // the first block, but pageDecor's origin is the sheet corner -- the
+    // two differ by #screenplayContent's 96px padding-top (more, with a
+    // title-page spacer in the flow), so drawing at b.y put the mark most
+    // of a page's top margin above the break it was marking.
+    const startEl=b.lineId ? content.querySelector('[data-id="'+b.lineId+'"]') : null;
+    const boxTop=startEl ? lineWorldTop(startEl) : b.y;
+    // Top of the actual glyphs: most block types carry their own 16px
+    // padding above the text, Dialogue/Parenthetical carry none.
+    const textTop=boxTop+(startEl ? lineOwnPaddingTop(startEl) : (b.padTop||0));
+    const ruleY=textTop-RULE_LIFT; // the boundary itself: immediately above the first sentence
+    const rule=document.createElement('div');
+    rule.className='page-break-rule';
+    // Drawn on EVERY boundary, including the ones whose page is unnumbered
+    // -- the page still broke there.
+    rule.style.top=ruleY+'px';
+    pageDecor.appendChild(rule);
     if(pageIndex>=skipPages){
       const num=document.createElement('div');
       num.className='page-number page-number-continuous';
-      // No +48 offset here (unlike renderPageDecor's discrete-page version):
-      // in Continuous View there's no gap between pages to sit inside, so the
-      // label sits directly level with the topmost paragraph of the new page
-      // -- making it visually clear that paragraph used to start a new page.
-      // b.y itself marks the top of that paragraph's full layout box, which
-      // for most element types includes its own 16px padding-top gap above
-      // the actual glyphs (Dialogue/Parenthetical have none) -- add it back
-      // so the label lines up with the text itself, not the empty space
-      // above it.
-      num.style.top=(b.y+(b.padTop||0))+'px';
+      num.style.top=(ruleY+2)+'px'; // directly under the rule, out in the right margin
       num.textContent=(pageIndex-skipPages+2)+'.';
       pageDecor.appendChild(num);
     }
   });
 }
+/* Switching between paginated and Continuous Page View moves every
+   paragraph in the document: page gaps (bottom margin + canvas gap + top
+   margin, ~220 units each) either appear or disappear above everything
+   below them. Without compensating, the camera stays where it was and the
+   reader is dumped somewhere else entirely -- further off the deeper into
+   the script they were, since the drift accumulates one gap per page.
+
+   So: remember the paragraph nearest the top of the viewport and exactly
+   where on screen it sat, then after the relayout put the camera back so
+   that same paragraph is at that same screen position. Measured in screen
+   pixels via client rects, which already account for the current zoom, and
+   applied to pan directly (same units as ensureCaretVisible's nudge). */
+function captureViewportAnchor(){
+  const vr=viewport.getBoundingClientRect();
+  const blocks=allLineEls();
+  let best=null, bestD=Infinity;
+  blocks.forEach(b=>{
+    const d=Math.abs(b.getBoundingClientRect().top-vr.top);
+    if(d<bestD){ bestD=d; best=b; }
+  });
+  if(!best) return null;
+  return {id:best.dataset.id, screenOffset:best.getBoundingClientRect().top-vr.top};
+}
+function restoreViewportAnchor(anchor){
+  if(!anchor) return false;
+  const el=content.querySelector('[data-id="'+anchor.id+'"]');
+  if(!el) return false;
+  const vr=viewport.getBoundingClientRect();
+  const dy=(vr.top+anchor.screenOffset)-el.getBoundingClientRect().top;
+  if(dy){ pan.y+=dy; applyTransform(); }
+  return true;
+}
 function setContinuousView(on){
+  const anchor=captureViewportAnchor(); // must be read BEFORE the relayout
   continuousView=on;
   content.querySelectorAll('.page-spacer').forEach(n=>n.remove());
   content.querySelectorAll('.dlg-gap-spacer').forEach(n=>n.remove());
@@ -2215,6 +2527,8 @@ function setContinuousView(on){
   renderDrawLayer();
   renderTextHighlights();
   document.body.classList.toggle('continuous-view', on);
+  restoreViewportAnchor(anchor);
+  updatePageIndicator();
   const btn=document.getElementById('btnContinuousView');
   btn.classList.toggle('active', on);
   btn.title = on ? 'Exit Continuous Page View' : 'Continuous Page View';
@@ -2222,6 +2536,10 @@ function setContinuousView(on){
 const scheduleReflow=debounce(function(){
   recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderTextHighlights();
   if(state.activeTab.left==='scenes') renderSidebar('left');
+  // Shot grouping is derived from the live scene list now, so editing a scene
+  // heading has to refresh the shot list too -- otherwise the two sidebars
+  // disagree until something else happens to redraw the right one.
+  if(state.activeTab.right==='shots') renderSidebar('right');
   ensureCaretVisible(); // pagination can shift a page break in after the fact (debounced), moving the caret's screen position independent of the keystroke that triggered it
 }, 260);
 
@@ -2282,15 +2600,28 @@ function updatePageIndicator(){
   const label='Page '+cur+' of '+totalPageCount;
   if(el.textContent!==label) el.textContent=label;
   let leftOffset=20;
-  if(state.panelsVisible.left){
-    const sb=document.getElementById('leftSidebar');
-    if(sb) leftOffset = sb.getBoundingClientRect().right + 20;
+  let bottomOffset=20;
+  if(isPortraitChrome()){
+    // Portrait: the left sidebar is the FULL-WIDTH top toolbar, so its
+    // right edge is the window edge -- measuring it would push the badge
+    // off-screen. What the badge has to clear instead is the Living Script
+    // rail on the left and the On-Set strip along the bottom.
+    const rail=document.getElementById('timeline');
+    if(state.panelsVisible.timeline && rail) leftOffset = rail.getBoundingClientRect().width + 20;
+    const bottomBar=document.getElementById('rightSidebar');
+    if(state.panelsVisible.right && bottomBar) bottomOffset = bottomBar.getBoundingClientRect().height + 20;
+  } else {
+    if(state.panelsVisible.left){
+      const sb=document.getElementById('leftSidebar');
+      if(sb) leftOffset = sb.getBoundingClientRect().right + 20;
+    }
+    // The timeline (Living Script) bar is a fixed 56px tall strip pinned to the
+    // bottom of the viewport when open -- without this, the badge's own default
+    // 20px-from-bottom position lands squarely inside that strip's left end.
+    if(state.panelsVisible.timeline) bottomOffset = 56+20;
   }
   el.style.left=leftOffset+'px';
-  // The timeline (Living Script) bar is a fixed 56px tall strip pinned to the
-  // bottom of the viewport when open -- without this, the badge's own default
-  // 20px-from-bottom position lands squarely inside that strip's left end.
-  el.style.bottom = (state.panelsVisible.timeline ? 56+20 : 20)+'px';
+  el.style.bottom=bottomOffset+'px';
 }
 function animateTransformTo(newPan, newZoom, cb){
   world.classList.add('animated');
@@ -2309,6 +2640,15 @@ function zoomAt(sx, sy, newZoom){
 let zoomIndicatorTimer=null;
 function positionZoomIndicator(){
   const el=document.getElementById('zoomIndicator');
+  if(!el) return;
+  if(isPortraitChrome()){
+    // The On-Set panel is along the bottom now, not the right edge.
+    const bottomBar=document.getElementById('rightSidebar');
+    el.style.right='20px';
+    el.style.bottom = ((state.panelsVisible.right && bottomBar ? bottomBar.getBoundingClientRect().height : 0) + 20)+'px';
+    return;
+  }
+  el.style.bottom='20px';
   let rightOffset=20;
   if(state.panelsVisible.right){
     const sb=document.getElementById('rightSidebar');
@@ -2354,6 +2694,12 @@ function ensureCaretVisible(){
   else if(br.bottom>vr.bottom-margin) dy=(vr.bottom-margin)-br.bottom;
   if(dy){ pan.y+=dy; applyTransform(); }
 }
+/* Where a navigation jump parks its target line: one fifth down from the
+   viewport's top edge. High enough that the line being navigated to reads as
+   a heading with its scene below it, rather than sitting mid-screen with as
+   much dead space above as below. Shared by the scene list and shot focus so
+   the two never drift apart. */
+const NAV_TOP_FRACTION=0.2;
 function panToWorldPointFraction(wx, wy, vFrac){
   const r=viewport.getBoundingClientRect();
   animateTransformTo({x:r.width/2-wx*zoom, y:r.height*vFrac-wy*zoom}, zoom);
@@ -2379,35 +2725,66 @@ function nearestLineToWorldY(worldY){
   });
   return best;
 }
-/* Anything in the empty margin+gap area between two consecutive paragraphs
-   that actually sit on DIFFERENT pages (a real page break -- bottom
-   margin + canvas gap + top margin, ~220+ world units, never confusable
-   with a normal 0-16px paragraph gap) belongs to whichever side of the
-   *physical gap's own midpoint* it falls on: the upper page's last
-   paragraph above that line, the lower page's first paragraph below it.
-   nearestLineToWorldY's "closest paragraph by its own center" doesn't
-   line up with this -- a tall multi-line paragraph's center sits well
-   above its own bottom edge, which shifts the effective split point away
-   from the actual visual gap between the pages. Measuring the real gap
-   between consecutive lines directly (rather than assuming fixed page
-   math) means this works the same whether the break is a plain page
-   break or a force-broken one (e.g. after the Title Page).
-*/
+/* ---------------------------------------------------------
+   Which paragraph a dot belongs to, around a page break.
+
+   The reference line is HORIZONTAL and sits at the exact centre of the
+   grey canvas gap between the two page sheets. Everything above it --
+   the upper page's last paragraph, the blank space level with that
+   paragraph, the upper page's bottom margin -- anchors to that last
+   paragraph. Everything below it -- the lower page's top margin, its
+   first paragraph, the blank space level with it -- anchors to the first
+   paragraph. The horizontal position of the dot is irrelevant.
+
+   Two things were wrong before. The split point was the midpoint between
+   the two paragraphs' own text edges, which is NOT the middle of the grey
+   gap: when the upper page ends early (a short last paragraph, or a
+   force-broken page), that midpoint drifts up into the upper page's white
+   area, so a dot placed in the upper page's own bottom margin got the
+   lower page's paragraph. And the band only covered the space between the
+   paragraphs, so the paragraphs themselves were still resolved by
+   elementFromPoint -- the caller's explicitLineId -- which is what made
+   the boundary behave as though it ran vertically.
+
+   Derived from page geometry (PAGE_H + GAP) rather than from the
+   paragraphs, so it is exact regardless of how full either page is.
+   --------------------------------------------------------- */
+function pageBoundaryRefY(worldY){
+  // Centre of the grey gap below whichever page this Y falls on/after.
+  const stride=PAGE_H+GAP;
+  const pageIdx=Math.floor(worldY/stride);
+  return pageIdx*stride+PAGE_H+GAP/2;
+}
 function lineForPageGap(worldY){
+  if(continuousView) return null; // one unbroken sheet -- there is no inter-page gap to straddle
   const lines=allLineEls();
   for(let i=0;i<lines.length-1;i++){
-    const aBottom=lineWorldTop(lines[i])+lines[i].offsetHeight;
+    const aTop=lineWorldTop(lines[i]);
+    const aBottom=aTop+lines[i].offsetHeight;
     const bTop=lineWorldTop(lines[i+1]);
-    if(bTop-aBottom>64 && worldY>=aBottom && worldY<bTop){
-      return worldY<(aBottom+bTop)/2 ? lines[i] : lines[i+1];
-    }
+    const bBottom=bTop+lines[i+1].offsetHeight;
+    // A real page break: bottom margin + canvas gap + top margin (~220 world
+    // units), never confusable with a normal 0-16px paragraph gap.
+    if(bTop-aBottom<=64) continue;
+    // The band covers BOTH paragraphs as well as everything between them,
+    // so the whole run from the upper paragraph's top edge to the lower
+    // paragraph's bottom edge is decided by one rule.
+    if(worldY<aTop || worldY>=bBottom) continue;
+    const refY=pageBoundaryRefY(aBottom);
+    return worldY<refY ? lines[i] : lines[i+1];
   }
   return null;
 }
 function resolveAnchorLine(worldX, worldY, explicitLineId){
+  // Geometry first, and only inside a page-break band: there the answer is
+  // positional by definition, so a caller's hit-test result (explicitLineId,
+  // from elementFromPoint) or a stale caret (highlightedLineId) must not
+  // override it. Everywhere else the explicit target still wins, as before.
+  const gapLine=lineForPageGap(worldY);
+  if(gapLine) return gapLine;
   if(explicitLineId){ const el=content.querySelector('[data-id="'+explicitLineId+'"]'); if(el) return el; }
   if(highlightedLineId){ const el=content.querySelector('[data-id="'+highlightedLineId+'"]'); if(el) return el; }
-  return lineForPageGap(worldY) || nearestLineToWorldY(worldY);
+  return nearestLineToWorldY(worldY);
 }
 function panIntoViewIfNearEdge(worldX, worldY, margin){
   const r=viewport.getBoundingClientRect();
@@ -2430,6 +2807,21 @@ function linesTouchedBySelection(){
   if(!sel || !sel.rangeCount || sel.isCollapsed || !content.contains(sel.anchorNode)) return [];
   const range=sel.getRangeAt(0);
   return allLineEls().filter(b=>range.intersectsNode(b));
+}
+/* A new Dot Note's card belongs beside its own dot, not lined up against
+   the page edge with every other note.
+
+   cardOffsetX is stored as a distance measured OUTWARD from the page edge
+   (see layoutNote: left cards hang off 0, right cards off PAGE_W), so the
+   offset that puts the card next to the dot has to be derived from the
+   dot's own X. The floor is what keeps the promise that a card never sits
+   on the paper: a dot dropped inside the script can't have its card beside
+   it, so the card stops at the page edge and the connector stretches to
+   reach it. A dot out in the open canvas gets its card right there. */
+const CARD_DOT_GAP=36;
+function defaultCardOffsetX(side, dotX){
+  const beside = side==='left' ? (CARD_DOT_GAP-dotX) : (dotX+CARD_DOT_GAP-PAGE_W);
+  return clamp(Math.max(CARD_DOT_GAP, beside), CARD_DOT_GAP, 1400);
 }
 function createNote(kind, worldX, worldY, explicitLineId, extraLineIds){
   if(readOnlyMode) return null; // creating a note is a project mutation -- locked in Read-Only Mode
@@ -2466,7 +2858,7 @@ function createNote(kind, worldX, worldY, explicitLineId, extraLineIds){
   const impliedShot = candidateShots.length===1 ? candidateShots[0] : null;
   const note={
     id:uid('note'), kind:kind, anchorLineIds:anchorLineIds,
-    dotX:worldX, dotY:worldY, dotAnchorOffsetY:worldY-lineWorldTop(line), side:side, cardOffsetX:36, cardYOffset:0, connectedLater:false,
+    dotX:worldX, dotY:worldY, dotAnchorOffsetY:worldY-lineWorldTop(line), side:side, cardOffsetX:defaultCardOffsetX(side, worldX), cardYOffset:0, connectedLater:false,
     folded:false, text:'', keyword:'', category:null, shotId:impliedShot?impliedShot.id:null, shootDay:'',
     createdAt:Date.now()
   };
@@ -4586,7 +4978,48 @@ function getScenes(){
   });
   return scenes;
 }
-function shotsForScene(sceneId){ return state.shots.filter(s=>s.sceneId===sceneId).sort((a,b)=>naturalCompare(a.number,b.number)); }
+/* Which scene a shot belongs to is DERIVED from the paragraph it is anchored
+   to, resolved fresh against the very same getScenes() list the left
+   sidebar numbers its rows from -- so "Shot 1A" always lands under the scene
+   the writer can see it sitting in.
+
+   It used to be a snapshot taken once at creation and never revisited, which
+   went stale the moment the script changed around it: inserting a scene
+   heading above a shot left it filed under the previous scene, and deleting
+   a scene heading nulled its shots' sceneId, at which point they matched no
+   group and silently disappeared from the list entirely.
+
+   sceneManual is the escape hatch: dragging a shot into another scene's
+   group pins it there deliberately, and that pin outranks the derivation
+   until the shot is dragged back to where it actually lives (or the scene it
+   was pinned to stops existing). */
+function sceneForLineId(lineId, scenes){
+  if(!lineId) return null;
+  return scenes.find(sc=>sc.lineIds.includes(lineId)) || null;
+}
+function derivedSceneIdForShot(shot, scenes){
+  const sc = sceneForLineId(shot.startLineId, scenes) || sceneForLineId(shot.endLineId, scenes);
+  return sc ? sc.id : null;
+}
+function resolvedSceneIdForShot(shot, scenes){
+  if(shot.sceneManual && scenes.some(s=>s.id===shot.sceneId)) return shot.sceneId;
+  const derived=derivedSceneIdForShot(shot, scenes);
+  if(derived) return derived;
+  // Anchor paragraph is gone, or sits above the first scene heading (which
+  // getScenes() deliberately doesn't count as a scene). Keep a still-valid
+  // stored sceneId if there is one; otherwise the shot is unassigned and
+  // gets its own group rather than vanishing.
+  return scenes.some(s=>s.id===shot.sceneId) ? shot.sceneId : null;
+}
+function sortShots(list){ return list.slice().sort((a,b)=>naturalCompare(a.number,b.number)); }
+function shotsForScene(sceneId, scenes){
+  const list=scenes||getScenes();
+  return sortShots(state.shots.filter(s=>resolvedSceneIdForShot(s, list)===sceneId));
+}
+function shotsWithoutScene(scenes){
+  const list=scenes||getScenes();
+  return sortShots(state.shots.filter(s=>resolvedSceneIdForShot(s, list)===null));
+}
 function shotLineRange(shot){
   const ids=allLineEls().map(l=>l.dataset.id);
   const s=ids.indexOf(shot.startLineId), e=ids.indexOf(shot.endLineId);
@@ -4749,10 +5182,9 @@ function selectShot(shotId){
   });
   setFoldedBatch(shotFocusChanges);
   const first=content.querySelector('[data-id="'+shot.startLineId+'"]');
-  // Same top-1/4 alignment as clicking a scene in the left sidebar (see
-  // MODULES.scenes' row click handler), rather than dead-centering the
-  // shot's start line in the viewport.
-  if(first) panToWorldPointFraction(PAGE_W/2, lineWorldTop(first), 0.25);
+  // Same alignment as clicking a scene in the left sidebar (see MODULES.scenes'
+  // row click handler), rather than dead-centering the shot's start line.
+  if(first) panToWorldPointFraction(PAGE_W/2, lineWorldTop(first), NAV_TOP_FRACTION);
   renderSidebar('right');
 }
 function clearShotFocus(){
@@ -4847,7 +5279,10 @@ async function deleteScene(sceneId, heading){
   const ok=await confirmModal('Delete Scene', 'This removes the scene heading "'+heading+'". The rest of its content stays in the script and joins the previous scene. Any shots pointing to this scene become unassigned. You can undo this with Ctrl/Cmd+Z.');
   if(!ok) return;
   line.remove();
-  state.shots.forEach(s=>{ if(s.sceneId===sceneId) s.sceneId=null; });
+  // Release both the stored id and any manual pin to the scene being
+  // deleted, so these shots re-derive from their paragraphs (which have now
+  // merged into the preceding scene) instead of being stranded.
+  state.shots.forEach(s=>{ if(s.sceneId===sceneId){ s.sceneId=null; delete s.sceneManual; } });
   recomputePagination();
   renderSidebar('left'); renderSidebar('right'); refreshFilterOptions();
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
@@ -4887,7 +5322,7 @@ function renderScenesModule(el){
     row.innerHTML='<span class="scene-num">'+(i+1)+'</span><span class="scene-title">'+escapeHtml(sc.heading||'(untitled)')+'</span>';
     row.addEventListener('click', ()=>{
       const first=content.querySelector('[data-id="'+sc.lineIds[0]+'"]');
-      if(first) panToWorldPointFraction(PAGE_W/2, lineWorldTop(first), 0.25);
+      if(first) panToWorldPointFraction(PAGE_W/2, lineWorldTop(first), NAV_TOP_FRACTION);
     });
     attachSceneLongPressDelete(row, sc.id, sc.heading||'(untitled)');
     el.appendChild(row);
@@ -4943,14 +5378,29 @@ function renderShotsModule(el){
       let data; try{ data=JSON.parse(e.dataTransfer.getData('text/plain')); }catch(err){ return; }
       if(!data || !data.shotId) return;
       const shot=state.shots.find(s=>s.id===data.shotId); if(!shot) return;
-      if(shot.sceneId===sceneIdForGroup) return;
-      shot.sceneId=sceneIdForGroup;
+      const scenesNow=getScenes();
+      if(resolvedSceneIdForShot(shot, scenesNow)===sceneIdForGroup) return;
+      if(sceneIdForGroup===null || derivedSceneIdForShot(shot, scenesNow)===sceneIdForGroup){
+        // Dropped back where the script itself puts it (or into Unassigned):
+        // release the pin so it tracks the paragraph again from now on.
+        shot.sceneId=sceneIdForGroup;
+        delete shot.sceneManual;
+      } else {
+        shot.sceneId=sceneIdForGroup;
+        shot.sceneManual=true;
+      }
       renderSidebar('right');
       scheduleSnapshot(); scheduleAutosave();
     });
     el.appendChild(group);
   }
-  scenes.forEach((sc,i)=>{ renderGroup('Scene '+(i+1), shotsForScene(sc.id), sc.id); });
+  scenes.forEach((sc,i)=>{ renderGroup('Scene '+(i+1), shotsForScene(sc.id, scenes), sc.id); });
+  // Shots whose anchor sits above the first scene heading, or whose anchor
+  // paragraph was deleted. Previously these matched no group and dropped out
+  // of the UI without a trace; they get a home instead, and can be dragged
+  // into a real scene from here.
+  const unassigned=shotsWithoutScene(scenes);
+  if(unassigned.length) renderGroup('Unassigned', unassigned, null);
 }
 
 function refreshFilterOptions(){
@@ -5486,13 +5936,54 @@ async function addMilestone(){
   renderTimeline(); scheduleAutosave();
   showToast('Milestone saved');
 }
+/* =========================================================
+   PORTRAIT CHROME
+   One matchMedia query is the single source of truth for the rotated
+   layout: it toggles #app.portrait-mode (which every portrait CSS rule
+   hangs off) and re-runs the bits of layout that are computed in JS
+   rather than CSS -- the milestone rail and the floating badges.
+   Bounded below so this never engages on a phone (the app doesn't target
+   phones at all) and above so a portrait desktop window doesn't get
+   tablet chrome.
+   ========================================================= */
+const PORTRAIT_CHROME_QUERY='(orientation: portrait) and (min-width: 600px) and (max-width: 1200px)';
+let portraitChromeMQ=null;
+function isPortraitChrome(){
+  const app=document.getElementById('app');
+  return !!(app && app.classList.contains('portrait-mode'));
+}
+function applyPortraitChrome(matches){
+  const app=document.getElementById('app');
+  if(!app || app.classList.contains('portrait-mode')===matches) return;
+  app.classList.toggle('portrait-mode', matches);
+  renderTimeline();          // milestones move between the bar and the rail
+  updatePageIndicator();
+  positionZoomIndicator();
+}
+function initPortraitChrome(){
+  if(!window.matchMedia) return;
+  portraitChromeMQ=window.matchMedia(PORTRAIT_CHROME_QUERY);
+  applyPortraitChrome(portraitChromeMQ.matches);
+  const onChange=e=>applyPortraitChrome(e.matches);
+  if(portraitChromeMQ.addEventListener) portraitChromeMQ.addEventListener('change', onChange);
+  else if(portraitChromeMQ.addListener) portraitChromeMQ.addListener(onChange); // older iPadOS Safari
+}
+
 function renderTimeline(){
   const track=document.getElementById('tlTrack');
   track.innerHTML='';
-  const visible=state.milestones.filter(m=>!m.hidden || state.showHiddenMilestones);
+  // Always oldest-first. In landscape that reads left to right along the
+  // bar; in portrait the same order runs top to bottom down the rail.
+  // Sorted rather than trusted to push order, so a restored or imported
+  // project can't come back out of sequence.
+  const visible=state.milestones.filter(m=>!m.hidden || state.showHiddenMilestones)
+    .slice().sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+  const vertical=isPortraitChrome();
   visible.forEach((m,i)=>{
     const pct= visible.length<=1 ? 50 : (i/(visible.length-1))*94+3;
-    const el=document.createElement('div'); el.className='tl-milestone'; el.style.left=pct+'%';
+    const el=document.createElement('div'); el.className='tl-milestone';
+    if(vertical){ el.style.top=pct+'%'; el.style.left=''; }
+    else { el.style.left=pct+'%'; el.style.top=''; }
     if(m.hidden) el.style.opacity='.4';
     el.innerHTML='<span class="tl-tip">'+escapeHtml(m.name)+' · '+new Date(m.timestamp).toLocaleString()+'</span>';
     el.addEventListener('click', async ()=>{
@@ -6015,21 +6506,374 @@ async function exportScriptPDF(){
   doc.save('screenplay.pdf');
   showToast('PDF downloaded');
 }
-function parseTextToLines(text){
-  const paras=text.split(/\n\s*\n/).filter(p=>p.trim());
-  return paras.map(raw=>{
-    const firstLine=raw.split('\n')[0];
-    const leadingWs=(firstLine.match(/^[ \t]*/)||[''])[0];
-    const indentCols=leadingWs.replace(/\t/g,'    ').length;
-    const clean=raw.replace(/\n/g,' ').trim();
-    let type='action';
-    if(/^(INT|EXT|INT\.\/EXT|I\/E)[. ]/i.test(clean)) type='scene_heading';
-    else if(/^[A-Z0-9 .'\-]{2,30}$/.test(clean) && clean===clean.toUpperCase() && clean.split(' ').length<=5) type='character';
-    else if(/^\(.*\)$/.test(clean)) type='parenthetical';
-    else if(/(TO:|FADE (IN|OUT))\s*$/i.test(clean) && clean===clean.toUpperCase()) type='transition';
-    else if(indentCols>=6) type='dialogue';
-    return {type, text:clean};
+/* =========================================================
+   SCRIPT IMPORT — shared helpers
+   ---------------------------------------------------------
+   Every import path below (.txt, .fountain, .docx, .fdx, .pdf) funnels
+   into the same {type, text} shape initScreenplay() already expects. Two
+   format-independent ideas are shared by all of them:
+
+   1. classifyByIndentDelta / the column-based equivalent in
+      linesToScreenplayBlocks -- screenplay elements sit at a small number
+      of fixed indentation "stops" (action, dialogue, parenthetical,
+      character), and the GAP between those stops is a fixed physical
+      distance (see PDF_COLS above: +1in to dialogue, +1.604in to
+      parenthetical, +2.2in to character from the action margin)
+      regardless of page size (Letter vs A4), font, or how far the whole
+      block has been shifted by an unusual left margin. So rather than
+      comparing a line's raw position against an assumed page width (which
+      only works if the source already matches the US Letter/Courier/
+      1.5in-margin convention), every importer first finds its OWN
+      document's action-margin baseline (detectIndentBaseline), expresses
+      every other line as a delta *from that baseline*, and only then
+      classifies. This is what makes PDFs/Word docs from non-US software
+      (different page size, different margins) classify correctly without
+      hardcoding anyone's specific margins.
+
+   2. finalizeImportedLines() -- every importer's output passes through
+      this before reaching initScreenplay(): drop stray empty lines,
+      guarantee a known type (never break rendering on an unrecognized
+      type), and produce per-type counts for a post-import summary toast
+      so mis-classification is visible rather than silently wrong.
+
+   This app targets English-language screenplays only. Classification is
+   free to lean on ALL-CAPS as a real signal (it is one in Latin script);
+   there is deliberately no handling for writing systems without letter
+   case.
+   ========================================================= */
+const RE_SCENE_HEADING=/^(INT|EXT|EST|INT\.?\/EXT|I\/E)[.\s]/i;
+const RE_PARENTHETICAL=/^\(.*\)$/;
+const RE_TRANSITION=/^(CUT TO|DISSOLVE TO|SMASH CUT TO|MATCH CUT TO|JUMP CUT TO|FADE TO|FADE IN|FADE OUT)\s*:?\.?$/i;
+// Only used to REJECT "NAME: dialogue" as a character cue -- see
+// isCharacterCue(). This app parses screenplay format, where a cue is its
+// own line; the one-line playscript convention is not supported.
+const RE_INLINE_CUE=/^[^\s:]{1,15}\s*:\s*\S.*$/;
+const INDENT_ZONE_DIALOGUE=(PDF_COLS.action.left+PDF_COLS.dialogue.left)/2;
+const INDENT_ZONE_PARENTHETICAL=(PDF_COLS.dialogue.left+PDF_COLS.parenthetical.left)/2;
+const INDENT_ZONE_CHARACTER=(PDF_COLS.parenthetical.left+PDF_COLS.character.left)/2;
+// A Latin-letter guard is still needed here so that a line of pure digits
+// or punctuation ("1997", "---") doesn't pass as "all caps" by default.
+function isAllCapsLatin(s){ return /[A-Za-z]/.test(s) && s===s.toUpperCase(); }
+function looksLikeCharacterCue(clean){
+  // Shape check only: too long, or reads as prose, and it isn't a name.
+  // The ALL-CAPS signal is layered on top of this at the call sites (see
+  // the isAllCapsLatin calls below) rather than being folded in here,
+  // because a cue sitting at the character column is a cue whether or not
+  // the writer happened to capitalize it.
+  const words=clean.trim().split(/\s+/).filter(Boolean);
+  if(words.length<1 || words.length>6 || clean.length>40) return false;
+  if(/[.!?]\s/.test(clean)) return false;
+  return true;
+}
+function detectIndentBaseline(items){
+  // items: [{x}], x in any consistent unit (pt for PDF, twips for docx,
+  // columns for plain text). Returns the leftmost recurring x (rounded to
+  // absorb sub-pixel/kerning jitter) that accounts for a real share of the
+  // document, ignoring one-off outliers (a stray page number, a lone
+  // watermark). Action/scene-heading is structurally the leftmost element
+  // in standard screenplay format, so the leftmost substantial cluster IS
+  // the action margin -- whatever that happens to measure as in this file.
+  if(!items.length) return 0;
+  const buckets={};
+  items.forEach(it=>{ const b=Math.round(it.x/2)*2; buckets[b]=(buckets[b]||0)+1; });
+  const keys=Object.keys(buckets).map(Number).sort((a,b)=>a-b);
+  const minCount=Math.max(2, Math.floor(items.length*0.05));
+  for(const k of keys){ if(buckets[k]>=minCount) return k; }
+  return keys[0];
+}
+function classifyByIndentDelta(deltaIn, text){
+  // deltaIn: this line's left position minus the document's own detected
+  // action-margin baseline, in inches. Zone edges are the midpoints
+  // between PDF_COLS' stops, so a change to those constants (export)
+  // keeps import in sync automatically.
+  const nameShaped=looksLikeCharacterCue(text);
+  if(deltaIn < INDENT_ZONE_DIALOGUE) return (nameShaped && isAllCapsLatin(text)) ? 'character' : 'action';
+  if(deltaIn < INDENT_ZONE_PARENTHETICAL) return 'dialogue';
+  if(deltaIn < INDENT_ZONE_CHARACTER) return nameShaped ? 'character' : 'dialogue';
+  // Character cues are short by nature; a long run of text way out at the
+  // character column is almost always a mis-measured line, not a name.
+  return nameShaped ? 'character' : 'dialogue';
+}
+function finalizeImportedLines(rawLines){
+  const counts={scene_heading:0, action:0, character:0, dialogue:0, parenthetical:0, transition:0, other:0};
+  const lines=[];
+  rawLines.forEach(l=>{
+    const text=(l.text||'').trim();
+    // Blank lines are dropped as parser noise -- EXCEPT title-page spacers,
+    // which are deliberate vertical placement, the same way this app's own
+    // new-project title page uses blank centered lines.
+    if(!text && !l.spacer) return;
+    const type=TYPES.includes(l.type) ? l.type : 'action'; // never let an unrecognized type reach the DOM layer
+    if(counts[type]!==undefined) counts[type]++; else counts.other++;
+    const out={type, text};
+    if(l.html) out.html=l.html;
+    if(l.align) out.align=l.align;
+    if(l.titleRole) out.titleRole=l.titleRole;
+    if(l.forceBreakAfter) out.forceBreakAfter=true;
+    if(l.titleRole || l.forceBreakAfter || l.spacer) counts.title_page=1;
+    lines.push(out);
   });
+  return {lines, counts};
+}
+function importSummaryToast(counts, warnings){
+  const total=counts.scene_heading+counts.action+counts.character+counts.dialogue+counts.parenthetical+counts.transition+counts.other;
+  const parts=[];
+  if(counts.scene_heading) parts.push(counts.scene_heading+' scene headings');
+  if(counts.character) parts.push(counts.character+' characters');
+  if(counts.dialogue) parts.push(counts.dialogue+' dialogue');
+  if(counts.parenthetical) parts.push(counts.parenthetical+' parentheticals');
+  if(counts.transition) parts.push(counts.transition+' transitions');
+  let msg='Imported '+total+' lines'+(parts.length ? ' — '+parts.join(', ') : '');
+  if(counts.title_page) msg+=' (title page detected)';
+  if(warnings && warnings.length) msg+=' ⚠ '+warnings[0]+(warnings.length>1 ? ' (+'+(warnings.length-1)+' more)' : '');
+  return msg;
+}
+
+/* =========================================================
+   TXT / FOUNTAIN — shared line-by-line classifier
+   ---------------------------------------------------------
+   Neither format reliably indents dialogue (Fountain never does; many
+   plain-text exports flatten everything to column 0), so the signal both
+   share is ADJACENCY: dialogue is whatever follows a character cue, up to
+   the next blank line. Classification is a two-pass walk: first tag
+   scene headings / transitions / character cues (forced-syntax markers
+   for Fountain, indent+shape+adjacency otherwise), then resolve every
+   remaining line as dialogue (inside an open speech) or action (not),
+   with indentation as a secondary signal when neither format gives us
+   adjacency to go on. A final pass merges consecutive same-type lines
+   that a blank line doesn't separate, so a wrapped multi-line paragraph
+   comes in as one block instead of one per physical line.
+   ========================================================= */
+const COL_DIALOGUE=5, COL_CHARACTER=14;
+// Only Fountain's own documented title-page keys count. A generic
+// "Word Word:" test is far too loose: a script that opens with the very
+// common "FADE IN:" matched it, and the whole first line was silently
+// thrown away as title-page metadata.
+const RE_FOUNTAIN_TITLE_KEY=/^(title|credit|author|authors|source|notes|draft date|date|contact|copyright|revision|revision date)\s*:/i;
+function stripFountainTitlePage(text){
+  // Fountain title pages are "Key: value" lines (with optional indented
+  // continuation lines) before the first blank line. If the opening block
+  // doesn't look like that, assume there's no title page and the file
+  // starts straight into the body -- title-page metadata isn't wired into
+  // this app's actual title page fields, so the safest move is to just not
+  // import it as a stray body line.
+  const raw=text.replace(/\r\n?/g,'\n').split('\n');
+  let i=0; const first=[];
+  while(i<raw.length && raw[i].trim()){ first.push(raw[i]); i++; }
+  const isKeyLine=l=>RE_FOUNTAIN_TITLE_KEY.test(l.trim());
+  const isContinuation=l=>/^[ \t]/.test(l);
+  // The block must START with a real key line (a continuation can't come
+  // first), and every other line must be either another key or an indented
+  // continuation of the one above it.
+  const looksLikeTitlePage=first.length>0 && isKeyLine(first[0]) && first.every(l=>isKeyLine(l) || isContinuation(l));
+  if(!looksLikeTitlePage) return text;
+  while(i<raw.length && !raw[i].trim()) i++;
+  return raw.slice(i).join('\n');
+}
+function linesToScreenplayBlocks(text, opts){
+  opts=opts||{};
+  const raw=text.replace(/\r\n?/g,'\n').split('\n');
+  const colsOf=(line)=>{ const m=line.match(/^[ \t]*/)[0]; return m.replace(/\t/g,'    ').length; };
+  const nonBlank=raw.filter(l=>l.trim());
+  const baseline=detectIndentBaseline(nonBlank.map(l=>({x:colsOf(l)})));
+
+  function isCharacterCue(clean, indentCols, nextRaw){
+    if(!looksLikeCharacterCue(clean)) return false;
+    // "SAM: GET OUT." is a cue AND its dialogue glued onto one line, which
+    // is not screenplay format -- this app doesn't parse it as dialogue.
+    // Without this guard it would pass the ALL-CAPS test below and become
+    // a Character element with the whole speech inside it; falling back to
+    // Action is the less wrong of the two.
+    if(RE_INLINE_CUE.test(clean)) return false;
+    const nextIsBlank = nextRaw===undefined || !nextRaw.trim();
+    if(nextIsBlank) return false; // a cue with nothing following it isn't a cue
+    const deltaCols=indentCols-baseline;
+    return isAllCapsLatin(clean) || deltaCols>=COL_CHARACTER;
+  }
+
+  const tagged=raw.map((rawLine, idx)=>{
+    const indentCols=colsOf(rawLine);
+    let clean=rawLine.trim();
+    if(!clean) return null;
+    if(opts.forced){
+      if(/^\.[^.]/.test(clean)) return {type:'scene_heading', text:clean.slice(1).trim()};
+      if(/^@/.test(clean)) return {type:'character', text:clean.slice(1).trim()};
+      if(/^~/.test(clean)) return {type:'lyrics', text:clean.slice(1).trim()};
+      const centeredM=clean.match(/^>\s*(.*?)\s*<$/);
+      if(centeredM) return {type:'centered', text:centeredM[1]};
+      if(/^>\s*\S/.test(clean)) return {type:'transition', text:clean.replace(/^>\s*/,'')};
+      if(/^!/.test(clean)) return {type:'action', text:clean.slice(1).trim()};
+      // boneyard/notes aren't visible script content -- strip, don't import
+      clean=clean.replace(/\[\[.*?\]\]/g,'').replace(/\/\*[\s\S]*?\*\//g,'').trim();
+      if(!clean) return null;
+    }
+    if(RE_SCENE_HEADING.test(clean)) return {type:'scene_heading', text:clean};
+    if(RE_TRANSITION.test(clean)) return {type:'transition', text:clean};
+    if(isCharacterCue(clean, indentCols, raw[idx+1])) return {type:'character', text:clean, cue:true};
+    return {type:null, text:clean, indentCols}; // resolved below once dialogue-state is known
+  });
+
+  const blocks=[];
+  let inDialogue=false;
+  tagged.forEach(t=>{
+    if(t===null){ inDialogue=false; blocks.push(null); return; }
+    if(t.type){
+      if(t.type==='character') inDialogue=true; else if(!t.cue) inDialogue=false;
+      blocks.push(t);
+      return;
+    }
+    if(RE_PARENTHETICAL.test(t.text)){ blocks.push({type:'parenthetical', text:t.text}); return; }
+    if(inDialogue){ blocks.push({type:'dialogue', text:t.text}); return; }
+    const deltaCols=t.indentCols-baseline;
+    blocks.push({type: deltaCols>=COL_DIALOGUE ? 'dialogue' : 'action', text:t.text});
+  });
+
+  const merged=[];
+  blocks.forEach(b=>{
+    if(!b){ merged.push(null); return; } // blank line: break merging, filtered out below
+    const prev=merged[merged.length-1];
+    if(prev && prev.type===b.type){ prev.text=(prev.text+' '+b.text).replace(/\s+/g,' ').trim(); }
+    else merged.push({type:b.type, text:b.text});
+  });
+  return merged.filter(Boolean);
+}
+function parseTextToLines(text){
+  return {lines: linesToScreenplayBlocks(text, {forced:false}), warnings:[]};
+}
+function fountainTextToLines(text){
+  return {lines: linesToScreenplayBlocks(stripFountainTitlePage(text), {forced:true}), warnings:[]};
+}
+
+/* =========================================================
+   FDX (Final Draft) import — the mirror image of exportScriptFDX above.
+   Because FDX explicitly tags every paragraph's type in the file itself,
+   this is the single most reliable import path of the bunch: no
+   guessing, just reading. Only the top-level <Content> (the body) is
+   read; <TitlePage><Content> is deliberately skipped so title-page text
+   doesn't leak into the script body.
+   ========================================================= */
+const FDX_TYPE_MAP_INVERSE=(()=>{ const m={}; Object.keys(FDX_TYPE_MAP).forEach(k=>{ m[FDX_TYPE_MAP[k]]=k; }); return m; })();
+function fdxRunsToLineHtmlAndText(paragraphEl){
+  const textEls=Array.from(paragraphEl.getElementsByTagName('Text'));
+  if(!textEls.length) return {text:'', html:''};
+  const text=textEls.map(t=>t.textContent||'').join('');
+  const html=textEls.map(t=>{
+    let s=escapeHtml(t.textContent||'');
+    if(!s) return '';
+    const style=t.getAttribute('Style')||'';
+    if(style.indexOf('Underline')>=0) s='<u>'+s+'</u>';
+    if(style.indexOf('Italic')>=0) s='<i>'+s+'</i>';
+    if(style.indexOf('Bold')>=0) s='<b>'+s+'</b>';
+    return s;
+  }).join('');
+  return {text, html};
+}
+function fdxTextToLines(xmlText){
+  let doc;
+  try{ doc=new DOMParser().parseFromString(xmlText, 'application/xml'); }
+  catch(e){ return {lines:[], warnings:['That .fdx file could not be read as XML.']}; }
+  if(!doc || doc.getElementsByTagName('parsererror').length) return {lines:[], warnings:['That .fdx file could not be read as XML.']};
+  const root=doc.getElementsByTagName('FinalDraft')[0];
+  if(!root) return {lines:[], warnings:['That file did not look like a Final Draft (.fdx) document.']};
+  const contentEl=Array.from(root.childNodes).filter(n=>n.nodeType===1 && n.tagName==='Content')[0];
+  if(!contentEl) return {lines:[], warnings:[]};
+  const paras=Array.from(contentEl.childNodes).filter(n=>n.nodeType===1 && n.tagName==='Paragraph');
+  const lines=paras.map(p=>{
+    const fdxType=p.getAttribute('Type')||'Action';
+    let type=FDX_TYPE_MAP_INVERSE[fdxType]||'action';
+    const alignAttr=p.getAttribute('Alignment');
+    if(type==='action' && alignAttr==='Center') type='centered';
+    const {text, html}=fdxRunsToLineHtmlAndText(p);
+    const out={type, text};
+    if(html && html!==escapeHtml(text)) out.html=html;
+    if(alignAttr==='Right') out.align='right';
+    else if(alignAttr==='Left') out.align='left';
+    return out;
+  });
+  return {lines, warnings:[]};
+}
+
+/* =========================================================
+   DOCX import
+   ---------------------------------------------------------
+   The previous version used mammoth's extractRawText(), which throws
+   away every bit of paragraph formatting (indentation, alignment) --
+   meaning it had no real signal to classify on at all, unlike the PDF
+   path. docx is a zip of XML, so instead this unzips it (via JSZip,
+   loaded the same on-demand way as mammoth/pdf.js below) and reads each
+   paragraph's ACTUAL left-indent (in twips -- an absolute unit,
+   independent of font/size, so no baseline-normalization tricks are
+   needed beyond finding the document's own action-margin twips value)
+   and alignment straight out of word/document.xml, then classifies with
+   the exact same classifyByIndentDelta() the PDF importer uses.
+   Bold/italic/underline runs are preserved into line.html.
+   ========================================================= */
+function jcCentered(v){ return v==='center' || v==='centerAll'; }
+function wordRunsToHtml(runs){
+  return runs.map(r=>{
+    let t=escapeHtml(r.text);
+    if(!t.trim()) return t;
+    if(r.underline) t='<u>'+t+'</u>';
+    if(r.italic) t='<i>'+t+'</i>';
+    if(r.bold) t='<b>'+t+'</b>';
+    return t;
+  }).join('');
+}
+function wordDocumentXmlToLines(xml){
+  let xdoc;
+  try{ xdoc=new DOMParser().parseFromString(xml, 'application/xml'); }
+  catch(e){ xdoc=null; }
+  if(!xdoc || xdoc.getElementsByTagName('parsererror').length){
+    return {lines:[], warnings:["Could not read that Word document's internal formatting — try Save As → a fresh .docx and re-import."]};
+  }
+  function hasToggle(rPr, tag){
+    if(!rPr) return false;
+    const els=rPr.getElementsByTagName(tag);
+    if(!els.length) return false;
+    const val=els[0].getAttribute('w:val');
+    return val!=='false' && val!=='0' && val!=='none';
+  }
+  function runInfo(r){
+    const rPr=r.getElementsByTagName('w:rPr')[0];
+    let text='';
+    Array.from(r.childNodes).forEach(node=>{
+      if(node.nodeType!==1) return;
+      if(node.tagName==='w:t') text+=node.textContent;
+      else if(node.tagName==='w:tab') text+='\t';
+      else if(node.tagName==='w:br' || node.tagName==='w:cr') text+=' ';
+    });
+    return {text, bold:hasToggle(rPr,'w:b'), italic:hasToggle(rPr,'w:i'), underline:hasToggle(rPr,'w:u')};
+  }
+  const paraEls=Array.from(xdoc.getElementsByTagName('w:p'));
+  const paras=paraEls.map(p=>{
+    const pPr=p.getElementsByTagName('w:pPr')[0];
+    const ind=pPr && pPr.getElementsByTagName('w:ind')[0];
+    const indentTwips=ind ? (parseInt(ind.getAttribute('w:left')||ind.getAttribute('w:start')||'0', 10)||0) : 0;
+    const jc=pPr && pPr.getElementsByTagName('w:jc')[0];
+    const jcVal=jc ? jc.getAttribute('w:val') : null;
+    const runs=Array.from(p.getElementsByTagName('w:r')).map(runInfo).filter(r=>r.text);
+    const text=runs.map(r=>r.text).join('').replace(/\s+/g,' ').trim();
+    return {text, indentTwips, jcVal, runs};
+  }).filter(p=>p.text);
+  if(!paras.length) return {lines:[], warnings:[]};
+  // Word paragraphs are already discrete units (each <w:p> is a deliberate
+  // paragraph break the author made) -- unlike PDF/plain-text, there's no
+  // line-wrap ambiguity to resolve, so no merge pass is needed here.
+  const baselineTwips=detectIndentBaseline(paras.map(p=>({x:p.indentTwips})));
+  const lines=paras.map(p=>{
+    const deltaIn=(p.indentTwips-baselineTwips)/1440;
+    let type;
+    if(RE_SCENE_HEADING.test(p.text)) type='scene_heading';
+    else if(RE_PARENTHETICAL.test(p.text)) type='parenthetical';
+    else if(RE_TRANSITION.test(p.text)) type='transition';
+    else if(jcCentered(p.jcVal) && p.text.length<40) type='centered';
+    else type=classifyByIndentDelta(deltaIn, p.text);
+    const html=wordRunsToHtml(p.runs);
+    const out={type, text:p.text};
+    if(html && html!==escapeHtml(p.text)) out.html=html;
+    return out;
+  });
+  return {lines, warnings:[]};
 }
 
 const loadedScripts={};
@@ -6043,45 +6887,210 @@ function loadScript(url){
   return loadedScripts[url];
 }
 async function docxFileToLines(file){
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
   const buf=await file.arrayBuffer();
-  const result=await window.mammoth.extractRawText({arrayBuffer:buf});
-  return parseTextToLines(result.value||'');
+  let zip;
+  try{ zip=await window.JSZip.loadAsync(buf); }
+  catch(e){ return {lines:[], warnings:['That file could not be opened as a Word document.']}; }
+  const entry=zip.file('word/document.xml');
+  if(!entry) return {lines:[], warnings:['That file did not look like a Word document (no word/document.xml found inside it).']};
+  const xml=await entry.async('text');
+  return wordDocumentXmlToLines(xml);
+}
+
+/* =========================================================
+   PDF import
+   ---------------------------------------------------------
+   pdf.js already gives us real x/y coordinates per text run (this was
+   never actually the problem -- see the investigation this replaces).
+   What's new: (1) the action-margin baseline is detected from the
+   document itself instead of assumed to be the US-standard 1.5in, so
+   non-Letter page sizes/margins (A4, a different left margin, a
+   non-Hollywood house template, ...) classify correctly; (2) a small space is
+   inserted between text runs only when there's a real gap between them
+   (pdf.js's item.str fragments otherwise concatenate with no guaranteed
+   whitespace, which used to silently glue words together); (3) a page
+   that extracts almost no text AND contains an embedded image is flagged
+   as likely scanned instead of silently importing nothing for it; (4)
+   consecutive rows of the same classified type merge into one block when
+   the gap between them is normal single-line spacing, so a wrapped
+   multi-line dialogue speech comes in as one block instead of one line
+   per physical PDF text row -- while a bigger gap (a real screenplay
+   inserts extra space between distinct elements) correctly keeps two
+   back-to-back same-type paragraphs separate.
+   ========================================================= */
+function joinRowItems(items){
+  items.sort((a,b)=>a.x-b.x);
+  let text='';
+  for(let k=0;k<items.length;k++){
+    const it=items[k];
+    if(k>0){
+      const prev=items[k-1];
+      const gap=it.x-(prev.x+prev.width);
+      if(gap>1 && !/\s$/.test(text)) text+=' ';
+    }
+    text+=it.str;
+  }
+  return text.trim();
+}
+function pdfRowsToLines(allRows){
+  if(!allRows.length) return {lines:[], warnings:[]};
+  const baselineX=detectIndentBaseline(allRows.map(r=>({x:r.minX})));
+  const gaps=[];
+  for(let i=1;i<allRows.length;i++){ const g=Math.abs(allRows[i].y-allRows[i-1].y); if(g>0.5 && g<40) gaps.push(g); }
+  gaps.sort((a,b)=>a-b);
+  const typicalGap=gaps.length ? gaps[Math.floor(gaps.length/2)] : 14;
+
+  const classified=allRows.map(r=>{
+    const clean=r.text;
+    let type;
+    if(RE_SCENE_HEADING.test(clean)) type='scene_heading';
+    else if(RE_PARENTHETICAL.test(clean)) type='parenthetical';
+    else if(RE_TRANSITION.test(clean)) type='transition';
+    else type=classifyByIndentDelta((r.minX-baselineX)/72, clean);
+    return {type, text:clean, y:r.y};
+  });
+  const mergeable={action:1,dialogue:1,parenthetical:1,lyrics:1,general:1};
+  const lines=[];
+  classified.forEach(c=>{
+    const prev=lines[lines.length-1];
+    if(prev && prev.type===c.type && mergeable[c.type] && Math.abs(c.y-prev._y)<=typicalGap*1.6){
+      prev.text=(prev.text+' '+c.text).trim();
+      prev._y=c.y;
+    } else {
+      lines.push({type:c.type, text:c.text, _y:c.y});
+    }
+  });
+  lines.forEach(l=>delete l._y);
+  return {lines, warnings:[]};
+}
+/* ---------------------------------------------------------
+   Page furniture (page numbers) and the title page.
+
+   Page numbers: a screenplay's page number sits in the header or footer
+   band, outside the body text area -- this app's own export puts "3." at
+   0.7in from the top edge, right-aligned. They are page furniture, not
+   script content, so they are dropped before classification rather than
+   being imported as stray Action lines between scenes. The band test is
+   what keeps a legitimate one-line body row that happens to be numeric
+   (a numbered scene, a line of dialogue that is just "1985.") safe: only
+   rows physically in the margin are considered.
+
+   Title page: the first page of a screenplay PDF is usually the title
+   page -- a handful of centered lines, no scene heading, no transition.
+   It is recognized as such and rebuilt as this app's own Title Page
+   structure (centered lines ending in a forceBreakAfter marker, with
+   titleRole tags on the title and author) instead of being flattened
+   into the body as Action.
+   --------------------------------------------------------- */
+const RE_PDF_PAGE_NUMBER=/^(?:-\s*)?(?:page\s+)?(?:\d{1,4}|[ivxlcdm]{1,7})\s*[.\-)]?\s*$/i;
+const RE_TITLE_BY_LINE=/^(?:written\s+by|screenplay\s+by|story\s+by|teleplay\s+by|by)\.?$/i;
+const PDF_MARGIN_BAND=0.9*72; // pt; header/footer zone, just outside a 1in text margin
+function isPageFurnitureRow(row, pageH){
+  if(!row.text) return false;
+  if(row.text.length>12) return false;
+  const inHeader=row.y > pageH-PDF_MARGIN_BAND;
+  const inFooter=row.y < PDF_MARGIN_BAND;
+  if(!inHeader && !inFooter) return false;
+  return RE_PDF_PAGE_NUMBER.test(row.text.trim());
+}
+function looksLikePdfTitlePage(rows, pageW){
+  // Deliberately conservative: anything that already reads as script body
+  // (a scene heading, a transition like FADE IN:) disqualifies the page,
+  // so a script that simply opens on page 1 is never eaten.
+  if(!rows.length || rows.length>20) return false;
+  const totalChars=rows.reduce((n,r)=>n+r.text.length, 0);
+  if(totalChars>700) return false;
+  if(rows.some(r=>RE_SCENE_HEADING.test(r.text) || RE_TRANSITION.test(r.text))) return false;
+  if(rows.some(r=>RE_TITLE_BY_LINE.test(r.text.trim()))) return true;
+  const centre=pageW/2;
+  const centred=rows.filter(r=>Math.abs((r.minX+r.maxX)/2 - centre) < 0.75*72).length;
+  return centred/rows.length >= 0.5;
+}
+function pdfTitleRowsToLines(rows, pageH){
+  // rows arrive top-first. Blank spacer lines reproduce the source's
+  // vertical placement, the same way this app's own new-project title
+  // page uses blank centered lines to push the title down the page --
+  // including the gap above the first line, or an imported title page
+  // would sit flush against the top margin instead of where it was set.
+  const out=[];
+  const LINE=12;
+  const spacer=n=>{ for(let i=0;i<Math.max(0,Math.min(n,24));i++) out.push({type:'centered', text:'', spacer:true}); };
+  if(pageH && rows.length){
+    const topMargin=pageH-72; // 1in text margin, in pdf.js's bottom-up coordinates
+    spacer(Math.round((topMargin-rows[0].y)/LINE));
+  }
+  for(let i=0;i<rows.length;i++){
+    if(i>0){
+      const gap=rows[i-1].y-rows[i].y;
+      spacer(Math.round(gap/LINE)-1);
+    }
+    out.push({type:'centered', text:rows[i].text});
+  }
+  const solid=out.filter(l=>l.text);
+  if(solid.length) solid[0].titleRole='title';
+  const byIdx=out.findIndex(l=>RE_TITLE_BY_LINE.test((l.text||'').trim()));
+  if(byIdx>=0){
+    const author=out.slice(byIdx+1).find(l=>l.text);
+    if(author && author.titleRole!=='title') author.titleRole='author';
+  }
+  if(out.length) out[out.length-1].forceBreakAfter=true;
+  return out;
 }
 async function pdfFileToLines(file){
   await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
   window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const buf=await file.arrayBuffer();
   const doc=await window.pdfjsLib.getDocument({data:buf}).promise;
-  const lines=[];
+  const pages=[];
+  const warnings=[];
   for(let p=1;p<=doc.numPages;p++){
     const page=await doc.getPage(p);
+    const viewport=page.getViewport({scale:1});
     const content=await page.getTextContent();
-    const rows=[]; // group text items into visual lines by y position
+    const rows=[];
     content.items.forEach(item=>{
+      if(!item.str) return;
       const y=Math.round(item.transform[5]);
       const x=item.transform[4];
       let row=rows.find(r=>Math.abs(r.y-y)<3);
-      if(!row){ row={y, minX:x, text:''}; rows.push(row); }
-      row.minX=Math.min(row.minX,x);
-      row.text+=item.str;
+      if(!row){ row={y, items:[]}; rows.push(row); }
+      row.items.push({x, str:item.str, width:item.width||0});
+    });
+    const charCount=rows.reduce((n,r)=>n+r.items.reduce((m,it)=>m+it.str.replace(/\s/g,'').length,0),0);
+    if(charCount<100){
+      try{
+        const opList=await page.getOperatorList();
+        const hasImage=opList.fnArray.some(fn=>fn===window.pdfjsLib.OPS.paintImageXObject || fn===window.pdfjsLib.OPS.paintJpegXObject);
+        if(hasImage) warnings.push('Page '+p+' looks like a scanned image, not text — re-export that page as text, or run OCR on it first.');
+      }catch(e){ /* if we can't tell, say nothing rather than guess wrong */ }
+    }
+    rows.forEach(row=>{
+      row.minX=Math.min(...row.items.map(it=>it.x));
+      row.maxX=Math.max(...row.items.map(it=>it.x+(it.width||0)));
+      row.text=joinRowItems(row.items);
     });
     rows.sort((a,b)=>b.y-a.y);
-    const pageWidth=page.view[2]-page.view[0];
-    rows.forEach(row=>{
-      const clean=row.text.trim();
-      if(!clean) return;
-      const indentRatio=(row.minX-page.view[0])/pageWidth;
-      let type='action';
-      if(/^(INT|EXT|INT\.\/EXT|I\/E)[. ]/i.test(clean)) type='scene_heading';
-      else if(/^\(.*\)$/.test(clean)) type='parenthetical';
-      else if(/^(CUT TO:|FADE (IN|OUT):?|DISSOLVE TO:)$/i.test(clean)) type='transition';
-      else if(clean===clean.toUpperCase() && indentRatio>0.32 && clean.split(' ').length<=6) type='character';
-      else if(indentRatio>0.22 && indentRatio<0.5) type='dialogue';
-      lines.push({type, text:clean});
-    });
+    const kept=rows.filter(r=>r.text && !isPageFurnitureRow(r, viewport.height));
+    pages.push({rows:kept, width:viewport.width, height:viewport.height});
   }
-  return lines;
+
+  // A one-page PDF is the script, not a title page -- never swallow it.
+  let titleLines=[];
+  let bodyPages=pages;
+  if(pages.length>1 && looksLikePdfTitlePage(pages[0].rows, pages[0].width)){
+    titleLines=pdfTitleRowsToLines(pages[0].rows, pages[0].height);
+    bodyPages=pages.slice(1);
+  }
+
+  const allRows=[];
+  let pageOffset=0;
+  bodyPages.forEach(pg=>{
+    pg.rows.forEach(r=>allRows.push({y:pageOffset-r.y, minX:r.minX, text:r.text}));
+    pageOffset+=10000; // keeps reading order strictly increasing across pages without assuming a shared page height
+  });
+  const {lines}=pdfRowsToLines(allRows);
+  return {lines:titleLines.concat(lines), warnings};
 }
 
 async function importFile(file){
@@ -6103,23 +7112,44 @@ async function importFile(file){
     }catch(err){ showToast('Could not read that project file'); }
     return;
   }
-  if(lower.endsWith('.docx') || lower.endsWith('.pdf')){
-    showToast(lower.endsWith('.docx') ? 'Reading Word document…' : 'Reading PDF…');
+  // Formats with no realistic in-browser, single-file-friendly reader
+  // (proprietary/binary, or would need a heavy OCR-scale dependency) --
+  // reject clearly and immediately rather than reading garbage bytes as
+  // text or silently producing an empty import.
+  const UNSUPPORTED_EXT=['.hwp','.hwpx','.pages','.celtx','.rtf','.odt'];
+  if(UNSUPPORTED_EXT.some(ext=>lower.endsWith(ext))){
+    showToast("That file type isn't supported yet — export it as .pdf, .docx, or .fdx first, then import that.");
+    return;
+  }
+  const FORMAT_HANDLERS={
+    '.docx': {label:'Reading Word document…', fn:docxFileToLines},
+    '.pdf':  {label:'Reading PDF…', fn:pdfFileToLines},
+    '.fdx':  {label:'Reading Final Draft file…', fn: async f=>fdxTextToLines(await f.text())},
+    '.fountain': {label:'Reading Fountain script…', fn: async f=>fountainTextToLines(await f.text())}
+  };
+  const ext=Object.keys(FORMAT_HANDLERS).find(e=>lower.endsWith(e));
+  if(ext){
+    const {label, fn}=FORMAT_HANDLERS[ext];
+    showToast(label);
     try{
-      const lines = lower.endsWith('.docx') ? await docxFileToLines(file) : await pdfFileToLines(file);
-      if(!lines.length){ showToast('No readable text found in that file'); return; }
+      const {lines:rawLines, warnings}=await fn(file);
+      if(!rawLines.length){ showToast((warnings && warnings[0]) || 'No readable text found in that file'); return; }
+      const {lines, counts}=finalizeImportedLines(rawLines);
       undoStack.push(snapshotState());
       initScreenplay(lines);
       recomputePagination(); layoutAllNotes();
-      scheduleAutosave(); showToast('Imported and formatted '+lines.length+' lines');
+      scheduleAutosave(); showToast(importSummaryToast(counts, warnings));
     }catch(err){ showToast('Could not import that file — '+(err.message||'unknown error')); }
     return;
   }
+  // Fallback: plain text (.txt, or anything else readable as text).
   const text=await file.text();
+  const {lines:rawLines}=parseTextToLines(text);
+  const {lines, counts}=finalizeImportedLines(rawLines);
   undoStack.push(snapshotState());
-  initScreenplay(parseTextToLines(text));
+  initScreenplay(lines);
   recomputePagination(); layoutAllNotes();
-  scheduleAutosave(); showToast('Text imported and formatted');
+  scheduleAutosave(); showToast(importSummaryToast(counts, []));
 }
 
 /* =========================================================
@@ -6300,7 +7330,14 @@ async function ensureProjectsIndexLoaded(){
     persistProjectsIndex();
     return projectsIndexCache;
   }
+  // Index entries written before createdAt existed would otherwise fall back
+  // to updatedAt for sorting -- which reshuffles the list on every edit, the
+  // exact thing the stable creation-order rule forbids -- and show "—" as
+  // their created date in the preview pane. Backfill once, then persist.
+  let backfilled=false;
+  idx.forEach(p=>{ if(!p.createdAt){ p.createdAt=p.updatedAt||Date.now(); backfilled=true; } });
   projectsIndexCache=idx;
+  if(backfilled) persistProjectsIndex();
   return projectsIndexCache;
 }
 async function loadProjectData(id){
@@ -6354,6 +7391,7 @@ async function enterEditor(id, data){
   Object.keys(state.filters).forEach(k=>state.filters[k].clear());
   state.notes.forEach(n=>createNoteDOM(n));
   refreshAllShotOptions();
+  reconcileTitleOnOpen();
   showEditorView();
   fitInitialView();
   recomputePagination();
@@ -6425,6 +7463,9 @@ async function goHome(){
     // correct the instant it renders, without waiting on storage at all.
     touchProjectIndexSync(state.projectId, state.projectTitle);
     saveProjectData(state.projectId, projectData()).catch(()=>{});
+    // Show the project you just left as the preview-pane selection, rather
+    // than leaving whatever was selected before you opened it.
+    landingSelectedId=state.projectId;
   }
   state.projectId=null;
   showLandingView();
@@ -6438,36 +7479,80 @@ function showEditorView(){
   document.getElementById('landingPage').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 }
+// Ephemeral UI-only state: which project is highlighted/previewed on the
+// landing page. Never persisted — a fresh load always falls back to
+// auto-selecting the topmost (most recently created) project, same as
+// before this list+preview layout existed.
+let landingSelectedId=null;
 async function renderProjectsList(){
   const listEl=document.getElementById('projectsList');
   if(projectsIndexCache===undefined) listEl.innerHTML='<div class="landing-empty">Loading…</div>';
   let idx=await ensureProjectsIndexLoaded();
   idx=idx.slice().sort((a,b)=>(b.createdAt||b.updatedAt||0)-(a.createdAt||a.updatedAt||0));
   listEl.innerHTML='';
-  if(!idx.length){ listEl.innerHTML='<div class="landing-empty">No saved projects yet — start with Blank Script above.</div>'; return; }
+  if(!idx.length){
+    listEl.innerHTML='<div class="landing-empty">No saved projects yet — start with Blank Script above.</div>';
+    landingSelectedId=null;
+    renderLandingPreview(null);
+    return;
+  }
+  // Keep the current selection if it still exists; otherwise default to the
+  // topmost (most recently created) project, so the preview pane is never
+  // empty when projects exist.
+  if(!landingSelectedId || !idx.find(p=>p.id===landingSelectedId)) landingSelectedId=idx[0].id;
   idx.forEach(p=>{
-    const row=document.createElement('div'); row.className='project-row';
+    const row=document.createElement('div'); row.className='project-row'+(p.id===landingSelectedId?' selected':'');
     const titleSpan=document.createElement('span'); titleSpan.className='pr-title'; titleSpan.textContent=p.title||'Untitled Screenplay';
-    const dateSpan=document.createElement('span'); dateSpan.className='pr-date'; dateSpan.textContent=new Date(p.updatedAt).toLocaleDateString();
-    const iconSpan=document.createElement('span'); iconSpan.className='pr-icon';
-    const delBtn=document.createElement('button'); delBtn.className='pr-delete'; delBtn.title='Delete project';
-    delBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>';
-    delBtn.addEventListener('click', async (e)=>{
-      e.stopPropagation();
-      const ok=await confirmModal('Delete project', 'Delete "'+(p.title||'Untitled Screenplay')+'"? This cannot be undone.');
-      if(!ok) return;
-      // Update the visible list and in-memory index immediately; the actual
-      // storage delete/persist happens in the background.
-      if(projectsIndexCache) projectsIndexCache=projectsIndexCache.filter(x=>x.id!==p.id);
-      persistProjectsIndex();
-      deleteProjectData(p.id).catch(()=>{});
-      renderProjectsList();
+    const dateSpan=document.createElement('span'); dateSpan.className='pr-date'; dateSpan.textContent='Edited '+new Date(p.updatedAt).toLocaleDateString();
+    row.appendChild(titleSpan); row.appendChild(dateSpan);
+    // Selection is updated IN PLACE rather than by re-rendering the whole
+    // list. Re-rendering replaced the row's DOM node between the first and
+    // second click of a double-click, so the browser fired `dblclick` on
+    // the nearest common ancestor (the list container) instead of the row
+    // itself — silently breaking double-click-to-open.
+    row.addEventListener('click', ()=>{
+      if(landingSelectedId===p.id) return;
+      landingSelectedId=p.id;
+      listEl.querySelectorAll('.project-row.selected').forEach(el=>el.classList.remove('selected'));
+      row.classList.add('selected');
+      renderLandingPreview(p);
     });
-    row.appendChild(iconSpan); row.appendChild(titleSpan); row.appendChild(dateSpan); row.appendChild(delBtn);
-    row.addEventListener('click', ()=>openProject(p.id));
+    row.addEventListener('dblclick', ()=>openProject(p.id));
     listEl.appendChild(row);
   });
+  renderLandingPreview(idx.find(p=>p.id===landingSelectedId)||null);
 }
+const PREVIEW_DOC_SVG='<svg class="preview-doc" viewBox="0 0 64 80" fill="none"><rect x="1" y="1" width="62" height="78" rx="3" fill="#fff" stroke="var(--chrome-line-strong)"/><line x1="12" y1="20" x2="44" y2="20" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="30" x2="52" y2="30" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="40" x2="52" y2="40" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="50" x2="38" y2="50" stroke="var(--paper-edge)" stroke-width="2"/></svg>';
+function renderLandingPreview(entry){
+  const el=document.getElementById('landingPreview');
+  if(!entry){
+    el.innerHTML='<div class="preview-empty">'+PREVIEW_DOC_SVG+'<div class="preview-empty-text">No project selected</div></div>';
+    return;
+  }
+  const title=entry.title||'Untitled Screenplay';
+  const created=entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : '—';
+  const edited=entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : '—';
+  el.innerHTML=PREVIEW_DOC_SVG+
+    '<div class="preview-title">'+escapeHtml(title)+'</div>'+
+    '<div class="preview-meta">Created '+created+' &middot; Edited '+edited+'</div>'+
+    '<div class="preview-actions">'+
+      '<button class="modal-btn primary" id="btnPreviewOpen">Open</button>'+
+      '<button class="modal-btn danger-outline" id="btnPreviewDelete">Delete</button>'+
+    '</div>';
+  document.getElementById('btnPreviewOpen').addEventListener('click', ()=>openProject(entry.id));
+  document.getElementById('btnPreviewDelete').addEventListener('click', async ()=>{
+    const ok=await confirmModal('Delete project', 'Delete "'+title+'"? This cannot be undone.');
+    if(!ok) return;
+    // Update the visible list and in-memory index immediately; the actual
+    // storage delete/persist happens in the background.
+    if(projectsIndexCache) projectsIndexCache=projectsIndexCache.filter(x=>x.id!==entry.id);
+    persistProjectsIndex();
+    deleteProjectData(entry.id).catch(()=>{});
+    if(landingSelectedId===entry.id) landingSelectedId=null;
+    renderProjectsList();
+  });
+}
+
 
 let currentTheme='gray';
 function applyTheme(){ document.body.classList.toggle('theme-beige', currentTheme==='beige'); }
@@ -6609,7 +7694,7 @@ function showFileMenu(anchorEl){
     {label:'New blank script', onClick:()=>createBlankProject()},
     {label:'Back to My Projects', onClick:goHome},
     {sep:true},
-    {label:'Import project, .txt, .docx, or .pdf…', onClick:()=>document.getElementById('fileInput').click()},
+    {label:'Import project, .txt, .docx, .pdf, .fountain, or .fdx…', onClick:()=>document.getElementById('fileInput').click()},
     {sep:true},
     {label:'Export project (.json)', onClick:exportProjectJSON},
     {label:'Export screenplay (.txt)', onClick:exportScriptTXT},
@@ -6681,7 +7766,11 @@ const elementTypeBtn=document.getElementById('elementTypeBtn');
 const elementTypeBtnLabel=document.getElementById('elementTypeBtnLabel');
 function refreshToolbarForBlock(block){
   if(!block) return;
-  elementTypeBtnLabel.textContent=TYPE_LABELS[block.dataset.type]||'';
+  // Describes the SELECTION, not one block: blank on a mixed multi-paragraph
+  // selection, the way Word empties its style box rather than showing
+  // whichever paragraph the caret happens to sit in.
+  const type=selectionElementType();
+  elementTypeBtnLabel.textContent = type ? (TYPE_LABELS[type]||'') : '';
 }
 /* Bold/Italic/Underline/Strikethrough are character-level now (real inline elements via
    execCommand), so their "active" state reflects the live selection/caret — not any one
@@ -6751,19 +7840,19 @@ function toggleElementTypePopover(){
   const existing=document.getElementById('elementTypePopover');
   if(existing){ existing.remove(); return; }
   const pop=document.createElement('div'); pop.id='elementTypePopover'; pop.className='element-type-popover';
-  const curType=lastActiveBlock ? lastActiveBlock.dataset.type : null;
+  const curType=selectionElementType();
   TYPES.forEach(t=>{
     const item=document.createElement('button'); item.type='button';
     item.className='et-item'+(curType===t?' active':'');
     item.innerHTML='<span class="et-name">'+escapeHtml(TYPE_LABELS[t])+'</span><span class="et-shortcut">'+escapeHtml(TYPE_SHORTCUTS[t]||'')+'</span>';
+    // Same reason as the Bold/Italic buttons: without this the button takes
+    // focus on mousedown and the script's selection collapses, so by the
+    // time click fires there is nothing multi-paragraph left to retype.
+    item.addEventListener('mousedown', e=>e.preventDefault());
     item.addEventListener('click', ()=>{
       closeElementTypePopover();
-      if(!lastActiveBlock) return;
-      setBlockType(lastActiveBlock, t);
-      scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
-      refreshToolbarForBlock(lastActiveBlock);
       content.focus();
-      placeCaretAt(lastActiveBlock, lastActiveBlock.textContent.length);
+      applyBlockTypeToSelection(t);
     });
     pop.appendChild(item);
   });
@@ -6779,15 +7868,23 @@ function toggleElementTypePopover(){
     });
   },0);
 }
+elementTypeBtn.addEventListener('mousedown', e=>e.preventDefault());
 elementTypeBtn.addEventListener('click', toggleElementTypePopover);
 function applyAlign(value){
-  if(!lastActiveBlock) return;
-  if(lastActiveBlock.dataset.align===value){ delete lastActiveBlock.dataset.align; }
-  else { lastActiveBlock.dataset.align=value; }
+  // Alignment is a paragraph command too: every selected paragraph gets it.
+  // The existing toggle-off behaviour is kept, but decided across the whole
+  // selection -- clear it only when all of them already carry that value,
+  // otherwise bring the odd ones into line first.
+  const blocks=blocksForParagraphCommand(lastActiveBlock);
+  if(!blocks.length) return;
+  const snap=captureSelectionAcrossBlocks();
+  const allHave=blocks.every(b=>b.dataset.align===value);
+  blocks.forEach(b=>{ if(allHave) delete b.dataset.align; else b.dataset.align=value; });
+  lastActiveBlock=blocks[blocks.length-1];
   refreshToolbarForBlock(lastActiveBlock);
   scheduleSnapshot(); scheduleAutosave();
   content.focus();
-  placeCaretAt(lastActiveBlock, lastActiveBlock.textContent.length);
+  if(!restoreSelectionAcrossBlocks(snap)) placeCaretAt(lastActiveBlock, lastActiveBlock.textContent.length);
 }
 /* mousedown preventDefault keeps the button from stealing focus, so the live text selection
    in the script (or a note body) survives the click and execCommand has something to act on. */
@@ -6802,8 +7899,18 @@ document.getElementById('btnStrike').addEventListener('click', ()=>applyInlineFo
 
 const projectTitleEl=document.getElementById('projectTitle');
 function commitProjectTitle(){
-  const val=(projectTitleEl.textContent||'').trim() || 'Untitled Screenplay';
+  const raw=(projectTitleEl.textContent||'').trim();
+  const val=raw || DEFAULT_PROJECT_TITLE;
   projectTitleEl.textContent=val;
+  // Write back onto the Title Page so renaming from the top bar doesn't
+  // leave the page itself showing the old title (and get reverted the next
+  // time anyone touches that field). Clearing the name clears the field.
+  const tb=titlePageTitleBlock();
+  if(tb && (tb.textContent||'').trim()!==raw){
+    tb.textContent=raw;
+    updateTitlePagePlaceholders();
+    scheduleReflow(); scheduleSnapshot();
+  }
   state.projectTitle=val;
   if(state.activeTab.left==='scenes') renderSidebar('left');
   scheduleAutosave();
@@ -6970,6 +8077,7 @@ content.addEventListener('pointerleave', function(){ cancelContentLongPress(); i
    ========================================================= */
 async function init(){
   document.getElementById('app').classList.add('hidden');
+  initPortraitChrome();
   // Theme and the projects index are independent reads — fetch them in
   // parallel rather than one-after-another so the landing page appears
   // after a single round trip's worth of latency, not two.
