@@ -28,7 +28,7 @@
   --strip-left-h:210px;
   --sidebar-right-w:260px;
   --strip-right-h:172px;
-  --canvas:#ECECEC;
+  --canvas:#E8E8E8;
   --canvas-beige:#EDE6D6;
   --chrome-bg:#FAFAFA;
   --chrome-bg-soft:#F1F1F1;
@@ -250,7 +250,7 @@ input,select,textarea{font-family:inherit;}
 .theme-option{display:flex; align-items:center; gap:9px; padding:7px 6px; border-radius:6px; font-size:12.5px; color:var(--text-chrome); cursor:pointer;}
 .theme-option:hover{background:var(--chrome-bg-soft);}
 .theme-swatch{width:18px; height:18px; border-radius:5px; border:1px solid var(--chrome-line-strong); flex:none;}
-.theme-swatch.gray{background:#ECECEC;}
+.theme-swatch.gray{background:#E8E8E8;}
 .theme-swatch.beige{background:#EDE6D6;}
 .theme-option input{accent-color:var(--accent);}
 
@@ -1742,15 +1742,50 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
 .ws-fill{height:100%; background:var(--accent);}
 .ws-fill.done{background:#2A9D84;}
 .ws-deadline{font-size:12.5px; margin:0 0 10px; color:var(--text-chrome);}
-.ws-chart{width:100%; height:190px; display:block; margin:4px 0 8px;}
+.ws-chart{position:relative; width:100%; height:190px; display:block; margin:4px 0 8px;}
+.ws-chart-svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
 .ws-bar{fill:var(--accent);}
 .ws-axis{stroke:var(--chrome-line-strong); stroke-width:1;}
 .ws-goal{stroke:#2A9D84; stroke-width:1.5; stroke-dasharray:5 4;}
-.ws-glbl{fill:#2A9D84; font:10px var(--sans);}
-.ws-lbl{fill:var(--text-chrome-dim); font:10px var(--sans); text-anchor:middle;}
+.ws-glbl{position:absolute; color:#2A9D84; font:10px/12px var(--sans); white-space:nowrap; pointer-events:none;}
+.ws-lbl{position:absolute; transform:translateX(-50%); color:var(--text-chrome-dim); font:10px/12px var(--sans); white-space:nowrap; pointer-events:none;}
 .ws-table td, .ws-table th{font-size:12px;}
 .ws-table th.num{text-align:right;}
-.ws-lbl.ws-lbl-l{text-anchor:start;}
+.ws-lbl.ws-lbl-l{transform:none;}
+.theme-swatch.dark{background:#1C1C1F; border-color:#3a3a40;}
+/* Compare workspace */
+#comparePane{flex:1; min-width:0; display:flex; flex-direction:column; background:var(--canvas); border-left:1px solid var(--chrome-line-strong);}
+#comparePane .cp-head{flex:none; display:flex; align-items:center; gap:8px; padding:6px 12px; font:600 11px var(--sans); letter-spacing:.04em; color:var(--text-chrome-dim); background:var(--chrome-bg); border-bottom:1px solid var(--chrome-line);}
+#comparePane .cp-title{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+#comparePane .cp-scroll{flex:1; overflow:auto; padding:24px 16px;}
+#comparePane .cp-page{width:816px; margin:0 auto; background:var(--paper, #fff); color:var(--ink, #111); box-shadow:0 1px 3px rgba(0,0,0,.18); padding:96px 0; font-family:var(--mono); font-size:16px; line-height:16px; user-select:text;}
+#comparePane .cp-line{box-sizing:border-box; white-space:pre-wrap; word-wrap:break-word; border-radius:2px;}
+#comparePane .cp-line.cp-np{opacity:.55;}
+#comparePane .cp-ins{background:rgba(42,157,132,.18); cursor:pointer;}
+#comparePane .cp-del{background:rgba(214,69,69,.16); cursor:pointer;}
+#comparePane .cp-mod{background:rgba(217,130,43,.18); cursor:pointer;}
+#comparePane .cp-flash{outline:2px solid var(--accent); outline-offset:2px;}
+#screenplayContent .line-block.cmp-focus{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px;}
+#comparePop{position:fixed; z-index:900; display:flex; flex-direction:column; min-width:260px; min-height:220px; background:var(--chrome-bg); color:var(--text-chrome);
+  border:1px solid var(--chrome-line-strong); border-radius:12px; box-shadow:0 12px 36px rgba(0,0,0,.28); overflow:hidden;}
+#comparePop .cpp-head{flex:none; display:flex; align-items:center; justify-content:space-between; padding:8px 10px 8px 14px; font:600 12.5px var(--sans); cursor:move; user-select:none; border-bottom:1px solid var(--chrome-line); touch-action:none;}
+#comparePop .cpp-x{border:none; background:none; color:var(--text-chrome-dim); font-size:13px; cursor:pointer; padding:2px 6px; border-radius:6px;}
+#comparePop .cpp-x:hover{background:var(--chrome-bg-soft);}
+#comparePop .cpp-body{flex:1; min-height:0; display:flex; flex-direction:column; padding:10px 12px 0; gap:8px;}
+#comparePop .cpp-labels{font-size:12px; line-height:1.45;}
+#comparePop .cpp-stats{display:flex; flex-wrap:wrap; gap:4px 10px; font-size:11.5px;}
+#comparePop .cmp-filter{align-self:flex-start;}
+#comparePop .cpp-list{flex:1; min-height:0; overflow:auto; max-height:none;}
+#comparePop .cmp-item{cursor:pointer;}
+#comparePop .cmp-item.on{outline:2px solid var(--accent); outline-offset:-2px; border-radius:6px;}
+#comparePop .cpp-foot{flex:none; display:flex; gap:6px; align-items:center; padding:8px 12px 12px; border-top:1px solid var(--chrome-line);}
+#comparePop .cpp-resize{position:absolute; right:0; bottom:0; width:18px; height:18px; cursor:nwse-resize; touch-action:none;
+  background:linear-gradient(135deg, transparent 50%, var(--chrome-line-strong) 50%, var(--chrome-line-strong) 58%, transparent 58%, transparent 70%, var(--chrome-line-strong) 70%, var(--chrome-line-strong) 78%, transparent 78%);}
+.sc-fixed-head{margin-top:14px;}
+.ms-savebar .ms-name{flex:1; min-width:0; font:inherit; font-size:13px; padding:6px 9px; border:1px solid var(--chrome-line-strong); border-radius:7px; background:var(--canvas); color:var(--text-chrome);}
+.ms-savebar .ms-name:focus{outline:2px solid var(--accent); outline-offset:-1px;}
+.sc-sub{font-size:10.5px; opacity:.8;}
+.sc-keys.sc-keys-fixed{cursor:default; border-style:dashed; background:none;}
 .ws-sprints{font-size:12px; margin:10px 0 0; display:flex; flex-wrap:wrap; gap:6px 12px; color:var(--text-chrome-dim);}
 .ws-sprints b{color:var(--text-chrome);}
 .ws-mins button{padding:6px 11px;}
@@ -1831,10 +1866,6 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
       </div>
       <div class="ribbon-panel" data-tab="production" role="tabpanel" aria-label="Production">
         <div class="tb-group">
-          <button class="icon-btn" id="btnSceneNumbers" title="Scene Numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h3M4 12h3M4 18h3"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
-        </div>
-        <div class="tb-sep"></div>
-        <div class="tb-group">
           <button class="icon-btn" id="btnRevisions" title="Revisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h10M3 11h12M3 16h8"/><path d="M19 4v7M15.9 5.8l6.2 3.4M22.1 5.8l-6.2 3.4"/></svg></button>
           <button class="icon-btn" id="btnPageLock" title="Lock Pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="9" rx="1.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></button>
         </div>
@@ -1852,8 +1883,7 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
       </div>
       <div class="ribbon-panel" data-tab="tools" role="tabpanel" aria-label="Tools">
         <div class="tb-group">
-          <button class="icon-btn" id="btnFoldAll" title="Fold All Notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M9 4 12 7 15 4"/><path d="M9 20 12 17 15 20"/></svg></button>
-          <button class="icon-btn" id="btnUnfoldAll" title="Unfold All Notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M9 6 12 3 15 6"/><path d="M9 18 12 21 15 18"/></svg></button>
+          <button class="icon-btn" id="btnFoldToggle" title="Fold or unfold every note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M9 4 12 7 15 4"/><path d="M9 20 12 17 15 20"/></svg></button>
           <button class="icon-btn" id="btnHideAll" title="Hide All"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="21" x2="21" y2="3"/></svg></button>
           <button class="icon-btn" id="btnNoteSelect" title="Select multiple notes (Ctrl/Cmd+J)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m7.5 12 3 3 6-6"/></svg></button>
         </div>
@@ -1868,14 +1898,20 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
           <button class="icon-btn" id="btnCompare" title="Compare Scripts — the differences between two scripts or milestones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/><path d="M5 8h3M16 8h3M5 12h3M16 12h2M16 16h3"/></svg></button>
           <button class="icon-btn" id="btnStats" title="Goals and Statistics — your writing time and pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
           <button class="icon-btn" id="btnSprint" title="Sprint — write against the clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5M12 2.5V5"/></svg></button>
-          <button class="icon-btn" id="btnMilestones" title="Milestones — saved stages of the script, and automatic backup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4h4"/><path d="M12 8v4.5l3 2"/></svg></button>
+          <button class="icon-btn" id="btnTypewriter" title="Typewriter Mode — keep the line being written at eye level (right-click for options)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="10" rx="1.5"/><path d="M7 10V4h10v6"/><path d="M7 14h1M10.5 14h1M14 14h1M17 14h0M8 17h8"/></svg></button>
         </div>
         <div class="tb-sep"></div>
         <div class="tb-group">
           <button class="icon-btn" id="btnDictate" title="Speech to Script — dictate (Control twice)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></button>
           <button class="icon-btn" id="btnSpeech" title="Speech Control — read the script aloud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
           <button class="icon-btn" id="btnVoices" title="Assign Voices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M2.5 19c.5-3 2.7-4.8 5.5-4.8s5 1.8 5.5 4.8M13.5 15.2c.9-.8 1.9-1.2 3-1.2 2.3 0 4.1 1.5 4.5 4"/></svg></button>
-          <button class="icon-btn" id="btnShortcuts" title="Keyboard Shortcuts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="icon-btn" id="btnToggleTimeline" title="Toggle Living Script timeline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
+          </button>
+          <button class="icon-btn" id="btnMilestones" title="Milestones — save one, restore or compare saved stages, automatic backup (Ctrl/Cmd+.)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h17"/><path d="M15.5 7.5L20 12l-4.5 4.5"/><path d="M10 9.2L12.8 12 10 14.8 7.2 12Z" fill="currentColor"/></svg></button>
         </div>
       </div>
       <div class="ribbon-panel" data-tab="settings" role="tabpanel" aria-label="Settings">
@@ -1883,33 +1919,36 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
           <button class="icon-btn" id="btnParagraph" title="Paragraph &amp; page options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16"/><path d="M4 10h10"/><path d="M4 19h16" stroke-dasharray="3 3"/><path d="M4 14h16" stroke-dasharray="3 3"/></svg></button>
           <button class="icon-btn" id="btnElements" title="Elements — indents, spacing, case and next element"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M8 10h12M4 14h16M10 18h10"/></svg></button>
           <button class="icon-btn" id="btnDocSetup" title="Document Setup — paper, margins, header and footer, font"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 18h6"/></svg></button>
+          <button class="icon-btn" id="btnSceneNumbers" title="Scene Numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h3M4 12h3M4 18h3"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
         </div>
         <div class="tb-sep"></div>
         <div class="tb-group">
-          <button class="icon-btn" id="btnSettings" title="Preferences — appearance, background, spell check, keyboard shortcuts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
-        </div>
-      </div>
-      <div class="ribbon-panel" data-tab="view" role="tabpanel" aria-label="View">
-        <div class="tb-group">
-          <button class="icon-btn" id="btnContinuousView" title="Continuous Page View">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2" width="14" height="7" rx="1"/><rect x="5" y="15" width="14" height="7" rx="1"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
           <button class="icon-btn" id="btnFocusMode" title="Focus Mode (fullscreen, app shortcuts take priority)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9V5a1 1 0 0 1 1-1h4"/><path d="M20 9V5a1 1 0 0 0-1-1h-4"/><path d="M4 15v4a1 1 0 0 0 1 1h4"/><path d="M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
           </button>
-          <button class="icon-btn" id="btnDarkMode" title="Dark Mode" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg></button>
-          <button class="icon-btn" id="btnFixCenter" title="Fix Center — keep the script centred and scroll only up and down" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="1"/><path d="M12 7v10"/><path d="m9.5 9.5 2.5-2.5 2.5 2.5M9.5 14.5l2.5 2.5 2.5-2.5"/><path d="M3 12h2M19 12h2"/></svg></button>
-          <button class="icon-btn" id="btnMinimap" title="Minimap — where you are in the whole script and its notes" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="6" width="5" height="12" rx=".5"/><rect x="11" y="9" width="7" height="5" rx=".5" stroke-dasharray="2 1.5"/><circle cx="16.5" cy="6.5" r=".9" fill="currentColor" stroke="none"/></svg></button>
-          <button class="icon-btn" id="btnReadOnly" title="Read-Only Mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></button>
         </div>
         <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="icon-btn" id="btnSettings" title="Preferences — appearance and writing options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+          <button class="icon-btn" id="btnShortcuts" title="Keyboard Shortcuts — every key, and your own"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M7 14h10"/></svg></button>
+        </div>
+      </div>
+      <div class="ribbon-panel" data-tab="view" role="tabpanel" aria-label="View">
         <div class="tb-group">
           <button class="icon-btn" id="btnRulerH" title="Horizontal Ruler" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="8" width="20" height="8" rx="1"/><path d="M6 8v3M10 8v4M14 8v3M18 8v4"/></svg></button>
           <button class="icon-btn" id="btnRulerV" title="Vertical Ruler" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="2" width="8" height="20" rx="1"/><path d="M8 6h3M8 10h4M8 14h3M8 18h4"/></svg></button>
         </div>
         <div class="tb-sep"></div>
         <div class="tb-group">
-          <button class="icon-btn" id="btnTypewriter" title="Typewriter Mode — keep the line being written at eye level (right-click for options)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="10" rx="1.5"/><path d="M7 10V4h10v6"/><path d="M7 14h1M10.5 14h1M14 14h1M17 14h0M8 17h8"/></svg></button>
+          <button class="icon-btn" id="btnContinuousView" title="Continuous Page View">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="2" width="14" height="7" rx="1"/><rect x="5" y="15" width="14" height="7" rx="1"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <button class="icon-btn" id="btnFixCenter" title="Fix Center — keep the script centred and scroll only up and down" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="1"/><path d="M12 7v10"/><path d="m9.5 9.5 2.5-2.5 2.5 2.5M9.5 14.5l2.5 2.5 2.5-2.5"/><path d="M3 12h2M19 12h2"/></svg></button>
+          <button class="icon-btn" id="btnMinimap" title="Minimap — where you are in the whole script and its notes" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="12.5" y="12.5" width="6" height="5" rx="1"/></svg></button>
+          <button class="icon-btn" id="btnReadOnly" title="Read-Only Mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
           <button class="icon-btn" id="btnCharHighlight" title="Character Highlighting — colour chosen characters' dialogue" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h8"/><path d="m9 16-3-3 8.5-8.5a2.1 2.1 0 0 1 3 3Z"/><path d="m6 13-2.5 3.5H7"/></svg></button>
           <button class="icon-btn" id="btnStructure" title="Structure Lines — outline, acts, sequences and scenes in the margin (right-click for options)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 3v8M4 14v7M8 3v4M8 10v11"/><path d="M12 5h8M12 10h8M12 15h8M12 20h5"/></svg></button>
         </div>
@@ -1917,13 +1956,6 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
         <div class="tb-group">
           <button class="icon-btn" id="btnSplitCards" title="Split Screen — the script beside its Index Cards or Scene View" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3.5" width="8.5" height="17" rx="1"/><rect x="14" y="3.5" width="7" height="7.5" rx="1"/><rect x="14" y="13" width="7" height="7.5" rx="1"/></svg></button>
           <button class="icon-btn" id="btnNavigator" title="Navigator — edit scenes, characters, locations and beats as tables" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11M3 14.5h18"/></svg></button>
-        </div>
-        <div class="tb-sep"></div>
-        <div class="tb-group">
-          <button class="icon-btn" id="btnToggleTimeline" title="Toggle Living Script timeline">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
-          </button>
-          <button class="text-btn" id="btnAddMilestone">+ Milestone</button>
         </div>
       </div>
     </div>
@@ -2585,6 +2617,7 @@ function initScreenplay(lines){
   if(!content.children.length){ content.appendChild(createLineElement({type:'scene_heading', text:''})); }
   _lastPaginationSig=null;
   _forcePaginationRebuild=false;
+  applyShownCaseAll(); // older files, imports and restores held what was typed
   updateTitlePagePlaceholders();
 }
 /* The Title Page's title/author lines show gray placeholder text ("SCREENPLAY
@@ -2697,7 +2730,115 @@ function updateTitlePagePlaceholders(){
     if(empty){ el.dataset.ph = titleRolePlaceholder(el.dataset.titleRole); }
   });
 }
+/* =========================================================
+   SCRIPT TEXT IS KEPT AS THE PAGE SHOWS IT
+   An element set to All caps (Scene Heading, Character, Transition ... or
+   whatever Settings > Elements makes all caps) used to get its capitals
+   from CSS alone, so the paragraph still held what was typed: "int.
+   Kitchen - day" on the page read "INT. KITCHEN - DAY", but the Navigator,
+   the reports, SmartType and everything else that reads the text saw the
+   lower case. Now the text itself is put in capitals, so every view of
+   the script reads what the page shows.
+   - What counts is what the screen does: a paragraph is capitalised when
+     its computed text-transform is uppercase (element settings, dual
+     dialogue and all).
+   - It happens as you type (after an IME composition ends, never during
+     one), when a paragraph becomes an all-caps element, when Settings >
+     Elements turns All caps on, when a script is opened, imported or
+     restored, and before anything is saved or snapshotted -- so no path
+     can leave lower case behind.
+   - Turning All caps OFF later keeps the capitals: they are what was on
+     the page.
+   - One character becomes one character (a letter whose capital is
+     longer, like the German eszett, is left alone), so offsets held
+     elsewhere -- the caret, SmartType, Find -- never shift.
+   - The Title Page is left as typed: its title is also the project's name
+     in My Projects and the top bar, which keep their own case.
+   ========================================================= */
+let _scriptComposing=false;
+function capsSameLength(s){
+  s=String(s==null ? '' : s);
+  const up=s.toUpperCase();
+  if(up===s) return s;
+  if(up.length===s.length) return up;
+  let out='';
+  for(const ch of s){ const u=ch.toUpperCase(); out+=(u.length===ch.length) ? u : ch; }
+  return out;
+}
+/* The rule for a paragraph that is only data (a Track Changes baseline, a
+   milestone being compared): measured once per element kind on a hidden
+   probe paragraph, so it is still what the screen would do. */
+let _capsProbe=null;
+function lineShowsCaps(type, dual, titleRole, cache){
+  if(titleRole || !type) return false;
+  const k=type+'|'+(dual||'');
+  if(cache && k in cache) return cache[k];
+  if(!_capsProbe){ _capsProbe=document.createElement('div'); _capsProbe.setAttribute('aria-hidden', 'true'); _capsProbe.style.display='none'; }
+  _capsProbe.className='line-block type-'+type;
+  if(dual) _capsProbe.dataset.dual=dual; else delete _capsProbe.dataset.dual;
+  content.appendChild(_capsProbe);
+  const up=getComputedStyle(_capsProbe).textTransform==='uppercase';
+  _capsProbe.remove();
+  if(cache) cache[k]=up;
+  return up;
+}
+function capsHtml(html){
+  const t=document.createElement('template'); t.innerHTML=String(html);
+  const w=document.createTreeWalker(t.content, NodeFilter.SHOW_TEXT);
+  while(w.nextNode()){ const n=w.currentNode, u=capsSameLength(n.data); if(u!==n.data) n.data=u; }
+  return t.innerHTML;
+}
+function capsNormalizeLines(lines){
+  const cache={};
+  return (lines||[]).map(l=>{
+    if(!l || !lineShowsCaps(l.type, l.dual, l.titleRole, cache)) return l;
+    const text=capsSameLength(l.text||'');
+    const html=l.html!=null ? capsHtml(l.html) : l.html;
+    return (text===l.text && html===l.html) ? l : Object.assign({}, l, {text, html});
+  });
+}
+function applyShownCase(block, cache){
+  if(!block || _scriptComposing || !block.dataset || block.dataset.titleRole) return false;
+  const t=block.textContent;
+  if(!t || capsSameLength(t)===t) return false;
+  const k=(block.dataset.type||'')+'|'+(block.dataset.dual||'');
+  let up;
+  if(cache && k in cache) up=cache[k];
+  else { up=getComputedStyle(block).textTransform==='uppercase'; if(cache) cache[k]=up; }
+  if(!up) return false;
+  const sel=window.getSelection();
+  let a=null, f=null;
+  if(sel && sel.rangeCount && block.contains(sel.anchorNode) && block.contains(sel.focusNode)){
+    a=flatOffsetInBlock(block, sel.anchorNode, sel.anchorOffset);
+    f=flatOffsetInBlock(block, sel.focusNode, sel.focusOffset);
+  }
+  const w=document.createTreeWalker(block, NodeFilter.SHOW_TEXT), nodes=[];
+  while(w.nextNode()) nodes.push(w.currentNode);
+  nodes.forEach(n=>{ const u=capsSameLength(n.data); if(u!==n.data) n.data=u; });
+  if(a!=null){
+    try{
+      const pa=textOffsetToNodeOffset(block, a), pf=textOffsetToNodeOffset(block, f);
+      sel.setBaseAndExtent(pa.node, pa.offset, pf.node, pf.offset);
+    }catch(err){}
+  }
+  return true;
+}
+function applyShownCaseAll(){
+  if(_scriptComposing) return false;
+  const cache={};
+  let changed=false;
+  allLineEls().forEach(b=>{ if(applyShownCase(b, cache)) changed=true; });
+  return changed;
+}
+content.addEventListener('compositionstart', ()=>{ _scriptComposing=true; });
+content.addEventListener('compositionend', ()=>{
+  _scriptComposing=false;
+  const sel=window.getSelection();
+  const b=(sel && sel.rangeCount) ? getCurrentBlock(sel) : null;
+  if(applyShownCase(b)){ scheduleSnapshot(); scheduleAutosave(); }
+});
 function serializeLines(){
+  applyShownCaseAll(); // what is saved, snapshotted or exported is what the page shows
   return Array.from(content.querySelectorAll('.line-block')).map(el=>({
     id:el.dataset.id, type:el.dataset.type,
     // A guessed name nobody has accepted yet is not in the script.
@@ -2953,6 +3094,37 @@ function setBlockType(block,type){
       if(hadFocusHere) placeCaretAt(block, block.textContent.length-1);
     }
   }
+  // An all-caps element holds capitals, not just shows them. Passing
+  // through one (Tab cycling, a wrong element key) must not cost the case
+  // that was typed, so it is remembered until the text is edited, and put
+  // back if the paragraph becomes an element that shows it as typed.
+  const before=block.textContent;
+  if(applyShownCase(block)) block._typedCase={typed:before, shown:block.textContent};
+  else if(block._typedCase){
+    const m=block._typedCase;
+    if(block.textContent===m.shown && getComputedStyle(block).textTransform!=='uppercase') restoreTypedCase(block, m.typed);
+    if(getComputedStyle(block).textTransform!=='uppercase' || block.textContent!==m.shown) delete block._typedCase;
+  }
+}
+/* Puts a remembered case back, letter for letter (same length), keeping
+   the formatting runs and the caret where they are. */
+function restoreTypedCase(block, typed){
+  const sel=window.getSelection();
+  let a=null, f=null;
+  if(sel && sel.rangeCount && block.contains(sel.anchorNode) && block.contains(sel.focusNode)){
+    a=flatOffsetInBlock(block, sel.anchorNode, sel.anchorOffset);
+    f=flatOffsetInBlock(block, sel.focusNode, sel.focusOffset);
+  }
+  const w=document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  let at=0;
+  while(w.nextNode()){
+    const n=w.currentNode, len=n.data.length, part=typed.slice(at, at+len);
+    if(part.length===len && part!==n.data) n.data=part;
+    at+=len;
+  }
+  if(a!=null){
+    try{ const pa=textOffsetToNodeOffset(block, a), pf=textOffsetToNodeOffset(block, f); sel.setBaseAndExtent(pa.node, pa.offset, pf.node, pf.offset); }catch(err){}
+  }
 }
 function cycleType(block,dir){
   // Cycles from the FIRST selected paragraph's type and lands every
@@ -2966,6 +3138,21 @@ function cycleType(block,dir){
   if(blocks.length>1){ applyBlockTypeToSelection(next, block); return; }
   setBlockType(block,next);
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
+}
+/* What a split leaves at the cut: inline shells with nothing in them (an
+   emptied <b></b>, an emptied tag span) and zero-length text nodes. A caret
+   parked inside one has no line box of its own, and typing there goes
+   outside it anyway, leaving the shell behind. Line breaks and the
+   dialogue page-gap spacer are kept. */
+function pruneEmptyInline(block){
+  if(!block) return;
+  Array.from(block.querySelectorAll('*')).reverse().forEach(el=>{
+    if(el.tagName==='BR' || el.classList.contains('dlg-gap-spacer')) return;
+    if(!el.textContent && !el.querySelector('br, .dlg-gap-spacer')) el.remove();
+  });
+  const w=document.createTreeWalker(block, NodeFilter.SHOW_TEXT), empty=[];
+  while(w.nextNode()) if(!w.currentNode.data.length) empty.push(w.currentNode);
+  empty.forEach(n=>n.remove());
 }
 function splitToNewLine(block, sel, newType){
   // A speech split across a page carries a non-editable spacer inside its
@@ -2991,6 +3178,7 @@ function splitToNewLine(block, sel, newType){
   // Final Draft lets you keep editing a dualed speech in place.
   if(block.dataset.dual) newBlock.dataset.dual=block.dataset.dual;
   block.after(newBlock);
+  pruneEmptyInline(block); pruneEmptyInline(newBlock);
   placeCaretAtStart(newBlock);
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
   return newBlock;
@@ -4112,6 +4300,7 @@ content.addEventListener('input', function(e){
   const block=sel && sel.rangeCount ? getCurrentBlock(sel) : null;
   if(block){
     autoDetectSceneHeading(block);
+    if(!(e && e.isComposing)) applyShownCase(block); // before SmartType reads what was typed
     runSmartType(block, e && e.inputType);
     if(block.dataset.titleRole){
       updateTitlePagePlaceholders();
@@ -6660,6 +6849,7 @@ function computePageLayout(blocks){
 function recomputePagination(){ recomputePaginationCore(); scheduleViewAids(); scheduleMinimap(); }
 function recomputePaginationCore(){
   sanitizeDirtyBlocks();     // nothing the browser slipped in may escape measurement
+  applyShownCaseAll();       // Replace, macros, dictation, the Navigator: text reads as the page shows it
   const blocks=Array.from(content.children).filter(el=>el.classList.contains('line-block'));
   renumberScenes();          // a new or deleted scene heading changes the numbering
   applyAutoContd();          // a cue's (CONT'D) is part of what gets measured
@@ -6973,6 +7163,7 @@ function setContinuousView(on){
   const btn=document.getElementById('btnContinuousView');
   btn.classList.toggle('active', on);
   btn.title = on ? 'Exit Continuous Page View' : 'Continuous Page View';
+  saveProjectViewState();
 }
 const scheduleReflow=debounce(function(){
   recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderTextHighlights();
@@ -7039,6 +7230,30 @@ function lineTextEdgeWorldX(lineEl, side){
   const clientX = side==='left' ? rect.left : rect.right;
   return domToWorld(clientX, rect.top).x;
 }
+/* OPENING A SIDEBAR MOVES ONLY THE SIDEBAR.
+   The camera (pan) is measured from the canvas's own top-left corner, so
+   when the LEFT sidebar opened or closed -- or the top strip in portrait --
+   that corner moved and dragged the script along with it; the right
+   sidebar never did, because the corner doesn't move for it. Every change
+   in where the canvas starts is now taken back out of the pan, frame by
+   frame through the sidebar's animation (a ResizeObserver fires before the
+   frame is painted), so the script stays exactly where it was on screen.
+   Resizing the sidebar by its edge works the same way. Not while the
+   canvas is hidden (My Projects) or when a view is being fitted anew
+   (opening a project, starting or ending Compare). */
+let _vpEdge=null, _vpEdgeHold=0;
+function trackViewportEdge(){
+  const r=viewport.getBoundingClientRect();
+  if(!r.width || !r.height){ _vpEdge=null; return; }
+  const held=Date.now()<_vpEdgeHold || (typeof _compareFit!=='undefined' && _compareFit);
+  if(_vpEdge && state.projectId && !held){
+    const dx=r.left-_vpEdge.left, dy=r.top-_vpEdge.top;
+    if(dx || dy){ pan.x-=dx; pan.y-=dy; applyTransform(); }
+  }
+  _vpEdge={left:r.left, top:r.top};
+}
+function resetViewportEdge(holdMs){ _vpEdge=null; if(holdMs) _vpEdgeHold=Date.now()+holdMs; }
+if(window.ResizeObserver) new ResizeObserver(trackViewportEdge).observe(viewport);
 function applyTransform(){
   // Fix Center: the script's centre is pinned -- zoom still works, and the
   // page scrolls up and down, but never sideways.
@@ -7431,6 +7646,7 @@ function showZoomIndicator(){
   zoomIndicatorTimer=setTimeout(()=>{ el.classList.remove('show'); }, 3000);
 }
 function fitInitialView(){
+  resetViewportEdge(); // a fresh view: nothing to hold still
   const r=viewport.getBoundingClientRect();
   zoom=clamp((r.height-80)/PAGE_H, 0.45, 0.92);
   pan.x=(r.width-PAGE_W*zoom)/2;
@@ -7447,19 +7663,65 @@ function panToWorldPoint(wx, wy){
    block back within a margin of the viewport's top/bottom edge, instead of
    re-centering on every keystroke (which would feel jumpy during continuous
    typing). No-op when the caret is already comfortably in view. */
-function ensureCaretVisible(){
-  if(twPrefs.on && typewriterPin(false)) return; // Typewriter Mode pins the line instead
+/* THE INSERTION POINT STAYS ON SCREEN.
+   The canvas clips the page on every side (#canvasViewport is
+   overflow:hidden between the two sidebars), so a caret can be perfectly
+   placed and still be out of sight. That is the Enter bug: zoomed in far
+   enough that the page is wider than the canvas, a new paragraph starts at
+   the left margin, off the canvas's left edge, and the caret only came
+   back once typing carried it right. So this keeps the caret visible on
+   BOTH axes, measured from the caret itself, not from its paragraph -- a
+   paragraph taller than the canvas must not be aligned by its top while
+   the caret sits at its bottom.
+   - Sideways, it brings the paragraph's whole text column into view when
+     the column fits, so typing along the line doesn't nudge the page at
+     every keystroke; otherwise it moves just enough to show the caret.
+   - Fix Center never pans sideways (its hard rule), and Typewriter Mode
+     keeps its own vertical pin; both still get the other axis. */
+function caretScreenBox(){
   const sel=window.getSelection();
-  if(!sel || !sel.rangeCount || !content.contains(sel.anchorNode)) return;
+  if(!sel || !sel.rangeCount || !sel.focusNode || !content.contains(sel.focusNode)) return null;
   const b=getCurrentBlock(sel);
-  if(!b) return;
-  const vr=viewport.getBoundingClientRect();
+  if(!b) return null;
   const br=b.getBoundingClientRect();
-  const margin=64;
-  let dy=0;
-  if(br.top<vr.top+margin) dy=(vr.top+margin)-br.top;
-  else if(br.bottom>vr.bottom-margin) dy=(vr.bottom-margin)-br.bottom;
-  if(dy){ pan.y+=dy; applyTransform(); }
+  const scale=(br.height && b.offsetHeight) ? br.height/b.offsetHeight : zoom;
+  const cs=getComputedStyle(b);
+  const colL=br.left+(parseFloat(cs.paddingLeft)||0)*scale, colR=br.right-(parseFloat(cs.paddingRight)||0)*scale;
+  try{
+    const r=document.createRange();
+    r.setStart(sel.focusNode, sel.focusOffset); r.collapse(true);
+    const rs=Array.from(r.getClientRects()).filter(x=>x.height>0 && x.height<LINE_H*3*scale);
+    if(rs.length){ const c=rs[rs.length-1]; return {x:c.left, top:c.top, bottom:c.bottom, colL, colR}; }
+  }catch(err){}
+  // An empty paragraph has no text to measure: its caret sits where its
+  // first character would.
+  const align=cs.textAlign;
+  const x=(align==='right' || align==='end') ? colR : (align==='center' ? (colL+colR)/2 : colL);
+  const top=br.top+lineOwnPaddingTop(b)*scale;
+  return {x, top, bottom:top+LINE_H*scale, colL, colR};
+}
+function ensureCaretVisible(){
+  const box=caretScreenBox();
+  if(!box) return;
+  const vr=viewport.getBoundingClientRect();
+  let dx=0, dy=0;
+  if(!fixCenterOn){
+    const mx=Math.min(48, vr.width/4);
+    const lo=vr.left+mx, hi=vr.right-mx;
+    if(box.x<lo || box.x>hi){
+      if(box.colR-box.colL<=hi-lo){
+        if(box.colL<lo) dx=lo-box.colL; else if(box.colR>hi) dx=hi-box.colR;
+      } else {
+        dx=(box.x<lo) ? lo-box.x : hi-box.x;
+      }
+    }
+  }
+  if(!(twPrefs.on && typewriterPin(false))){ // Typewriter Mode pins the line instead
+    const my=Math.min(64, vr.height/4);
+    if(box.top<vr.top+my) dy=(vr.top+my)-box.top;
+    else if(box.bottom>vr.bottom-my) dy=(vr.bottom-my)-box.bottom;
+  }
+  if(dx || dy){ pan.x+=dx; pan.y+=dy; applyTransform(); }
 }
 /* Where a navigation jump parks its target line: one fifth down from the
    viewport's top edge. High enough that the line being navigated to reads as
@@ -7519,8 +7781,8 @@ function setMinimap(on, quiet){
   if(!quiet){ try{ dbStorage.set('novel-dots-minimap', minimapOn ? '1' : '0'); }catch(err){} }
 }
 async function loadViewNavPrefs(){
-  try{ const r=await dbStorage.get('novel-dots-fixcenter'); if(r && r.value==='1') setFixCenter(true, true); }catch(err){}
-  try{ const r=await dbStorage.get('novel-dots-minimap'); if(r && r.value==='1') setMinimap(true, true); }catch(err){}
+  try{ const r=await dbStorage.get('novel-dots-fixcenter'); if(r && r.value!=null) setFixCenter(r.value==='1', true); }catch(err){}
+  try{ const r=await dbStorage.get('novel-dots-minimap'); if(r && r.value!=null) setMinimap(r.value==='1', true); }catch(err){}
 }
 let _minimapRaf=0, _minimapMap=null, _minimapFrozen=null;
 function scheduleMinimap(){
@@ -9523,21 +9785,42 @@ function appendStrokePath(groupId, stroke){
   drawLayer.appendChild(path);
   return path;
 }
+/* A drawing's dotted link to its paragraph joins the two where they are
+   CLOSEST -- the part of the drawing nearest the text and the nearest
+   point of the text's own box -- instead of starting at the first stroke's
+   first point. It stops 3 mm short of each, so it points at them without
+   touching either; a drawing closer than that to its text gets no link. */
+const DRAW_LINK_GAP=96*3/25.4; // 3 mm in page pixels (96 per inch)
 function renderConnectorForDrawing(dw){
   if(!dw.anchorLineId) return;
   const line=content.querySelector('[data-id="'+dw.anchorLineId+'"]');
   if(!line) return;
-  const first=dw.strokes && dw.strokes[0];
-  if(!first || !first.points || first.points.length<2) return;
-  const startX=first.points[0], startY=first.points[1];
-  const side = startX < PAGE_W/2 ? 'left' : 'right';
-  const targetX = lineTextEdgeWorldX(line, side);
-  const targetY = lineWorldTop(line) + (line.offsetHeight||16)/2;
-  const cx=(startX+targetX)/2;
+  const top=lineWorldTop(line)+lineOwnPaddingTop(line), bottom=lineWorldTop(line)+(line.offsetHeight||16);
+  const L=lineTextEdgeWorldX(line, 'left'), R=Math.max(L, lineTextEdgeWorldX(line, 'right'));
+  let best=null;
+  (dw.strokes||[]).forEach(st=>{
+    const pts=st.points||[];
+    for(let i=0;i+1<pts.length;i+=2){
+      const x=pts[i], y=pts[i+1];
+      const cx=Math.min(Math.max(x, L), R), cy=Math.min(Math.max(y, top), Math.max(top, bottom));
+      const d=(x-cx)*(x-cx)+(y-cy)*(y-cy);
+      if(!best || d<best.d) best={d, x, y, cx, cy};
+    }
+  });
+  if(!best) return;
+  const dist=Math.sqrt(best.d);
+  if(dist<DRAW_LINK_GAP*2+4) return;
+  const ux=(best.cx-best.x)/dist, uy=(best.cy-best.y)/dist;
+  const sx=best.x+ux*DRAW_LINK_GAP, sy=best.y+uy*DRAW_LINK_GAP;
+  const tx=best.cx-ux*DRAW_LINK_GAP, ty=best.cy-uy*DRAW_LINK_GAP;
+  // A soft S-curve along the main direction of travel.
+  const d=Math.abs(tx-sx)>=Math.abs(ty-sy)
+    ? 'M '+sx+' '+sy+' C '+((sx+tx)/2)+' '+sy+', '+((sx+tx)/2)+' '+ty+', '+tx+' '+ty
+    : 'M '+sx+' '+sy+' C '+sx+' '+((sy+ty)/2)+', '+tx+' '+((sy+ty)/2)+', '+tx+' '+ty;
   const conn=document.createElementNS('http://www.w3.org/2000/svg','path');
   conn.setAttribute('class','drawing-connector');
   conn.dataset.drawId=dw.id;
-  conn.setAttribute('d','M '+startX+' '+startY+' C '+cx+' '+startY+', '+cx+' '+targetY+', '+targetX+' '+targetY);
+  conn.setAttribute('d', d);
   drawLayer.appendChild(conn);
 }
 function renderDrawingSelection(){
@@ -11747,7 +12030,7 @@ function setReadOnly(on){
   document.querySelectorAll('.note-shot-input, .note-day-input, .note-category-select').forEach(el=>{ el.disabled=on; });
   document.querySelectorAll('.note-close-btn').forEach(el=>{ el.style.display = on ? 'none' : ''; });
   document.querySelectorAll('.note-resize-handle').forEach(el=>{ el.style.display = on ? 'none' : ''; });
-  ['btnBold','btnItalic','btnUnderline','btnStrike','btnAlignLeft','btnAlignCenter','btnAlignRight','btnAddMilestone'].forEach(id=>{
+  ['btnBold','btnItalic','btnUnderline','btnStrike','btnAlignLeft','btnAlignCenter','btnAlignRight'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.disabled=on;
   });
   updateUndoButtons(); // undo() itself is gated too, but the buttons should visibly grey out either way
@@ -11768,6 +12051,7 @@ function setPanel(name, visible){
     document.getElementById('timeline').classList.toggle('hidden-panel', !visible);
     document.getElementById('btnToggleTimeline').classList.toggle('active', visible);
     updatePageIndicator();
+    saveProjectViewState();
     return;
   }
   const map={left:'leftSidebar', right:'rightSidebar'};
@@ -11776,6 +12060,7 @@ function setPanel(name, visible){
   document.getElementById(edgeMap[name]).classList.toggle('hidden', visible);
   if(name==='right') positionZoomIndicator();
   if(name==='left') updatePageIndicator();
+  saveProjectViewState();
 }
 
 /* =========================================================
@@ -11900,7 +12185,7 @@ viewport.addEventListener('pointerdown', function(e){
   }
   if(currentTool==='eraser'){ startErasing(e); return; }
   const overUi = !!e.target.closest('.note-card,.dot-marker,#canvasHint');
-  const overPaper = !!e.target.closest('.paper-stack,#paperStack');
+  const overPaper = !!e.target.closest('.paper-stack,#paperStack') || pagePressTarget(e); // the whole sheet, not just the part the text reaches
   /* A finger dragged across a script page pans the canvas, the same as a
      finger dragged across the empty desk beside it: on a touch screen the
      page is something you push around, not something you drag a text
@@ -11918,6 +12203,157 @@ viewport.addEventListener('pointerdown', function(e){
       showContextMenu(cx, cy, createMenuItemsAt(screenToWorld(cx, cy)));
     });
   }
+});
+/* =========================================================
+   CLICKING ON THE PAGE: THE NEAREST LINE, AS WORD AND GOOGLE DOCS DO
+   Left to the browser, a click on the page lands wherever the paragraph
+   BOXES say, and those boxes are not what the writer sees:
+   - the blank space between two paragraphs is the lower paragraph's own
+     padding (its "space before"), so a click just under a line's letters
+     -- right on the caret -- went to the start of the next paragraph;
+   - the paper below the last line, and the page margins, are not part of
+     the editable text at all, so a click there took the focus away and
+     the caret vanished.
+   Here a mouse or pen press anywhere on the paper finds the text line
+   nearest to it (vertical distance first; across a dual-dialogue pair,
+   the nearer column) and puts the caret there, at the letter nearest the
+   pointer, keeping the focus in the script. Where the browser already
+   agrees -- a press right on a line's letters -- it is left alone, so
+   double- and triple-click and drag-selecting work as they always have.
+   A drag that starts off the text extends the selection the same way;
+   Shift+click extends it. The grey desk around the pages is not paper:
+   a click there still leaves the script, on purpose. Touch is left to its
+   own gestures (a finger on the page pans).
+   ========================================================= */
+let _lastPointerType='mouse';
+viewport.addEventListener('pointerdown', e=>{ _lastPointerType=e.pointerType||'mouse'; }, true);
+function blockLineBoxes(b){
+  const br=b.getBoundingClientRect();
+  const scale=(br.height && b.offsetHeight) ? br.height/b.offsetHeight : zoom;
+  const cs=getComputedStyle(b);
+  const padL=(parseFloat(cs.paddingLeft)||0)*scale, padR=(parseFloat(cs.paddingRight)||0)*scale;
+  const maxH=LINE_H*3*scale;
+  let rects=[];
+  if(b.textContent){
+    const r=document.createRange(); r.selectNodeContents(b);
+    rects=Array.from(r.getClientRects()).filter(x=>x.height>0 && x.height<maxH);
+  }
+  rects.sort((a, c)=>a.top-c.top);
+  const lines=[];
+  rects.forEach(x=>{
+    const cur=lines[lines.length-1];
+    if(cur && x.top<cur.bottom-1){ cur.top=Math.min(cur.top, x.top); cur.bottom=Math.max(cur.bottom, x.bottom); cur.left=Math.min(cur.left, x.left); cur.right=Math.max(cur.right, x.right); }
+    else lines.push({top:x.top, bottom:x.bottom, left:x.left, right:x.right});
+  });
+  if(!lines.length){
+    const top=br.top+lineOwnPaddingTop(b)*scale;
+    lines.push({top, bottom:top+LINE_H*scale, left:br.left+padL, right:br.right-padR, empty:true});
+  }
+  return lines;
+}
+/* The text line nearest a screen point: {block, line}. The paragraphs run
+   down the page in order, so a binary search finds the neighbourhood and a
+   small window around it settles it (a dual pair sits side by side). */
+function nearestTextLine(x, y, sheet){
+  const blocks=allLineEls();
+  if(!blocks.length) return null;
+  let lo=0, hi=blocks.length-1;
+  while(lo<hi){
+    const mid=(lo+hi+1)>>1;
+    if(blocks[mid].getBoundingClientRect().top<=y) lo=mid; else hi=mid-1;
+  }
+  const pick=onSheet=>{
+  let best=null;
+  for(let i=Math.max(0, lo-6); i<=Math.min(blocks.length-1, lo+6); i++){
+    const b=blocks[i];
+    blockLineBoxes(b).forEach(l=>{
+      if(onSheet){ const c=(l.top+l.bottom)/2; if(c<onSheet.top || c>onSheet.bottom) return; }
+      const dy=y<l.top ? l.top-y : (y>l.bottom ? y-l.bottom : 0);
+      const dx=x<l.left ? l.left-x : (x>l.right ? x-l.right : 0);
+      const score=Math.round(dy*2)*100000+dx;
+      if(!best || score<best.score) best={block:b, line:l, score, dy};
+    });
+  }
+  return best;
+  };
+  // On a page, the nearest line OF THAT PAGE: the empty foot of the title
+  // page is the title page's last line, not the next page's first.
+  return (sheet && pick(sheet)) || pick(null);
+}
+function caretPosOnLine(hit, x){
+  const b=hit.block, l=hit.line;
+  if(l.empty) return {node:b, offset:0};
+  const cx=Math.min(Math.max(x, l.left+0.5), l.right-0.5), cy=(l.top+l.bottom)/2;
+  const p=caretFromPoint(cx, cy);
+  if(p && b.contains(p.node) && !(p.node.nodeType===1 && p.node.closest && p.node.closest('.dlg-gap-spacer'))) return p;
+  // Something drawn over the line answered instead: its nearer end.
+  if(x<=l.left) return {node:b, offset:0};
+  const r=document.createRange(); r.selectNodeContents(b); r.collapse(false);
+  return {node:r.endContainer, offset:r.endOffset};
+}
+/* "On the paper" is decided by where the sheets are DRAWN, not by which
+   element is under the pointer. #paperStack is only as tall as the text in
+   it, and the sheets in #pageDecor are decoration that takes no clicks, so
+   a press a few lines under the last line landed on the desk behind the
+   page and the caret vanished. Every sheet counts: the title page, each
+   script page, the continuous strip. Controls and the things that live on
+   the desk above the page (notes, images, drawings, the minimap ...) keep
+   their own clicks. */
+const PAGE_PRESS_BLOCKERS='button, input, textarea, select, a, [contenteditable="true"]:not(#screenplayContent), '+
+  '.tc-del, .tc-caret, .tc-bar, .alts-widget, .note-card, .dot-marker, .context-menu, '+
+  '#notesLayer *, #imagesLayer *, #drawLayer *, #connectorLayer *, #connectorFrontLayer *, '+
+  '#minimap, #minimap *, #zoomIndicator, #pageIndicator, #selectionBar, #drawPalette, #drawPalette *, '+
+  '#canvasHint, #canvasHint *, #splitPane, #splitPane *, #leftEdgeTab, #rightEdgeTab';
+function pointOnPaper(x, y){ // the sheet's screen rect, or null
+  const sheets=pageDecor.querySelectorAll('.page-sheet');
+  for(let i=0;i<sheets.length;i++){
+    const r=sheets[i].getBoundingClientRect();
+    if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom) return r;
+  }
+  return null;
+}
+function pagePressTarget(e){
+  const t=e.target;
+  if(!t || !t.closest || !viewport.contains(t)) return false;
+  if(t.closest(PAGE_PRESS_BLOCKERS)) return false;
+  if(t.closest('#screenplayContent')) return true;
+  return !!pointOnPaper(e.clientX, e.clientY);
+}
+let _pageDrag=null;
+viewport.addEventListener('mousedown', function(e){
+  if(e.button!==0 || readOnlyMode || !state.projectId || currentTool!=='none') return;
+  if(_lastPointerType==='touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
+  if(!pagePressTarget(e)) return;
+  const hit=nearestTextLine(e.clientX, e.clientY, pointOnPaper(e.clientX, e.clientY));
+  if(!hit) return;
+  // A press on a line's own letters: the browser already gets it right.
+  if(hit.dy===0 && e.target.closest('#screenplayContent')){
+    const nat=caretFromPoint(e.clientX, e.clientY);
+    if(nat && hit.block.contains(nat.node)) return;
+  }
+  e.preventDefault(); // keep the focus, and the caret, in the script
+  const pos=caretPosOnLine(hit, e.clientX);
+  const sel=window.getSelection();
+  content.focus({preventScroll:true});
+  const keepAnchor=e.shiftKey && sel.rangeCount && content.contains(sel.anchorNode);
+  try{
+    if(keepAnchor) sel.setBaseAndExtent(sel.anchorNode, sel.anchorOffset, pos.node, pos.offset);
+    else sel.setBaseAndExtent(pos.node, pos.offset, pos.node, pos.offset);
+  }catch(err){ return; }
+  _pageDrag={anchor:{node:sel.anchorNode, offset:sel.anchorOffset}};
+}, true);
+document.addEventListener('mousemove', function(e){
+  if(!_pageDrag) return;
+  if(!(e.buttons & 1)){ _pageDrag=null; return; }
+  const hit=nearestTextLine(e.clientX, e.clientY, pointOnPaper(e.clientX, e.clientY));
+  if(!hit) return;
+  const pos=caretPosOnLine(hit, e.clientX);
+  try{ window.getSelection().setBaseAndExtent(_pageDrag.anchor.node, _pageDrag.anchor.offset, pos.node, pos.offset); }catch(err){}
+});
+document.addEventListener('mouseup', function(){
+  if(!_pageDrag) return;
+  _pageDrag=null;
+  updateSelectionCursorState();
 });
 viewport.addEventListener('pointermove', function(e){
   if(e.pointerType==='touch' && activeTouches.has(e.pointerId)){
@@ -11952,6 +12388,9 @@ viewport.addEventListener('pointermove', function(e){
   if(currentTool!=='none') return;
   moveLongPress(e);
   if(!pointerDown) return;
+  // The button was let go somewhere the canvas never heard about (over a
+  // sidebar, outside the window): the press is over, whatever pointerup said.
+  if(e.pointerType!=='touch' && !(e.buttons & 1)){ endCanvasPress(); return; }
   const dx=e.clientX-pStartX, dy=e.clientY-pStartY;
   // A finger needs more room than a mouse before its wobble means a drag.
   const slop = e.pointerType==='touch' ? LONG_PRESS_SLOP : 6;
@@ -11988,6 +12427,18 @@ viewport.addEventListener('pointerup', function(e){
   }
   dragging=false;
 });
+/* A pan (or any press on the canvas) ends wherever the button comes up.
+   Released over a sidebar, the canvas's own pointerup never fired, so the
+   canvas kept "holding" the desk and moved with the bare pointer when it
+   came back. */
+function endCanvasPress(){
+  if(!pointerDown && !dragging) return;
+  pointerDown=false; dragging=false; viewport.classList.remove('panning');
+  cancelLongPress();
+}
+window.addEventListener('pointerup', e=>{ if(!viewport.contains(e.target)) endCanvasPress(); }, true);
+window.addEventListener('pointercancel', e=>{ if(!viewport.contains(e.target)) endCanvasPress(); }, true);
+window.addEventListener('blur', endCanvasPress);
 viewport.addEventListener('pointercancel', function(e){
   endTouchTracking(e);
   pointerDown=false; dragging=false; viewport.classList.remove('panning');
@@ -12973,6 +13424,7 @@ async function exportScriptPDF(opts){
      over six lines carries six marks on a real revised page. */
   function drawRevisionMark(rev){
     if(!rev || !state.revisions.showMarks) return;
+    marginBusy.push({page:physicalPage, y, side:'right'});
     doc.setFont(PDF_FACE,'normal');
     doc.text(state.revisions.mark||'*', REV_MARK_X, y);
   }
@@ -13083,13 +13535,96 @@ async function exportScriptPDF(opts){
     return wrapped.length;
   }
   const pageLineIds=[];
+  const noteAnchorAt=new Map(); // line id -> where its first printed line sits {page, y}
+  const marginBusy=[];          // scene numbers and revision marks already in the margins
   function notePageLine(line){
     if(!line || !line.id) return;
     (pageLineIds[physicalPage]=pageLineIds[physicalPage]||new Set()).add(line.id);
+    if(!noteAnchorAt.has(line.id)){
+      const brk=y+PDF_LINE_H > PDF_IN.pageH-PDF_IN.mBottom; // it will open the next page
+      noteAnchorAt.set(line.id, {page:physicalPage+(brk?1:0), y:brk ? PDF_IN.mTop : y});
+    }
   }
   // Recorded on the page a paragraph STARTS on -- the same test the screen
   // side uses (lineIdsOnPhysicalPage) -- so a speech that runs over a break
   // doesn't pull the following page into a "current page" output.
+  /* Notes as comments in the margins, the way Word prints its comments: a
+     small tinted box beside the line each note is pinned to, on the side
+     of the page the note sits on in the editor, with a dotted leader to the
+     text. The script itself is laid out exactly as without them -- same
+     pages, same breaks -- because the boxes only use the margins. Boxes on
+     one side stack downward so they never cover each other, and step past
+     a printed scene number or revision mark. A very long note is cut short
+     with an ellipsis rather than run off the page. */
+  function drawMarginNotes(){
+    const byId=new Map((state.notes||[]).map(n=>[n.id, n]));
+    const items=[];
+    (state.notes||[]).forEach(n=>{
+      if(n.kind!=='dot') return;
+      const text=String(n.text||'').replace(/\s+\n/g, '\n').trim(), kw=String(n.keyword||'').trim();
+      if(!text && !kw) return;
+      let root=n, guard=0;
+      while(root.parentNoteId && byId.get(root.parentNoteId) && guard++<20) root=byId.get(root.parentNoteId);
+      const ids=(n.anchorLineIds && n.anchorLineIds.length) ? n.anchorLineIds : (root.anchorLineIds||[]);
+      let at=null;
+      ids.forEach(id=>{ const a=noteAnchorAt.get(id); if(a && (!at || a.page<at.page || (a.page===at.page && a.y<at.y))) at=a; });
+      if(!at) return;
+      const cat=n.category ? CATEGORY_MAP[n.category] : null;
+      items.push({text, kw, at, side:(n.side||root.side)==='left' ? 'left' : 'right', color:(cat && cat.color) || '#8FA6C4', order:n.createdAt||0});
+    });
+    if(!items.length) return;
+    const FS=6.5, LH=FS*1.3/72, PAD=0.05, BAR=0.03;
+    const geom={left:{x:0.14, w:0.66, lead:PDF_IN.mLeft-0.08}, right:{x:PDF_IN.pageW-PDF_IN.mRight+0.1, w:PDF_IN.mRight-0.22, lead:PDF_IN.pageW-PDF_IN.mRight+0.02}};
+    const rgb=hex=>{ const m=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)||[0,'8f','a6','c4']; return [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)]; };
+    const mixW=(c, t)=>c.map(v=>Math.round(v+(255-v)*t));
+    const lw=typeof doc.getLineWidth==='function' ? doc.getLineWidth() : 0.01;
+    const groups=new Map();
+    items.forEach(it=>{ const k=it.at.page+'|'+it.side; if(!groups.has(k)) groups.set(k, []); groups.get(k).push(it); });
+    groups.forEach((list, k)=>{
+      const pg=Number(k.split('|')[0]), side=k.split('|')[1], g=geom[side];
+      if(pg>physicalPage) return;
+      list.sort((a, b)=>a.at.y-b.at.y || a.order-b.order);
+      doc.setPage(pg+1);
+      const busy=marginBusy.filter(m=>m.page===pg && (m.side==='both' || m.side===side));
+      const textW=g.w-PAD*2-BAR;
+      let next=0.3;
+      list.forEach(it=>{
+        doc.setFontSize(FS);
+        doc.setFont('helvetica', 'bold');
+        const head=it.kw ? doc.splitTextToSize(it.kw, textW) : [];
+        doc.setFont('helvetica', 'normal');
+        let body=it.text ? doc.splitTextToSize(it.text, textW) : [];
+        const MAXL=18;
+        if(head.length+body.length>MAXL){ body=body.slice(0, Math.max(1, MAXL-head.length)); body[body.length-1]=body[body.length-1].replace(/\s*\S?$/, '')+'\u2026'; }
+        const h=PAD*2+(head.length+body.length)*LH;
+        let top=Math.max(next, it.at.y-0.13);
+        for(let guard=0, moved=true; moved && guard<30; guard++){
+          moved=false;
+          busy.forEach(m=>{ if(top<m.y+0.05 && top+h>m.y-0.14){ top=m.y+0.06; moved=true; } });
+        }
+        if(top+h>PDF_IN.pageH-0.25) top=Math.max(next, PDF_IN.pageH-0.25-h);
+        const base=rgb(it.color);
+        doc.setLineWidth(0.006);
+        doc.setFillColor(...mixW(base, 0.86)); doc.setDrawColor(...mixW(base, 0.35));
+        doc.roundedRect(g.x, top, g.w, h, 0.03, 0.03, 'FD');
+        doc.setFillColor(...base); doc.rect(g.x+0.004, top+0.02, BAR-0.008, h-0.04, 'F');
+        doc.setTextColor(38, 38, 38);
+        let ly=top+PAD+LH*0.78;
+        doc.setFont('helvetica', 'bold'); head.forEach(t=>{ doc.text(t, g.x+BAR+PAD*0.8, ly); ly+=LH; });
+        doc.setFont('helvetica', 'normal'); body.forEach(t=>{ doc.text(t, g.x+BAR+PAD*0.8, ly); ly+=LH; });
+        // Dotted leader from the box to the line it is about.
+        const bx=side==='left' ? g.x+g.w : g.x, by=Math.min(top+h-0.02, Math.max(top+0.04, it.at.y-0.04));
+        doc.setDrawColor(...mixW(base, 0.15));
+        if(typeof doc.setLineDashPattern==='function') doc.setLineDashPattern([0.02, 0.025], 0);
+        doc.line(bx, by, g.lead, it.at.y-0.04);
+        if(typeof doc.setLineDashPattern==='function') doc.setLineDashPattern([], 0);
+        next=top+h+0.06;
+      });
+    });
+    doc.setTextColor(0, 0, 0); doc.setDrawColor(0, 0, 0); doc.setFillColor(255, 255, 255);
+    doc.setLineWidth(lw); doc.setFont(PDF_FACE, 'normal'); doc.setFontSize(12);
+    doc.setPage(physicalPage+1);
+  }
   function printParagraph(line, colOverride){
     notePageLine(line);
     const col=colOverride||PDF_COLS[line.type]||PDF_COLS.action;
@@ -13139,6 +13674,7 @@ async function exportScriptPDF(opts){
     if(!state.sceneNumbers.on || line.type!=='scene_heading' || !line.sceneNumber) return;
     doc.setFont(PDF_FACE,'normal');
     const label=String(line.sceneNumber);
+    marginBusy.push({page:physicalPage, y, side:'both'});
     doc.text(label, PDF_IN.mLeft-0.35, y, {align:'right'});
     doc.text(label, PDF_IN.pageW-PDF_IN.mRight+0.1, y);
   }
@@ -13234,6 +13770,7 @@ async function exportScriptPDF(opts){
     }
     const text=(line.text||'');
     if(line.type==='dialogue'){
+      notePageLine(line);
       const col=PDF_COLS.dialogue;
       const runs=htmlToStyledRuns(line.html);
       const style=pdfRunStyle(runs);
@@ -13281,6 +13818,7 @@ async function exportScriptPDF(opts){
   }
 
   drawAllPageNumbers();
+  if(opts && opts.includeNotes) drawMarginNotes();
   drawPdfWatermarks(doc, opts && opts.watermark, physicalPage+1, hasTitleContent);
   return {doc, pageRevisions, pageLineIds, labels:finalLabels, pageCount:physicalPage+1};
   }
@@ -15611,6 +16149,83 @@ const dbStorage={
   async delete(key){ const b=await ndbBackend(); return b.delete(key); },
   async list(prefix){ const b=await ndbBackend(); return b.list(prefix); }
 };
+/* =========================================================
+   SETTINGS BELONG TO THE PROJECT
+   Every setting -- how the app looks, Fix Center, the
+   minimap, the sidebars and their sizes, Typewriter, Structure Lines, the
+   split pane, the Navigator, spell check, the ribbon tab, Continuous View
+   -- is remembered per project: project A can keep Fix Center on while
+   project B keeps it off, and opening one never changes the other.
+   Keyboard shortcuts and the rulers are the exceptions: the same everywhere.
+   - They are kept beside the project in storage, never inside its data
+     (no export and no script file carries them).
+   - The loaders and setters that already existed are untouched: dbStorage
+     reads and writes these keys under the open project's name. With no
+     project open (My Projects) they are the app-wide values.
+   - Every change is also written app-wide, so a NEW project starts with
+     the settings last used.
+   - The first time a project opens under this scheme it takes a full copy
+     of the settings in force (the ones it was always shown with), so from
+     then on it keeps its own, even for settings it never touched.
+   ========================================================= */
+const PROJECT_PREF_KEYS=['novel-dots-appearance','novel-dots-theme','novel-dots-autoguess','novel-dots-fixcenter','novel-dots-minimap',
+  'novel-dots-navigator','novel-dots-ribbon-tab','novel-dots-show-alts','novel-dots-sidebar','novel-dots-spellcheck',
+  'novel-dots-split','novel-dots-structure','novel-dots-typewriter','novel-dots-view'];
+function projectPrefKey(pid, key){ return 'novel-dots-pp-'+pid+'|'+key; }
+const _dbGetAny=dbStorage.get, _dbSetAny=dbStorage.set;
+dbStorage.get=async function(key){
+  if(state.projectId && PROJECT_PREF_KEYS.includes(key)) return _dbGetAny.call(dbStorage, projectPrefKey(state.projectId, key));
+  return _dbGetAny.call(dbStorage, key);
+};
+dbStorage.set=async function(key, value){
+  if(state.projectId && PROJECT_PREF_KEYS.includes(key)) await _dbSetAny.call(dbStorage, projectPrefKey(state.projectId, key), value);
+  return _dbSetAny.call(dbStorage, key, value);
+};
+/* What each setting is before anything has been loaded: read once, as the
+   app starts, from the variables' own starting values. */
+let _prefFactory=null;
+function capturePrefFactory(){
+  _prefFactory={
+    'novel-dots-appearance':currentAppearance, 'novel-dots-theme':currentTheme, 'novel-dots-autoguess':autoGuessOn,
+    'novel-dots-fixcenter':fixCenterOn?'1':'0', 'novel-dots-minimap':minimapOn?'1':'0',
+    'novel-dots-navigator':JSON.stringify(navPrefs), 'novel-dots-ribbon-tab':ribbonTab,
+    'novel-dots-show-alts':showAltsOn, 'novel-dots-sidebar':JSON.stringify(sidebarSizes), 'novel-dots-spellcheck':spellcheckOn,
+    'novel-dots-split':JSON.stringify(splitPrefs), 'novel-dots-structure':JSON.stringify(stPrefs), 'novel-dots-typewriter':JSON.stringify(twPrefs),
+    'novel-dots-view':JSON.stringify({left:true, right:true, timeline:false, continuous:false})
+  };
+}
+async function ensureProjectPrefs(pid){
+  try{ const m=await _dbGetAny.call(dbStorage, projectPrefKey(pid, '__init')); if(m && m.value) return; }catch(err){}
+  for(const key of PROJECT_PREF_KEYS){
+    let r=null;
+    try{ r=await _dbGetAny.call(dbStorage, key); }catch(err){}
+    const v=(r && r.value!=null) ? r.value : (_prefFactory ? _prefFactory[key] : undefined);
+    if(v!==undefined){ try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, key), v); }catch(err){} }
+  }
+  try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, '__init'), '1'); }catch(err){}
+}
+/* Opening a project: its settings replace whatever the last one left. */
+let _viewStateLoading=false;
+async function applyProjectPrefs(pid){
+  await ensureProjectPrefs(pid);
+  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadSidebarSizes(), loadAutoGuessPref(),
+    loadShowAltsPref(), loadViewAidPrefs(), loadRibbonTabPref(), loadViewNavPrefs()]);
+  let view=null;
+  try{ const r=await dbStorage.get('novel-dots-view'); view=r && r.value ? JSON.parse(r.value) : null; }catch(err){}
+  view=Object.assign({left:true, right:true, timeline:false, continuous:false}, view||{});
+  _viewStateLoading=true;
+  try{ setPanel('left', !!view.left); setPanel('right', !!view.right); setPanel('timeline', !!view.timeline); }
+  finally{ _viewStateLoading=false; }
+  return view;
+}
+function saveProjectViewState(){
+  if(!state.projectId || _viewStateLoading || (typeof _compareActive!=='undefined' && _compareActive)) return;
+  saveViewPref('novel-dots-view', {left:!!state.panelsVisible.left, right:!!state.panelsVisible.right,
+    timeline:!!state.panelsVisible.timeline, continuous:!!continuousView});
+}
+async function deleteProjectPrefs(pid){
+  for(const key of PROJECT_PREF_KEYS.concat(['__init'])){ try{ await dbStorage.delete(projectPrefKey(pid, key)); }catch(err){} }
+}
 
 /* =========================================================
    PROJECTS / PERSISTENCE (IndexedDB via dbStorage)
@@ -15718,6 +16333,7 @@ async function enterEditor(id, data){
   state.projectTitle=data.projectTitle || 'Untitled Screenplay';
   document.getElementById('projectTitle').textContent=state.projectTitle;
   initScreenplay(data.lines && data.lines.length ? data.lines : [{type:'scene_heading', text:''}]);
+  if(state.trackChanges && Array.isArray(state.trackChanges.baseline)) state.trackChanges.baseline=capsNormalizeLines(state.trackChanges.baseline);
   notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
   state.notes=migrateNotes(data.notes); state.shots=data.shots||[]; state.drawings=migrateDrawings(data.drawings||[]); state.images=data.images||[];
   state.activeShotId=null;
@@ -15740,6 +16356,7 @@ async function enterEditor(id, data){
   applyPageLockState();
   applyBreakdownState();
   reconcileTitleOnOpen();
+  const viewState=await applyProjectPrefs(id); // this project's own settings
   showEditorView();
   scheduleDualButtonState();
   fitInitialView();
@@ -15751,6 +16368,8 @@ async function enterEditor(id, data){
   renderSidebar('left'); renderSidebar('right'); renderTimeline();
   undoStack=[snapshotState()]; redoStack=[];
   updateUndoButtons();
+  if(viewState && viewState.continuous) setContinuousView(true);
+  refreshFoldToggle();
 }
 async function createBlankProject(){
   return createProjectFromTemplate('blank');
@@ -15875,7 +16494,9 @@ async function goHome(){
   }
   // Home's default is the start zone, never the project you just left.
   landingSelectedId=null;
+  if(typeof _compareActive!=='undefined' && _compareActive) endCompareMode();
   state.projectId=null;
+  loadThemePref(); // My Projects wears the app-wide appearance, not the last project's
   showLandingView();
   renderProjectsList();
 }
@@ -15984,6 +16605,22 @@ function projectRow(p, listEl){
   row.addEventListener('dblclick', ()=>openProject(p.id));
   return row;
 }
+/* Return opens the project selected in My Projects -- the keyboard's
+   double-click. Not while typing in a field or with a dialog open, and a
+   focused button keeps its own Return. */
+let _landingOpening=false;
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter' || e.repeat || e.isComposing || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+  if(state.projectId || !landingSelectedId || _landingOpening) return;
+  const page=document.getElementById('landingPage');
+  if(!page || page.classList.contains('hidden')) return;
+  if(modalRoot && !modalRoot.classList.contains('hidden')) return;
+  const ae=document.activeElement;
+  if(ae && (ae.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(ae.tagName))) return;
+  e.preventDefault();
+  _landingOpening=true;
+  Promise.resolve(openProject(landingSelectedId)).finally(()=>{ _landingOpening=false; });
+});
 /* ---- the New options: choose, never create ---- */
 function setLandingTemplate(key){
   landingTemplateKey=key;
@@ -16029,6 +16666,7 @@ function renderLandingCenter(){
     persistProjectsIndex();
     deleteProjectData(entry.id).catch(()=>{});
     deleteAllMilestones(entry.id).catch(()=>{});
+    deleteProjectPrefs(entry.id).catch(()=>{});
     landingSelectedId=null;
     renderProjectsList();
   });
@@ -16224,37 +16862,33 @@ function toggleSettingsPopover(anchorEl){
   const existing=document.getElementById('settingsPopover');
   if(existing){ existing.remove(); return; }
   const pop=document.createElement('div'); pop.id='settingsPopover'; pop.className='settings-popover';
-  const ap=(v,label)=>'<label data-value="'+v+'" class="'+(currentAppearance===v?'on':'')+'"><input type="radio" name="appearanceopt" value="'+v+'"'+(currentAppearance===v?' checked':'')+'>'+label+'</label>';
+  // One choice for how the app looks: the grey or beige desk in light, or
+  // dark. (A stored "system" shows as whichever it currently resolves to.)
+  const look=appearanceIsDark() ? 'dark' : (currentTheme==='beige' ? 'beige' : 'gray');
+  const lk=(v, label)=>'<label class="theme-option"><input type="radio" name="lookopt" value="'+v+'"'+(look===v?' checked':'')+'><span class="theme-swatch '+v+'"></span>'+label+'</label>';
   pop.innerHTML=
     '<div class="filter-title">Appearance</div>'+
-    '<div class="appearance-row" role="radiogroup" aria-label="Appearance">'+ap('light','Light')+ap('dark','Dark')+ap('system','System')+'</div>'+
-    '<div class="settings-divider"></div>'+
-    '<div class="filter-title">Background</div>'+
-    '<label class="theme-option"><input type="radio" name="themeopt" value="gray"'+(currentTheme==='gray'?' checked':'')+'><span class="theme-swatch gray"></span>Bright Gray</label>'+
-    '<label class="theme-option"><input type="radio" name="themeopt" value="beige"'+(currentTheme==='beige'?' checked':'')+'><span class="theme-swatch beige"></span>Beige</label>'+
+    lk('gray', 'Gray')+lk('beige', 'Beige')+lk('dark', 'Dark')+
     '<div class="settings-divider"></div>'+
     '<div class="filter-title">Writing</div>'+
     '<label class="theme-option"><input type="checkbox" id="optSpellcheck"'+(spellcheckOn?' checked':'')+'>Spell check</label>'+
     '<div class="settings-note">Scene headings, character cues and transitions are skipped \u2014 they are not prose.</div>'+
     '<label class="theme-option"><input type="checkbox" id="optAutoGuess"'+(autoGuessOn?' checked':'')+'>Auto-guess next character</label>'+
-    '<div class="settings-note">In an empty character cue, offers whoever is being answered. Return takes it; typing replaces it.</div>'+
-    '<div class="settings-divider"></div>'+
-    '<button type="button" class="settings-link-btn" id="btnOpenShortcuts">\u2328 Keyboard Shortcuts</button>';
+    '<div class="settings-note">In an empty character cue, offers whoever is being answered. Return takes it; typing replaces it.</div>';
   document.body.appendChild(pop);
   const r=anchorEl.getBoundingClientRect();
   pop.style.top=(r.bottom+8)+'px';
   pop.style.right=Math.max(10, window.innerWidth-r.right)+'px';
-  pop.querySelectorAll('input[name="themeopt"]').forEach(inp=>{
-    inp.addEventListener('change', ()=>setTheme(inp.value));
-  });
-  pop.querySelectorAll('input[name="appearanceopt"]').forEach(inp=>{
-    inp.addEventListener('change', ()=>setAppearance(inp.value));
+  pop.querySelectorAll('input[name="lookopt"]').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      if(inp.value==='dark') setAppearance('dark');
+      else { setTheme(inp.value); setAppearance('light'); }
+    });
   });
   const spellOpt=pop.querySelector('#optSpellcheck');
   if(spellOpt) spellOpt.addEventListener('change', ()=>setSpellcheck(spellOpt.checked));
   const guessOpt=pop.querySelector('#optAutoGuess');
   if(guessOpt) guessOpt.addEventListener('change', ()=>setAutoGuess(guessOpt.checked));
-  document.getElementById('btnOpenShortcuts').addEventListener('click', ()=>{ pop.remove(); openShortcutsModal(); });
   setTimeout(()=>{
     document.addEventListener('pointerdown', function closePop(e){
       if(!pop.contains(e.target) && e.target!==anchorEl && !anchorEl.contains(e.target)){
@@ -16263,42 +16897,99 @@ function toggleSettingsPopover(anchorEl){
     });
   },0);
 }
-/* Settings > Keyboard Shortcuts: a quick reference. Every shortcut a person
-   can reassign is read from COMMANDS -- the keys in force, custom ones
-   included -- so this list can't drift from the real bindings (the element
-   keys come from NUMBER_TYPE_MAP / SHIFT_NUMBER_TYPE_MAP through there).
-   The other rows are the fixed keys the editor handles itself. Customize...
-   opens the full shortcut editor (Tools > Keyboard Shortcuts). */
+/* Settings > Keyboard Shortcuts: every key Novel Dots answers to.
+   - Reassignable keys are read from COMMANDS -- the keys in force, custom
+     ones included -- so this list can't drift from the real bindings (the
+     element keys come from NUMBER_TYPE_MAP / SHIFT_NUMBER_TYPE_MAP through
+     there). A command with no key, default or custom, is left out; one the
+     writer has given a key appears in its group.
+   - The other rows are the fixed keys the editor handles itself (All Caps,
+     Find, the sidebars ...), the keys that work inside SmartType, Find,
+     the Navigator and dialogs, the mouse-wheel gestures, and this
+     project's own macro keys.
+   When a keydown handler gains a fixed key, add its row here.
+   Customize... opens the full shortcut editor (Tools > Keyboard Shortcuts). */
 function commandKeysText(id){
   const c=COMMANDS.find(x=>x.id===id); if(!c) return '';
   const keys=customShortcuts[c.id] ? customShortcuts[c.id] : c.keys;
   return keys.length ? keys.map(comboLabel).join(', ') : '\u2014';
 }
+function commandHasKeys(c){ return (customShortcuts[c.id] ? customShortcuts[c.id] : c.keys).length>0; }
 function shortcutGroups(){
-  const cmd=ids=>ids.map(id=>{ const c=COMMANDS.find(x=>x.id===id); return c ? [c.label, commandKeysText(id)] : null; }).filter(Boolean);
-  return [
-    {title:'Element Types', rows:COMMANDS.filter(c=>c.group==='Elements').map(c=>[c.label, commandKeysText(c.id)])},
+  const K=combo=>comboLabel(combo);                       // 'Mod+K' -> Ctrl+K / ⌘K
+  const cmdRow=c=>[c.label, commandKeysText(c.id)];
+  const cmd=ids=>ids.map(id=>COMMANDS.find(x=>x.id===id)).filter(Boolean).map(cmdRow);
+  // Every command in a group that has a key, except the ones already placed.
+  const placed=new Set(['edit:undo','edit:redo','edit:dual','edit:altadd','edit:altremove',
+    'fmt:bold','fmt:italic','fmt:underline','fmt:strike','file:print','file:pdf','tools:savemilestone']);
+  const keyed=group=>COMMANDS.filter(c=>c.group===group && !placed.has(c.id) && commandHasKeys(c)).map(cmdRow);
+  const ctrlAlt=IS_MAC ? '\u2303\u2325' : 'Ctrl+Alt+';
+  const hWheel=IS_MAC ? 'Shift or Option + wheel' : 'Shift or Alt + wheel';
+  const macroRows=(state.macros||[]).filter(m=>m.key).map(m=>[m.name||m.alias||'Macro', macroKeyLabel(m.key)]);
+  const groups=[
+    {title:'Element Types', rows:COMMANDS.filter(c=>c.group==='Elements').map(cmdRow)},
     {title:'Writing', rows:[
-      ['Context-aware jump / cycle type', 'Tab'], ['Cycle type backward', 'Shift+Tab'], ['Smart new line', 'Enter']
-    ].concat(cmd(['fmt:bold','fmt:italic','fmt:underline','fmt:strike','edit:dual']))},
-    {title:'Notes & Shots', rows:[
-      ['New Dot Note on selection', shortcutLabel('N')], ['New Sticky Note on selection', shiftShortcutLabel('N')],
-      ['Right-click / long-press', 'Add note or shot menu'],
-      ['Toggle Note Selection', shortcutLabel('J')], ['Finish Note Selection', 'Enter']
+      ['Smart new line (next element)', 'Enter'],
+      ['Context-aware jump / cycle element', 'Tab'],
+      ['Cycle element backward', 'Shift+Tab'],
+      ['SmartType: choose a suggestion', '\u2191 / \u2193'],
+      ['SmartType: accept', 'Tab, Enter, \u2192 or End'],
+      ['SmartType: dismiss', 'Escape'],
+      ['Select Current Scene', K('Mod+Shift+A')]
     ]},
+    {title:'Format', rows:cmd(['fmt:bold','fmt:italic','fmt:underline','fmt:strike']).concat([
+      ['All Caps (selected text)', K('Mod+K')]
+    ]).concat(keyed('Format'))},
+    {title:'Dialogue', rows:cmd(['edit:dual','edit:altadd','edit:altremove']).concat([
+      ['Add / Remove Alt Dialogue (also)', ctrlAlt+'L / '+ctrlAlt+(IS_MAC?'\u21E7':'Shift+')+'L']
+    ])},
     {title:'Editing', rows:cmd(['edit:undo','edit:redo']).concat([
-      ['Find', shortcutLabel('F')], ['Replace', shortcutLabel('H')], ['Manual save', shortcutLabel('S')]
-    ]).concat(cmd(['file:print','file:pdf']))},
-    {title:'Layout', rows:[
-      ['Toggle left sidebar', shortcutLabel('[')], ['Toggle right sidebar', shortcutLabel(']')],
-      ['Save Milestone', shortcutLabel('.')]
+      ['Find', K('Mod+F')],
+      ['Replace', IS_MAC ? K('Mod+Shift+H') : K('Mod+H')],
+      ['Find next / previous (in the Find box)', 'Enter / Shift+Enter'],
+      ['Close Find or Replace', 'Escape']
+    ]).concat(keyed('Edit'))},
+    {title:'File', rows:[
+      ['Save', K('Mod+S')]
+    ].concat(cmd(['file:print','file:pdf','tools:savemilestone'])).concat(keyed('File'))},
+    {title:'Notes & Drawing', rows:[
+      ['New Dot Note on selection', K('Mod+N')],
+      ['New Sticky Note on selection', K('Mod+Shift+N')],
+      ['Toggle Note Selection', K('Mod+J')],
+      ['Finish Note Selection', 'Enter'],
+      ['Delete the selected drawing (Select tool)', 'Delete / Backspace'],
+      ['Drawing thickness (slider focused)', 'Arrow keys'],
+      ['Right-click / long-press', 'Add note, shot or drawing menu']
     ]},
+    {title:'Tools', rows:[
+      ['Speech to Script (dictation)', IS_MAC ? '\u2303 twice' : 'Ctrl twice']
+    ].concat(keyed('Tools')).concat(keyed('Production'))},
+    {title:'View & Layout', rows:[
+      ['Toggle left sidebar', K('Mod+[')],
+      ['Toggle right sidebar', K('Mod+]')]
+    ].concat(keyed('View'))},
     {title:'Canvas', rows:[
-      ['Pan', 'Mouse wheel'], ['Pan horizontally', (IS_MAC?'Option':'Shift')+' + wheel'],
-      ['Zoom (centered on cursor)', shortcutLabel('wheel')],
-      ['Close menu / clear shot focus / exit Pen, Eraser or Select tool', 'Escape']
+      ['Pan', 'Mouse wheel / trackpad'],
+      ['Pan horizontally', hWheel],
+      ['Zoom (centred on the pointer)', (IS_MAC ? '\u2318' : 'Ctrl')+' + wheel, or pinch'],
+      ['Close menu / clear shot focus / leave Pen, Eraser or Select / cancel a connection', 'Escape']
+    ]},
+    {title:'Navigator', rows:[
+      ['Save a field', 'Enter'],
+      ['New line in a long field', 'Shift+Enter'],
+      ['Put the old value back', 'Escape']
+    ]},
+    {title:'Index Cards', rows:[
+      ['Finish a card title', 'Enter or Escape'],
+      ['Finish a card summary', K('Mod+Enter')+' or Escape']
+    ]},
+    {title:'Dialogs', rows:[
+      ['Confirm', 'Enter'],
+      ['Cancel / close', 'Escape']
     ]}
   ];
+  if(macroRows.length) groups.splice(groups.length-2, 0, {title:'Macros (this project)', rows:macroRows});
+  return groups.filter(g=>g.rows.length);
 }
 function openShortcutsModal(){
   const groupsHtml=shortcutGroups().map(g=>
@@ -16400,7 +17091,7 @@ function selectOutputPages(pages, opts){
 }
 // Remembered for the session, the way a print dialog remembers its last
 // settings -- never stored with the script.
-let _lastOutputOptions={range:'all', custom:'', includeTitle:true, revisionId:null};
+let _lastOutputOptions={range:'all', custom:'', includeTitle:true, includeNotes:true, revisionId:null};
 function outputOptionsModal(kind){
   return new Promise(resolve=>{
     const hasTitle=!!content.querySelector('.line-block[data-force-break="1"]');
@@ -16431,6 +17122,7 @@ function outputOptionsModal(kind){
         '<div class="oo-group"><div class="oo-label">Include</div>'+
           '<label class="oo-row'+(hasTitle?'':' disabled')+'"><input type="checkbox" id="ooTitle"'+(hasTitle && o.includeTitle?' checked':'')+(hasTitle?'':' disabled')+'><span>Title page</span>'+
           (hasTitle ? '' : ' <span class="oo-dim">(this script has none)</span>')+'</label>'+
+          (kind==='pdf' ? '<label class="oo-row"><input type="checkbox" id="ooNotes"'+(o.includeNotes!==false?' checked':'')+'><span>Notes, as comments in the margins</span></label>' : '')+
         '</div>'+
         watermarkOptionsHtml(o)+
         '<p class="oo-note">Pages keep the numbers they carry in the full script, so a partial '+(kind==='pdf'?'PDF':'printout')+' of 12A is the 12A on screen.</p>'+
@@ -16452,12 +17144,14 @@ function outputOptionsModal(kind){
         range: checked ? checked.value : 'all',
         custom: custom.value.trim(),
         includeTitle: !!(document.getElementById('ooTitle')||{}).checked,
+        includeNotes: kind==='pdf' ? !!(document.getElementById('ooNotes')||{}).checked : false,
         revisionId: revSel ? Number(revSel.value) : null,
         currentKey: curKey,
         watermark: readWatermarkOptions()
       };
       if(res.range==='custom' && !res.custom){ custom.focus(); showToast('Type the pages to include, e.g. 1-5, 12A'); return; }
-      _lastOutputOptions={range:res.range, custom:res.custom, includeTitle:hasTitle ? res.includeTitle : _lastOutputOptions.includeTitle, revisionId:res.revisionId, watermark:res.watermark};
+      _lastOutputOptions={range:res.range, custom:res.custom, includeTitle:hasTitle ? res.includeTitle : _lastOutputOptions.includeTitle,
+        includeNotes:kind==='pdf' ? res.includeNotes : _lastOutputOptions.includeNotes, revisionId:res.revisionId, watermark:res.watermark};
       done(res);
     }
     document.getElementById('ooOk').addEventListener('click', ok);
@@ -16531,7 +17225,6 @@ document.getElementById('leftEdgeTab').addEventListener('click', ()=>setPanel('l
 document.getElementById('rightEdgeTab').addEventListener('click', ()=>setPanel('right', true));
 document.getElementById('btnToggleTimeline').addEventListener('click', ()=>setPanel('timeline', !state.panelsVisible.timeline));
 document.getElementById('btnContinuousView').addEventListener('click', ()=>setContinuousView(!continuousView));
-document.getElementById('btnDarkMode').addEventListener('click', toggleDarkMode);
 document.getElementById('btnRulerH').addEventListener('click', ()=>setRuler('h', !rulerPrefs.h));
 document.getElementById('btnRulerV').addEventListener('click', ()=>setRuler('v', !rulerPrefs.v));
 // The canvas changes size when a sidebar opens or the window resizes, and
@@ -16542,25 +17235,40 @@ document.getElementById('btnUndo').addEventListener('click', undo);
 document.getElementById('btnRedo').addEventListener('click', redo);
 document.getElementById('btnFind').addEventListener('click', openFindPopover);
 document.getElementById('btnFileMenu').addEventListener('click', e=>showFileMenu(e.currentTarget));
-document.getElementById('btnAddMilestone').addEventListener('click', saveMilestonePrompt);
 document.getElementById('btnHome').addEventListener('click', goHome);
 document.getElementById('btnRecenter').addEventListener('click', imLost);
 document.getElementById('btnFixCenter').addEventListener('click', ()=>setFixCenter(!fixCenterOn));
 document.getElementById('btnMinimap').addEventListener('click', ()=>setMinimap(!minimapOn));
-document.getElementById('btnFoldAll').addEventListener('click', function(){
-  // Batched (see setFoldedBatch's comment) -- Fold All had the same latent
-  // bug as items 5/6: folding many notes via a per-note setFoldedAnimated
-  // loop meant each note's own connector rebuild wiped the previous note's
-  // just-started fold animation, so only the last note actually animated.
+/* One button for folding: while any note stands open it folds them all,
+   otherwise it opens them all. Its caption says which it will do. */
+function anyNoteUnfolded(){ return state.notes.some(n=>n.kind==='dot' && !n.folded); }
+const FOLD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h16M4 20.5h16"/><path d="M12 6.5v4.5M9.5 8.8L12 11.2l2.5-2.4"/><path d="M12 17.5V13M9.5 15.2L12 12.8l2.5 2.4"/></svg>';
+const UNFOLD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M12 9.5V3.5M9.5 6L12 3.5 14.5 6"/><path d="M12 14.5v6M9.5 18l2.5 2.5 2.5-2.5"/></svg>';
+/* fold=true: the button will fold (two lines, arrows closing in);
+   fold=false: it will unfold (one line, arrows opening out). */
+function setFoldToggleLook(fold){
+  const btn=document.getElementById('btnFoldToggle'); if(!btn) return;
+  btn.title=fold ? 'Fold All Notes' : 'Unfold All Notes';
+  const svg=btn.querySelector('svg'), look=fold ? 'fold' : 'unfold';
+  if(svg && btn.dataset.look!==look){ svg.outerHTML=fold ? FOLD_ICON : UNFOLD_ICON; btn.dataset.look=look; }
+  const cap=btn.querySelector('.tb-label'); if(cap) cap.textContent=fold ? 'Fold' : 'Unfold';
+}
+function refreshFoldToggle(){
+  setFoldToggleLook(anyNoteUnfolded() || !state.notes.some(n=>n.kind==='dot'));
+}
+document.getElementById('btnFoldToggle').addEventListener('click', function(){
+  // Batched (see setFoldedBatch): a per-note loop let each connector rebuild
+  // wipe the previous note's fold animation.
+  const fold=anyNoteUnfolded();
   const changes=[];
-  state.notes.forEach(n=>{ if(n.kind==='dot' && !n.folded) changes.push({id:n.id, folded:true}); });
+  state.notes.forEach(n=>{ if(n.kind==='dot' && !!n.folded!==fold) changes.push({id:n.id, folded:fold}); });
   setFoldedBatch(changes);
+  // The notes fold with an animation and only count as folded at its end,
+  // so the caption is set from what was just asked for, then re-read.
+  setFoldToggleLook(!fold);
+  setTimeout(refreshFoldToggle, 700);
 });
-document.getElementById('btnUnfoldAll').addEventListener('click', function(){
-  const changes=[];
-  state.notes.forEach(n=>{ if(n.kind==='dot' && n.folded) changes.push({id:n.id, folded:false}); });
-  setFoldedBatch(changes);
-});
+document.getElementById('btnFoldToggle').addEventListener('mouseenter', refreshFoldToggle);
 document.getElementById('btnHideAll').addEventListener('click', function(){ setHideAll(!allHidden); });
 document.getElementById('btnReadOnly').addEventListener('click', function(){ setReadOnly(!readOnlyMode); });
 document.getElementById('btnNoteSelect').addEventListener('click', function(){ setNoteSelectMode(!noteSelectMode); });
@@ -16762,7 +17470,7 @@ function keyboardLockSupported(){
   return !!(navigator.keyboard && typeof navigator.keyboard.lock==='function');
 }
 async function engageKeyboardLock(){
-  if(!keyboardLockSupported() || !document.fullscreenElement) return false;
+  if(!keyboardLockSupported() || !fsElement()) return false;
   try{ await navigator.keyboard.lock(FOCUS_MODE_LOCK_KEYS); return true; }
   catch(err){ return false; } // insecure origin, unsupported key, or user agent refusal
 }
@@ -16772,33 +17480,60 @@ function releaseKeyboardLock(){
 function updateFocusModeButton(){
   const btn=document.getElementById('btnFocusMode');
   if(!btn) return;
-  const on=!!document.fullscreenElement;
+  const on=!!focusModeOn;
   btn.classList.toggle('active', on);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   btn.title = on
     ? 'Exit Focus Mode'
     : (keyboardLockSupported()
         ? 'Focus Mode — fullscreen, and ' + MOD_KEY + '1-9 stops switching browser tabs'
         : 'Focus Mode (fullscreen). This browser reserves ' + MOD_KEY + '1-9 — use ' + (IS_MAC?'⌥':'Alt+') + '1-9 instead.');
 }
-async function toggleFocusMode(){
-  if(document.fullscreenElement){
+/* Focus Mode is a switch with its own state. It asks for fullscreen when
+   the browser allows it (with the prefixed WebKit calls for Safari, whose
+   unprefixed fullscreenElement is missing on older versions -- there the
+   button could only ever turn it ON). Where fullscreen is refused (an
+   embedded preview, a locked-down browser) Focus Mode still happens inside
+   the window: the sidebars step aside until it is turned off. Leaving
+   fullscreen with Esc turns Focus Mode off too. */
+let focusModeOn=false, _focusRestore=null;
+function fsElement(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+async function setFocusMode(on){
+  if(on===focusModeOn) return;
+  focusModeOn=on;
+  if(on){
+    _focusRestore={left:!!state.panelsVisible.left, right:!!state.panelsVisible.right};
+    _viewStateLoading=true; // a view change, not the project's layout
+    try{ setPanel('left', false); setPanel('right', false); } finally{ _viewStateLoading=false; }
+    document.body.classList.add('focus-mode');
+    const root=document.documentElement;
+    const request=root.requestFullscreen || root.webkitRequestFullscreen;
+    let full=false;
+    if(request && !fsElement()){ try{ await request.call(root); full=!!fsElement(); }catch(err){} }
+    const locked=full ? await engageKeyboardLock() : false;
+    showToast(!full ? 'Focus Mode on (in the window) \u2014 press Focus again to leave'
+      : locked ? 'Focus Mode on \u2014 ' + MOD_KEY + '1-9 now sets element types'
+      : 'Focus Mode on \u2014 this browser keeps ' + MOD_KEY + '1-9, use ' + (IS_MAC?'\u2325':'Alt+') + '1-9');
+  } else {
     releaseKeyboardLock();
-    try{ await document.exitFullscreen(); }catch(err){}
-    return;
+    if(fsElement()){ const exit=document.exitFullscreen || document.webkitExitFullscreen; try{ await exit.call(document); }catch(err){} }
+    document.body.classList.remove('focus-mode');
+    const r=_focusRestore||{left:true, right:true}; _focusRestore=null;
+    _viewStateLoading=true;
+    try{ setPanel('left', r.left); setPanel('right', r.right); } finally{ _viewStateLoading=false; }
   }
-  const root=document.documentElement;
-  const request=root.requestFullscreen||root.webkitRequestFullscreen;
-  if(!request){ showToast('Fullscreen is not available in this browser'); return; }
-  try{ await request.call(root); }catch(err){ showToast('Fullscreen was blocked'); return; }
-  const locked=await engageKeyboardLock();
-  showToast(locked
-    ? 'Focus Mode on — ' + MOD_KEY + '1-9 now sets element types'
-    : 'Focus Mode on — this browser keeps ' + MOD_KEY + '1-9, use ' + (IS_MAC?'⌥':'Alt+') + '1-9');
-}
-document.addEventListener('fullscreenchange', function(){
-  if(!document.fullscreenElement) releaseKeyboardLock();
   updateFocusModeButton();
-});
+}
+function toggleFocusMode(){ return setFocusMode(!focusModeOn); }
+let _wasFullscreen=false;
+function onFullscreenChange(){
+  const full=!!fsElement();
+  if(!full){ releaseKeyboardLock(); if(_wasFullscreen && focusModeOn) setFocusMode(false); }
+  _wasFullscreen=full;
+  updateFocusModeButton();
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 document.getElementById('btnFocusMode').addEventListener('click', toggleFocusMode);
 /* Final Draft puts all of this behind Production > Scene Numbers; the same
    choices, in a popover off the toolbar button. */
@@ -17108,7 +17843,7 @@ applyBreakdownState();
    captions keep every button identifiable at a glance within its panel.
    ========================================================= */
 const TOPBAR_LABELS={
-  btnHome:'Projects', btnFileMenu:'File', btnAddMilestone:'Milestone',
+  btnHome:'Projects', btnFileMenu:'File',
   elementTypeBtn:'Element',
   btnBold:'Bold', btnItalic:'Italic', btnUnderline:'Underline', btnStrike:'Strike',
   btnAlignLeft:'Left', btnAlignCenter:'Center', btnAlignRight:'Right',
@@ -17116,10 +17851,10 @@ const TOPBAR_LABELS={
   btnPageLock:'Lock Pages', btnReports:'Reports', btnTag:'Tag',
   btnParagraph:'Page',
   btnFixCenter:'Fix Center', btnMinimap:'Minimap',
-  btnFoldAll:'Fold', btnUnfoldAll:'Unfold', btnHideAll:'Hide All',
+  btnFoldToggle:'Fold', btnHideAll:'Hide All', btnShortcuts:'Shortcuts',
   btnReadOnly:'Read-Only', btnNoteSelect:'Multi-Select',
   btnUndo:'Undo', btnRedo:'Redo', btnFind:'Find', btnFormatAssistant:'Check', btnShowAlts:'Alts', btnNamesDb:'Names', btnMacros:'Macros', btnDictate:'Dictate', btnSpeech:'Read', btnVoices:'Voices', btnElements:'Elements', btnDocSetup:'Setup', btnShortcuts:'Shortcuts',
-  btnContinuousView:'Continuous', btnFocusMode:'Focus', btnToggleTimeline:'Timeline', btnDarkMode:'Dark',
+  btnContinuousView:'Continuous', btnFocusMode:'Focus', btnToggleTimeline:'Timeline',
   btnRulerH:'H. Ruler', btnRulerV:'V. Ruler',
   btnTypewriter:'Typewriter', btnOmit:'Omit', btnStats:'Goals', btnSprint:'Sprint', btnTrackChanges:'Track', btnChanges:'Changes', btnCompare:'Compare', btnMilestones:'Milestones', btnCharHighlight:'Highlight', btnStructure:'Structure', btnSplitCards:'Cards', btnNavigator:'Navigator',
   btnSettings:'Preferences', btnRecenter:"I'm lost", btnElements:'Elements', btnDocSetup:'Setup'
@@ -17232,6 +17967,9 @@ document.addEventListener('keydown', function(e){
   else if(mod && e.shiftKey && !e.altKey && e.code==='KeyP' && state.projectId){ e.preventDefault(); openOutputDialog('pdf'); }
   else if(mod && e.key==='['){ e.preventDefault(); setPanel('left', !state.panelsVisible.left); }
   else if(mod && e.key===']'){ e.preventDefault(); setPanel('right', !state.panelsVisible.right); }
+  // Save Milestone's default key. COMMANDS lists it (tools:savemilestone),
+  // so the shortcut list and the editor show it; once it is reassigned the
+  // capture-phase handler there swallows Mod+. before it gets here.
   else if(mod && e.key==='.'){ e.preventDefault(); saveMilestonePrompt(); }
   // Ctrl/Cmd+J toggles Note Selection. Note: in Chrome (and some other
   // browsers) this combination is also the reserved shortcut for the
@@ -17480,6 +18218,7 @@ function applyDocFormat(repaginate){
   if(!style){ style=document.createElement('style'); style.id='docFormatCss'; document.head.appendChild(style); }
   style.textContent=css;
   document.documentElement.style.setProperty('--mono', scriptFontDef().stack);
+  if(state.projectId && applyShownCaseAll()){ scheduleSnapshot(); scheduleAutosave(); }
   if(repaginate){
     // A change of paper, spacing or indents moves every break: lay the pages
     // out now, then once more after the browser has settled the new sizes
@@ -17676,7 +18415,7 @@ function addCommand(id, label, group, keys, run){ COMMANDS.push({id, label, grou
   addCommand('format:elements','Elements\u2026','Format',[],()=>openElementsDialog());
   addCommand('format:setup','Document Setup\u2026','Format',[],()=>openDocumentSetup());
   addCommand('tools:milestones','Milestones\u2026','Tools',[],()=>openMilestones());
-  addCommand('tools:savemilestone','Save Milestone\u2026','Tools',[],()=>saveMilestonePrompt());
+  addCommand('tools:savemilestone','Save Milestone\u2026','Tools',['Mod+.'],()=>saveMilestonePrompt());
   addCommand('tools:compare','Compare Scripts\u2026','Tools',[],()=>openCompareDialog());
   addCommand('production:omit','Omit / Restore Scene','Production',[],()=>toggleOmitCurrentScene());
   addCommand('tools:stats','Goals and Statistics\u2026','Tools',[],()=>openStatsDialog());
@@ -17723,7 +18462,12 @@ function openShortcutsDialog(){
         '<button type="button" class="sc-clear" data-clear="'+c.id+'" title="No shortcut">\u2715</button>'+
         '<button type="button" class="sc-reset" data-reset="'+c.id+'"'+(work[c.id]?'':' disabled')+' title="Back to the default">\u21BA</button></div>';
     }).join('');
-    modalRoot.innerHTML='<div class="modal-box nd-shortcuts"><div class="modal-title">Keyboard Shortcuts</div><div class="sc-list">'+rows+'</div>'+
+    // The keys the editor handles itself can't be reassigned, but they are
+    // shortcuts too: listed after the editable ones, read-only.
+    const fixed=shortcutGroups().map(g=>({title:g.title, rows:g.rows.filter(r=>!COMMANDS.some(c=>c.label===r[0]))})).filter(g=>g.rows.length);
+    const fixedHtml='<div class="sc-group sc-fixed-head">Built-in keys (can\u2019t be changed)</div>'+fixed.map(g=>
+      '<div class="sc-group sc-sub">'+escapeHtml(g.title)+'</div>'+g.rows.map(r=>'<div class="sc-row sc-fixed"><span class="sc-name">'+escapeHtml(r[0])+'</span><span class="sc-keys sc-keys-fixed">'+escapeHtml(r[1])+'</span></div>').join('')).join('');
+    modalRoot.innerHTML='<div class="modal-box nd-shortcuts"><div class="modal-title">Keyboard Shortcuts</div><div class="sc-list">'+rows+fixedHtml+'</div>'+
       '<div class="el-note">Click a shortcut, then press the new keys. Keys the browser keeps for itself (such as '+(IS_MAC?'\u2318T or \u2318W':'Ctrl+T or Ctrl+W')+') can\u2019t be used.</div>'+
       '<div class="modal-actions"><button type="button" class="modal-btn" id="scResetAll">Reset All</button><span class="mc-spacer"></span><button type="button" class="modal-btn" id="scCancel">Cancel</button><button type="button" class="modal-btn primary" id="scOk">OK</button></div></div>';
     modalRoot.classList.remove('hidden');
@@ -19783,6 +20527,7 @@ function compareBody(lines){
   return (t>=0 ? lines.slice(t+1) : lines).filter(l=>String(l.text||'').trim());
 }
 function compareScripts(aLines, bLines){
+  aLines=capsNormalizeLines(aLines); bLines=capsNormalizeLines(bLines);
   const A=compareBody(aLines), B=compareBody(bLines);
   const norm=l=>l.type+'\u0001'+String(l.text||'').replace(/\s+/g,' ').trim().toUpperCase();
   const ops=myersDiff(A.map(norm), B.map(norm));
@@ -19837,10 +20582,8 @@ async function openCompareDialog(preset){
   const fileInput=document.getElementById('cmpFile');
   const dirSel=document.getElementById('cmpDir');
   const run=async (otherLines, otherLabel)=>{
-    const mine=serializeLines();
-    const older=dirSel.value==='old';
-    const res=older ? compareScripts(otherLines, mine) : compareScripts(mine, otherLines);
-    showCompareResult(res, older ? otherLabel : 'This script', older ? 'This script' : otherLabel, older);
+    closeModal();
+    startCompareMode(otherLines, otherLabel, dirSel.value==='old');
   };
   fileInput.addEventListener('change', async ()=>{
     const f=fileInput.files && fileInput.files[0]; if(!f) return;
@@ -19863,48 +20606,237 @@ async function openCompareDialog(preset){
     await run(lines, label);
   });
 }
-function showCompareResult(res, labelA, labelB, currentIsB){
-  const s=res.stats;
-  let filter='all';
-  const kinds={insert:'Added', delete:'Removed', modify:'Edited'};
-  const draw=()=>{
-    const list=res.changes.filter(c=>filter==='all' || c.kind===filter);
-    document.getElementById('cmpList').innerHTML=list.length ? list.map((c, i)=>{
-      const line=currentIsB ? c.b : c.a;
-      const canGo=!!(line && line.id && lineBlockById(line.id));
-      return '<div class="cmp-item"><div class="cmp-meta"><span class="tc-kind" style="background:'+TC_COLORS[c.kind==='delete'?'delete':c.kind]+'">'+kinds[c.kind]+'</span>'+
-        '<span>'+escapeHtml(typeLabelShort((c.b||c.a).type))+'</span><span class="cmp-scene">'+escapeHtml(c.scene||'')+'</span>'+
-        (canGo ? '<button type="button" class="tc-btn" data-go="'+escapeHtml(line.id)+'" title="Go to it in the script">Go to</button>' : '')+'</div>'+
-        '<div class="cmp-text">'+compareChangeHtml(c)+'</div></div>';
-    }).join('') : '<div class="nav-empty">'+(res.changes.length ? 'Nothing of that kind.' : 'The two scripts say the same thing.')+'</div>';
+/* =========================================================
+   COMPARE WORKSPACE
+   Comparing opens a working layout rather than a dialog:
+   - every sidebar closes (the split pane and the Navigator too), and the
+     canvas is shared: THIS script on the left, live and editable as
+     always, the OTHER script on the right as formatted pages, its
+     removed / added / edited paragraphs tinted;
+   - the list of differences is a floating panel, tall and narrow, in the
+     middle: drag it by its title bar, resize it from its bottom-right
+     corner. It is not modal -- both scripts stay clickable and the left
+     one editable underneath it;
+   - clicking a difference (in the list, or a tinted paragraph on the
+     right) brings both sides to it; Refresh re-compares after edits;
+   - Close restores the sidebars exactly as they were. None of this is
+     saved as the project's layout.
+   The other script is a milestone, another project or a file, so it is
+   shown, not edited: its own project is where it is written.
+   ========================================================= */
+let _compareActive=false, _compareRestore=null, _compareCtx=null;
+function compareLinesTagged(lines){ return (lines||[]).map((l, i)=>Object.assign({}, l, {__cmpIdx:i})); }
+function startCompareMode(otherLines, otherLabel, otherIsOlder){
+  if(!state.projectId) return;
+  if(_compareActive) endCompareMode(true);
+  _compareActive=true;
+  _compareRestore={left:!!state.panelsVisible.left, right:!!state.panelsVisible.right, split:!!splitPrefs.on, nav:!!navPrefs.open};
+  setPanel('left', false); setPanel('right', false);
+  if(splitPrefs.on){ splitPrefs.on=false; applySplitPane(); }
+  if(navPrefs.open){ navPrefs.open=false; placeNavigator(); }
+  _compareCtx={other:compareLinesTagged(otherLines), label:otherLabel, otherIsOlder:!!otherIsOlder, filter:'all', sel:-1};
+  let pane=document.getElementById('comparePane');
+  if(!pane){
+    pane=document.createElement('section'); pane.id='comparePane';
+    pane.innerHTML='<div class="cp-head"><span class="cp-title"></span></div><div class="cp-scroll"><div class="cp-page"></div></div>';
+    viewport.after(pane);
+  }
+  pane.querySelector('.cp-title').textContent=otherLabel;
+  pane.classList.remove('hidden');
+  buildComparePop();
+  runCompare();
+  compareFitLeft();
+  window.addEventListener('resize', compareOnResize);
+}
+function compareOnResize(){ if(_compareActive){ sizeComparePage(); } }
+if(window.ResizeObserver) new ResizeObserver(()=>{ if(_compareActive) sizeComparePage(); }).observe(document.getElementById('mainArea'));
+/* The canvas just lost half its width: fit the page to what is left,
+   keeping the line at the middle of the view where it was. The sidebars
+   close with an animation, so the width is only final once they have
+   finished: it is refitted on every size change for a moment, from the
+   zoom it started with (never ratcheting smaller). */
+let _compareFit=null;
+function compareFitLeft(){
+  const r0=viewport.getBoundingClientRect();
+  _compareFit={zoom, wy:(r0.height/2-pan.y)/zoom, until:Date.now()+900};
+  const fit=()=>{
+    if(!_compareFit) return;
+    const r=viewport.getBoundingClientRect();
+    if(r.width<60) return;
+    zoom=clamp(Math.min(_compareFit.zoom, (r.width-48)/PAGE_W), 0.2, 2.5);
+    pan.x=(r.width-PAGE_W*zoom)/2; pan.y=r.height/2-_compareFit.wy*zoom;
+    applyTransform(); sizeComparePage();
   };
-  modalRoot.innerHTML='<div class="modal-box va-wide"><div class="modal-title">Compare Scripts</div>'+
-    '<div class="cmp-head"><div><b>From</b> '+escapeHtml(labelA)+'<br><b>To</b> '+escapeHtml(labelB)+'</div>'+
-    '<div class="cmp-stats"><span class="c-ins">+'+s.added+' added</span><span class="c-del">\u2212'+s.removed+' removed</span><span class="c-mod">~'+s.edited+' edited</span>'+
-    '<span>'+s.paraA+' \u2192 '+s.paraB+' paragraphs</span><span>'+s.wordsA.toLocaleString()+' \u2192 '+s.wordsB.toLocaleString()+' words</span></div></div>'+
-    '<div class="split-seg cmp-filter" style="align-self:flex-start; margin:4px 0 8px"><button type="button" data-f="all" class="on">All '+res.changes.length+'</button><button type="button" data-f="insert">Added</button><button type="button" data-f="delete">Removed</button><button type="button" data-f="modify">Edited</button></div>'+
-    '<div class="cmp-list" id="cmpList"></div>'+
-    '<div class="modal-actions"><button class="modal-btn" id="cmpDl">Download Report</button><button class="modal-btn primary" id="cmpDone">Done</button></div></div>';
-  modalRoot.classList.remove('hidden');
-  draw();
-  modalRoot.querySelectorAll('.cmp-filter button').forEach(b=>b.addEventListener('click', ()=>{
-    filter=b.dataset.f; modalRoot.querySelectorAll('.cmp-filter button').forEach(x=>x.classList.toggle('on', x===b)); draw();
+  if(window.ResizeObserver){
+    const ro=new ResizeObserver(()=>{ if(!_compareFit || Date.now()>_compareFit.until){ ro.disconnect(); return; } fit(); });
+    ro.observe(viewport);
+    setTimeout(()=>{ ro.disconnect(); fit(); _compareFit=null; }, 950);
+  } else setTimeout(()=>{ fit(); _compareFit=null; }, 400);
+  requestAnimationFrame(fit);
+}
+function runCompare(){
+  const c=_compareCtx; if(!c) return;
+  document.querySelectorAll('#screenplayContent .line-block.cmp-focus').forEach(b=>b.classList.remove('cmp-focus'));
+  c.sel=-1;
+  const mine=serializeLines();
+  c.res=c.otherIsOlder ? compareScripts(c.other, mine) : compareScripts(mine, c.other);
+  c.labelA=c.otherIsOlder ? c.label : 'This script';
+  c.labelB=c.otherIsOlder ? 'This script' : c.label;
+  // Which paragraph of the OTHER script each difference touches.
+  c.otherMarks=new Map();
+  c.res.changes.forEach((ch, i)=>{
+    const l=c.otherIsOlder ? ch.a : ch.b;
+    if(l && l.__cmpIdx!=null) c.otherMarks.set(l.__cmpIdx, {kind:ch.kind, i});
+  });
+  renderComparePage(); renderComparePop();
+}
+function renderComparePage(){
+  const c=_compareCtx, page=document.querySelector('#comparePane .cp-page'); if(!c || !page) return;
+  const t=c.other.findIndex(l=>l.forceBreakAfter);
+  const body=t>=0 ? c.other.slice(t+1) : c.other;
+  const cls={insert:'cp-ins', delete:'cp-del', modify:'cp-mod'};
+  let first=true;
+  page.innerHTML=body.map(l=>{
+    const spec=docElementSpec(l.type||'action');
+    const left=(PDF_TEXT_ORIGIN_IN+spec.leftIn)*96, width=Math.max(48, (DOC_TEXT_W-spec.leftIn-spec.rightIn)*96);
+    const pad=first ? 0 : Math.max(0, spec.before)*16; first=false;
+    const m=c.otherMarks.get(l.__cmpIdx);
+    const align=l.align || spec.align;
+    const st='margin-left:'+left.toFixed(0)+'px; width:'+width.toFixed(0)+'px; padding-top:'+pad+'px; text-align:'+align+';'+
+      (spec.upper?' text-transform:uppercase;':'')+(spec.bold?' font-weight:700;':'')+(spec.italic?' font-style:italic;':'')+(spec.underline?' text-decoration:underline;':'');
+    const np=isNonPrintingType(l.type) ? ' cp-np' : '';
+    return '<div class="cp-line'+np+(m ? ' '+cls[m.kind] : '')+'"'+(m ? ' data-ch="'+m.i+'"' : '')+' data-oi="'+l.__cmpIdx+'" style="'+st+'">'+(escapeHtml(l.text||'')||'&nbsp;')+'</div>';
+  }).join('');
+  sizeComparePage();
+}
+function sizeComparePage(){
+  const pane=document.getElementById('comparePane'), page=pane && pane.querySelector('.cp-page'); if(!page) return;
+  const avail=pane.querySelector('.cp-scroll').clientWidth-32;
+  page.style.zoom=String(Math.max(0.25, Math.min(1, avail/PAGE_W)));
+}
+function buildComparePop(){
+  let pop=document.getElementById('comparePop');
+  if(pop) pop.remove();
+  pop=document.createElement('div'); pop.id='comparePop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Compare Scripts');
+  const w=Math.min(380, window.innerWidth-40), h=Math.min(Math.round(window.innerHeight*0.72), 720);
+  pop.style.width=w+'px'; pop.style.height=h+'px';
+  pop.style.left=Math.round((window.innerWidth-w)/2)+'px'; pop.style.top=Math.max(60, Math.round((window.innerHeight-h)/2))+'px';
+  pop.innerHTML='<div class="cpp-head" title="Drag to move"><span>Compare Scripts</span><button type="button" class="cpp-x" title="Close compare">\u2715</button></div>'+
+    '<div class="cpp-body"><div class="cpp-labels"></div><div class="cpp-stats"></div>'+
+    '<div class="split-seg cmp-filter"><button type="button" data-f="all" class="on">All</button><button type="button" data-f="insert">Added</button><button type="button" data-f="delete">Removed</button><button type="button" data-f="modify">Edited</button></div>'+
+    '<div class="cmp-list cpp-list"></div></div>'+
+    '<div class="cpp-foot"><button type="button" class="modal-btn" data-a="refresh" title="Compare again, with the edits made since">Refresh</button><button type="button" class="modal-btn" data-a="dl">Download Report</button><span class="mc-spacer"></span><button type="button" class="modal-btn primary" data-a="close">Close</button></div>'+
+    '<div class="cpp-resize" title="Drag to resize"></div>';
+  document.body.appendChild(pop);
+  pop.querySelector('.cpp-x').addEventListener('click', ()=>endCompareMode());
+  pop.querySelectorAll('.cmp-filter button').forEach(b=>b.addEventListener('click', ()=>{
+    _compareCtx.filter=b.dataset.f; pop.querySelectorAll('.cmp-filter button').forEach(x=>x.classList.toggle('on', x===b)); renderComparePop();
   }));
-  document.getElementById('cmpList').addEventListener('click', e=>{
-    const g=e.target.closest('[data-go]'); if(!g) return;
-    const el=lineBlockById(g.dataset.go); if(el){ closeModal(); goToSceneAndCaret(el); }
+  pop.querySelector('.cpp-foot').addEventListener('click', e=>{
+    const b=e.target.closest('[data-a]'); if(!b) return;
+    if(b.dataset.a==='close') endCompareMode();
+    else if(b.dataset.a==='refresh') runCompare();
+    else if(b.dataset.a==='dl') downloadCompareReport();
   });
-  document.getElementById('cmpDone').addEventListener('click', closeModal);
-  document.getElementById('cmpDl').addEventListener('click', ()=>{
-    const rows=res.changes.map(c=>'<div class="i"><div class="m"><b>'+kinds[c.kind]+'</b> \u00B7 '+escapeHtml(typeLabelShort((c.b||c.a).type))+' \u00B7 '+escapeHtml(c.scene||'')+'</div><div class="t">'+compareChangeHtml(c)+'</div></div>').join('');
-    const html='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Script Compare</title><style>'+
-      'body{font:14px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:860px;margin:32px auto;padding:0 16px;color:#222}'+
-      '.i{border-top:1px solid #ddd;padding:10px 0}.m{font-size:12px;color:#666}.t{font-family:"Courier New",Courier,monospace;white-space:pre-wrap}'+
-      'ins{background:#d8f3ea;text-decoration:none}del{background:#fbdada;color:#9a2b2b}</style></head><body>'+
-      '<h1>Script Compare</h1><p><b>From</b> '+escapeHtml(labelA)+'<br><b>To</b> '+escapeHtml(labelB)+'<br>'+new Date().toLocaleString()+'</p>'+
-      '<p>+'+s.added+' added \u00B7 \u2212'+s.removed+' removed \u00B7 ~'+s.edited+' edited \u00B7 '+s.wordsA+' \u2192 '+s.wordsB+' words</p>'+rows+'</body></html>';
-    downloadBlob(exportBaseName()+' - compare.html', html, 'text/html');
+  pop.querySelector('.cpp-list').addEventListener('click', e=>{
+    const it=e.target.closest('[data-ch]'); if(it) selectCompareChange(Number(it.dataset.ch), 'list');
   });
+  // Move by the title bar; resize from the corner. Pointer capture keeps
+  // the drag even when the pointer outruns the panel.
+  const drag=(handle, onMove)=>{
+    handle.addEventListener('pointerdown', e=>{
+      if(e.button!==0 || e.target.closest('button')) return;
+      e.preventDefault();
+      const r=pop.getBoundingClientRect(), sx=e.clientX, sy=e.clientY;
+      handle.setPointerCapture(e.pointerId);
+      const mv=ev=>onMove(r, ev.clientX-sx, ev.clientY-sy);
+      const up=()=>{ handle.removeEventListener('pointermove', mv); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up); };
+      handle.addEventListener('pointermove', mv); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
+    });
+  };
+  drag(pop.querySelector('.cpp-head'), (r, dx, dy)=>{
+    const x=clamp(r.left+dx, 40-r.width, window.innerWidth-40), y=clamp(r.top+dy, 0, window.innerHeight-32);
+    pop.style.left=x+'px'; pop.style.top=y+'px';
+  });
+  drag(pop.querySelector('.cpp-resize'), (r, dx, dy)=>{
+    pop.style.width=clamp(r.width+dx, 260, window.innerWidth-8)+'px';
+    pop.style.height=clamp(r.height+dy, 220, window.innerHeight-8)+'px';
+  });
+}
+function renderComparePop(){
+  const c=_compareCtx, pop=document.getElementById('comparePop'); if(!c || !pop) return;
+  const s=c.res.stats, kinds={insert:'Added', delete:'Removed', modify:'Edited'};
+  pop.querySelector('.cpp-labels').innerHTML='<b>From</b> '+escapeHtml(c.labelA)+'<br><b>To</b> '+escapeHtml(c.labelB);
+  pop.querySelector('.cpp-stats').innerHTML='<span class="c-ins">+'+s.added+' added</span><span class="c-del">\u2212'+s.removed+' removed</span><span class="c-mod">~'+s.edited+' edited</span>'+
+    '<span>'+s.wordsA.toLocaleString()+' \u2192 '+s.wordsB.toLocaleString()+' words</span>';
+  pop.querySelector('.cmp-filter [data-f="all"]').textContent='All '+c.res.changes.length;
+  const list=c.res.changes.map((ch, i)=>({ch, i})).filter(x=>c.filter==='all' || x.ch.kind===c.filter);
+  pop.querySelector('.cpp-list').innerHTML=list.length ? list.map(({ch, i})=>
+    '<div class="cmp-item'+(i===c.sel?' on':'')+'" data-ch="'+i+'"><div class="cmp-meta"><span class="tc-kind" style="background:'+TC_COLORS[ch.kind==='delete'?'delete':ch.kind]+'">'+kinds[ch.kind]+'</span>'+
+    '<span>'+escapeHtml(typeLabelShort((ch.b||ch.a).type))+'</span><span class="cmp-scene">'+escapeHtml(ch.scene||'')+'</span></div>'+
+    '<div class="cmp-text">'+compareChangeHtml(ch)+'</div></div>').join('')
+    : '<div class="nav-empty">'+(c.res.changes.length ? 'Nothing of that kind.' : 'The two scripts say the same thing.')+'</div>';
+}
+/* Both sides to one difference: this script's paragraph gets the caret
+   (when it still has one), the other script's is scrolled to and flashed. */
+function selectCompareChange(i, from){
+  const c=_compareCtx; if(!c) return;
+  const ch=c.res.changes[i]; if(!ch) return;
+  c.sel=i;
+  const pop=document.getElementById('comparePop');
+  if(pop){
+    pop.querySelectorAll('.cpp-list .cmp-item').forEach(el=>el.classList.toggle('on', Number(el.dataset.ch)===i));
+    if(from!=='list'){ const el=pop.querySelector('.cpp-list .cmp-item[data-ch="'+i+'"]'); if(el) el.scrollIntoView({block:'nearest'}); }
+  }
+  // One mark on each side, for the difference chosen now: the previous
+  // one comes off first. A paragraph this script no longer has (removed)
+  // leaves the left side unmarked; one only this script has, the right.
+  document.querySelectorAll('#screenplayContent .line-block.cmp-focus').forEach(b=>b.classList.remove('cmp-focus'));
+  const pane=document.getElementById('comparePane');
+  if(pane) pane.querySelectorAll('.cp-line.cp-flash').forEach(l=>l.classList.remove('cp-flash'));
+  const mine=c.otherIsOlder ? ch.b : ch.a;
+  const el=mine && mine.id ? lineBlockById(mine.id) : null;
+  if(el){ el.classList.add('cmp-focus'); goToSceneAndCaret(el); }
+  const other=c.otherIsOlder ? ch.a : ch.b;
+  if(other && pane){
+    const line=pane.querySelector('.cp-line[data-oi="'+other.__cmpIdx+'"]');
+    if(line){ line.scrollIntoView({block:'center', behavior:'smooth'}); line.classList.add('cp-flash'); }
+  }
+}
+document.addEventListener('click', e=>{
+  if(!_compareActive) return;
+  const l=e.target.closest && e.target.closest('#comparePane .cp-line[data-ch]');
+  if(l && window.getSelection().isCollapsed) selectCompareChange(Number(l.dataset.ch), 'pane');
+});
+function endCompareMode(silent){
+  if(!_compareActive) return;
+  window.removeEventListener('resize', compareOnResize);
+  const pop=document.getElementById('comparePop'); if(pop) pop.remove();
+  const pane=document.getElementById('comparePane'); if(pane) pane.remove();
+  const r=_compareRestore||{};
+  if(r.split){ splitPrefs.on=true; applySplitPane(); }
+  if(r.nav){ navPrefs.open=true; placeNavigator(); }
+  setPanel('left', !!r.left); setPanel('right', !!r.right);
+  _compareActive=false; _compareCtx=null; _compareRestore=null;
+  document.querySelectorAll('#screenplayContent .line-block.cmp-focus').forEach(b=>b.classList.remove('cmp-focus'));
+  // The sidebars come back with an animation: centre the script once the
+  // canvas has its final width, rather than hold it still meanwhile.
+  if(!silent){
+    resetViewportEdge(950);
+    setTimeout(()=>{ const vr=viewport.getBoundingClientRect(); pan.x=(vr.width-PAGE_W*zoom)/2; applyTransform(); resetViewportEdge(); }, 950);
+  }
+}
+function downloadCompareReport(){
+  const c=_compareCtx; if(!c) return;
+  const s=c.res.stats, kinds={insert:'Added', delete:'Removed', modify:'Edited'};
+  const rows=c.res.changes.map(ch=>'<div class="i"><div class="m"><b>'+kinds[ch.kind]+'</b> \u00B7 '+escapeHtml(typeLabelShort((ch.b||ch.a).type))+' \u00B7 '+escapeHtml(ch.scene||'')+'</div><div class="t">'+compareChangeHtml(ch)+'</div></div>').join('');
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Script Compare</title><style>'+
+    'body{font:14px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:860px;margin:32px auto;padding:0 16px;color:#222}'+
+    '.i{border-top:1px solid #ddd;padding:10px 0}.m{font-size:12px;color:#666}.t{font-family:"Courier New",Courier,monospace;white-space:pre-wrap}'+
+    'ins{background:#d8f3ea;text-decoration:none}del{background:#fbdada;color:#9a2b2b}</style></head><body>'+
+    '<h1>Script Compare</h1><p><b>From</b> '+escapeHtml(c.labelA)+'<br><b>To</b> '+escapeHtml(c.labelB)+'<br>'+new Date().toLocaleString()+'</p>'+
+    '<p>+'+s.added+' added \u00B7 \u2212'+s.removed+' removed \u00B7 ~'+s.edited+' edited \u00B7 '+s.wordsA+' \u2192 '+s.wordsB+' words</p>'+rows+'</body></html>';
+  downloadBlob(exportBaseName()+' - compare.html', html, 'text/html');
 }
 
 /* =========================================================
@@ -20080,7 +21012,8 @@ async function loadBackupPrefs(){
 async function openMilestones(){
   if(!state.projectId) return;
   modalRoot.innerHTML='<div class="modal-box va-wide"><div class="modal-title">Milestones \u2014 '+escapeHtml(state.projectTitle||'Untitled')+'</div>'+
-    '<div class="dlg-bar"><button class="modal-btn primary" id="msSave">Save Milestone\u2026</button><button class="modal-btn" id="msNow">Back Up Now</button>'+
+    (readOnlyMode ? '' : '<div class="dlg-bar ms-savebar"><input type="text" id="msName" class="ms-name" aria-label="Milestone name" placeholder="Name this milestone"><button class="modal-btn primary" id="msSave">Save Milestone</button></div>')+
+    '<div class="dlg-bar"><button class="modal-btn" id="msNow">Back Up Now</button>'+
     '<span class="dlg-sp"></span><label class="va-row" style="margin:0">Automatic milestones <select id="msInt"><option value="0">Off</option><option value="5">every 5 min</option><option value="10">every 10 min</option><option value="15">every 15 min</option><option value="30">every 30 min</option></select></label></div>'+
     '<div class="ms-folder" id="msFolder"></div>'+
     '<div class="cmp-list" id="msList"></div>'+
@@ -20089,7 +21022,21 @@ async function openMilestones(){
   const sel=document.getElementById('msInt');
   sel.value=String(backupPrefs.interval);
   sel.addEventListener('change', ()=>{ backupPrefs.interval=Number(sel.value); saveViewPref('novel-dots-backup', backupPrefs); });
-  document.getElementById('msSave').addEventListener('click', saveMilestonePrompt);
+  // Saving is the first thing here: the name is ready to type (or keep)
+  // the moment the dialog opens, and Return saves.
+  const nameIn=document.getElementById('msName');
+  const suggestName=async ()=>{ if(!nameIn) return; const named=(await loadMilestoneIndex(state.projectId)).filter(x=>x.kind==='named').length; nameIn.value='Milestone '+(named+1); nameIn.focus(); nameIn.select(); };
+  const saveNow=async ()=>{
+    if(!nameIn || readOnlyMode) return;
+    const v=await createMilestone({kind:'named', name:nameIn.value.trim() || nameIn.placeholder});
+    if(v) showToast('Milestone saved'+(v.file ? ' (and written to the backup folder)' : ''));
+    renderMilestoneList(); suggestName();
+  };
+  if(nameIn){
+    document.getElementById('msSave').addEventListener('click', saveNow);
+    nameIn.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing){ e.preventDefault(); saveNow(); } });
+    suggestName();
+  }
   document.getElementById('msNow').addEventListener('click', async ()=>{ const v=await createMilestone({kind:'auto', name:'Manual backup', force:true}); if(v) showToast('Backed up'+(v.file?' (and written to the backup folder)':'')); renderMilestoneList(); });
   document.getElementById('msDone').addEventListener('click', closeModal);
   renderBackupFolderRow();
@@ -20412,22 +21359,31 @@ async function wsAllProjects(){
   });
   return merged;
 }
+/* The bars stretch to the dialog's width (preserveAspectRatio="none"), so
+   no text may live inside the SVG: a stretched SVG squashes its letters.
+   The labels are HTML laid over the chart at the same proportional spots. */
 function wsBarChart(buckets, metric, goalPerBucket){
   const val=b=>metric==='time' ? b.ms/60000 : metric==='words' ? b.words : b.eighths/8;
   const vals=buckets.map(val);
   const max=Math.max(1, goalPerBucket||0, ...vals.map(v=>Math.max(0, v)));
-  const W=640, H=170, pad=26, bw=(W-pad)/buckets.length;
-  let svg='<svg class="ws-chart" viewBox="0 0 '+W+' '+(H+22)+'" preserveAspectRatio="none" role="img" aria-label="Chart">';
-  svg+='<line x1="'+pad+'" y1="'+H+'" x2="'+W+'" y2="'+H+'" class="ws-axis"/>';
+  const W=640, H=170, TH=H+22, pad=26, bw=(W-pad)/buckets.length;
+  const px=x=>(x/W*100).toFixed(3)+'%', py=y=>(y/TH*100).toFixed(3)+'%';
+  let svg='<svg class="ws-chart-svg" viewBox="0 0 '+W+' '+TH+'" preserveAspectRatio="none" role="img" aria-label="Chart">';
+  let labels='';
+  svg+='<line x1="'+pad+'" y1="'+H+'" x2="'+W+'" y2="'+H+'" class="ws-axis" vector-effect="non-scaling-stroke"/>';
   vals.forEach((v, i)=>{
     const h=Math.max(0, v)/max*(H-12), x=pad+i*bw+bw*0.18;
     svg+='<rect x="'+x.toFixed(1)+'" y="'+(H-h).toFixed(1)+'" width="'+(bw*0.64).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" class="ws-bar"><title>'+escapeHtml(buckets[i].label)+': '+
       (metric==='time' ? fmtMs(buckets[i].ms) : metric==='words' ? buckets[i].words.toLocaleString()+' words' : fmtPagesNet(buckets[i].eighths)+' pages')+'</title></rect>';
-    svg+='<text x="'+(pad+i*bw+bw/2).toFixed(1)+'" y="'+(H+15)+'" class="ws-lbl">'+escapeHtml(buckets[i].label)+'</text>';
+    labels+='<span class="ws-lbl" style="left:'+px(pad+i*bw+bw/2)+'; top:'+py(H+4)+'">'+escapeHtml(buckets[i].label)+'</span>';
   });
-  if(goalPerBucket){ const gy=H-goalPerBucket/max*(H-12); svg+='<line x1="'+pad+'" y1="'+gy.toFixed(1)+'" x2="'+W+'" y2="'+gy.toFixed(1)+'" class="ws-goal"/><text x="'+(pad+2)+'" y="'+(gy-4).toFixed(1)+'" class="ws-glbl">goal</text>'; }
-  svg+='<text x="2" y="10" class="ws-lbl ws-lbl-l">'+escapeHtml(metric==='time' ? Math.round(max)+' min' : metric==='words' ? Math.round(max).toLocaleString() : (Math.round(max*8)/8)+' pp')+'</text>';
-  return svg+'</svg>';
+  if(goalPerBucket){
+    const gy=H-goalPerBucket/max*(H-12);
+    svg+='<line x1="'+pad+'" y1="'+gy.toFixed(1)+'" x2="'+W+'" y2="'+gy.toFixed(1)+'" class="ws-goal" vector-effect="non-scaling-stroke"/>';
+    labels+='<span class="ws-glbl" style="left:'+px(pad+2)+'; top:'+py(gy-14)+'">goal</span>';
+  }
+  labels+='<span class="ws-lbl ws-lbl-l" style="left:0; top:0">'+escapeHtml(metric==='time' ? Math.round(max)+' min' : metric==='words' ? Math.round(max).toLocaleString() : (Math.round(max*8)/8)+' pp')+'</span>';
+  return '<div class="ws-chart">'+svg+'</svg>'+labels+'</div>';
 }
 let _wsView={scope:'script', period:'day', metric:'pages'};
 async function openStatsDialog(){
@@ -20718,8 +21674,13 @@ async function init(){
   // Theme and the projects index are independent reads — fetch them in
   // parallel rather than one-after-another so the landing page appears
   // after a single round trip's worth of latency, not two.
+  capturePrefFactory(); // before any setting is loaded: these are the starting values
   await Promise.all([loadThemePref(), loadSpellcheckPref(), loadRulerPref(), loadSidebarSizes(), loadAutoGuessPref(), loadShowAltsPref(), loadShortcutPrefs(), loadViewAidPrefs(), loadBackupPrefs(), loadRibbonTabPref(), loadViewNavPrefs(), renderProjectsList()]);
   window.addEventListener('resize', debounce(()=>{ if(state.projectId){ recomputePagination(); layoutAllNotes(); } }, 200));
+  // Every project that existed before settings became per-project keeps the
+  // settings it has always been shown with: copied now, before any of them
+  // can be changed in one project and leak into another's first opening.
+  (async ()=>{ for(const p of (projectsIndexCache||[])){ if(!state.projectId || state.projectId!==p.id) await ensureProjectPrefs(p.id); } })().catch(()=>{});
 }
 init();
 
