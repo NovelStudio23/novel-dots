@@ -1782,8 +1782,13 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
 #comparePop .cpp-resize{position:absolute; right:0; bottom:0; width:18px; height:18px; cursor:nwse-resize; touch-action:none;
   background:linear-gradient(135deg, transparent 50%, var(--chrome-line-strong) 50%, var(--chrome-line-strong) 58%, transparent 58%, transparent 70%, var(--chrome-line-strong) 70%, var(--chrome-line-strong) 78%, transparent 78%);}
 .sc-fixed-head{margin-top:14px;}
-.ms-savebar .ms-name{flex:1; min-width:0; font:inherit; font-size:13px; padding:6px 9px; border:1px solid var(--chrome-line-strong); border-radius:7px; background:var(--canvas); color:var(--text-chrome);}
-.ms-savebar .ms-name:focus{outline:2px solid var(--accent); outline-offset:-1px;}
+/* The generic .modal-box input rule gives every text field a 10px bottom
+   margin, which pushed this row's centre line down and left Save Milestone
+   sitting low. Here the field takes no margin and stretches to the button's
+   own height, so the two share a top and a bottom. */
+.modal-box .ms-savebar{align-items:stretch;}
+.modal-box .ms-savebar .ms-name{flex:1; min-width:0; margin:0; align-self:stretch; font:inherit; font-size:13px; padding:0 9px; border:1px solid var(--chrome-line-strong); border-radius:7px; background:var(--canvas); color:var(--text-chrome);}
+.modal-box .ms-savebar .ms-name:focus{outline:2px solid var(--accent); outline-offset:-1px;}
 .sc-sub{font-size:10.5px; opacity:.8;}
 .sc-keys.sc-keys-fixed{cursor:default; border-style:dashed; background:none;}
 .ws-sprints{font-size:12px; margin:10px 0 0; display:flex; flex-wrap:wrap; gap:6px 12px; color:var(--text-chrome-dim);}
@@ -1917,7 +1922,7 @@ body.theme-dark .tc-what del, body.theme-dark .cmp-text del{color:#F09A9A;}
       <div class="ribbon-panel" data-tab="settings" role="tabpanel" aria-label="Settings">
         <div class="tb-group">
           <button class="icon-btn" id="btnParagraph" title="Paragraph &amp; page options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16"/><path d="M4 10h10"/><path d="M4 19h16" stroke-dasharray="3 3"/><path d="M4 14h16" stroke-dasharray="3 3"/></svg></button>
-          <button class="icon-btn" id="btnElements" title="Elements — indents, spacing, case and next element"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M8 10h12M4 14h16M10 18h10"/></svg></button>
+          <button class="icon-btn" id="btnElements" title="Elements Setup — indents, spacing, case and next element"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M8 10h12M4 14h16M10 18h10"/></svg></button>
           <button class="icon-btn" id="btnDocSetup" title="Document Setup — paper, margins, header and footer, font"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 18h6"/></svg></button>
           <button class="icon-btn" id="btnSceneNumbers" title="Scene Numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h3M4 12h3M4 18h3"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
         </div>
@@ -7645,13 +7650,34 @@ function showZoomIndicator(){
   clearTimeout(zoomIndicatorTimer);
   zoomIndicatorTimer=setTimeout(()=>{ el.classList.remove('show'); }, 3000);
 }
+/* A project opens on its first TWO sheets, whole, one above the other in the
+   stack: the title page and script page 1 (or pages 1 and 2 when there is
+   no title page; a one-sheet script shows its one sheet). Needs the page
+   count, so it runs after recomputePagination(). */
 function fitInitialView(){
   resetViewportEdge(); // a fresh view: nothing to hold still
   const r=viewport.getBoundingClientRect();
-  zoom=clamp((r.height-80)/PAGE_H, 0.45, 0.92);
+  const sheets=Math.min(2, Math.max(1, totalPageCount||1));
+  const stackH=sheets*PAGE_H+(sheets-1)*GAP;
+  zoom=clamp(Math.min((r.height-96)/stackH, (r.width-48)/PAGE_W), 0.2, 0.92);
   pan.x=(r.width-PAGE_W*zoom)/2;
   pan.y=48;
   applyTransform();
+}
+/* The first line of the script proper: the first paragraph after the title
+   page, or the very first paragraph when there is no title page. */
+function firstScriptBlock(){
+  const blocks=allLineEls();
+  const t=blocks.findIndex(el=>el.dataset.forceBreak==='1');
+  return (t>=0 && t+1<blocks.length) ? blocks[t+1] : blocks[0] || null;
+}
+/* Opening a project puts the insertion point at the start of the script's
+   first line, so the writer can type at once. Not in Read-Only Mode. */
+function placeOpeningCaret(){
+  if(readOnlyMode) return;
+  const b=firstScriptBlock();
+  if(!b) return;
+  try{ content.focus({preventScroll:true}); placeCaretAtStart(b); }catch(err){}
 }
 function panToWorldPoint(wx, wy){
   const r=viewport.getBoundingClientRect();
@@ -16357,10 +16383,13 @@ async function enterEditor(id, data){
   applyBreakdownState();
   reconcileTitleOnOpen();
   const viewState=await applyProjectPrefs(id); // this project's own settings
+  // A project always opens on the Screenwriting tab, whatever tab it was
+  // left on: the ribbon tab is no longer restored per project.
+  ribbonTab='write'; applyRibbonTab();
   showEditorView();
   scheduleDualButtonState();
-  fitInitialView();
   recomputePagination();
+  fitInitialView(); // after pagination: it fits the first two sheets
   if(migrateLineOutlineToPlan()) scheduleAutosave();
   layoutAllNotes();
   renderDrawLayer();
@@ -16370,6 +16399,7 @@ async function enterEditor(id, data){
   updateUndoButtons();
   if(viewState && viewState.continuous) setContinuousView(true);
   refreshFoldToggle();
+  placeOpeningCaret();
 }
 async function createBlankProject(){
   return createProjectFromTemplate('blank');
@@ -17853,11 +17883,11 @@ const TOPBAR_LABELS={
   btnFixCenter:'Fix Center', btnMinimap:'Minimap',
   btnFoldToggle:'Fold', btnHideAll:'Hide All', btnShortcuts:'Shortcuts',
   btnReadOnly:'Read-Only', btnNoteSelect:'Multi-Select',
-  btnUndo:'Undo', btnRedo:'Redo', btnFind:'Find', btnFormatAssistant:'Check', btnShowAlts:'Alts', btnNamesDb:'Names', btnMacros:'Macros', btnDictate:'Dictate', btnSpeech:'Read', btnVoices:'Voices', btnElements:'Elements', btnDocSetup:'Setup', btnShortcuts:'Shortcuts',
+  btnUndo:'Undo', btnRedo:'Redo', btnFind:'Find', btnFormatAssistant:'Check', btnShowAlts:'Alts', btnNamesDb:'Names', btnMacros:'Macros', btnDictate:'Dictate', btnSpeech:'Read', btnVoices:'Voices', btnElements:'Elements Setup', btnDocSetup:'Setup', btnShortcuts:'Shortcuts',
   btnContinuousView:'Continuous', btnFocusMode:'Focus', btnToggleTimeline:'Timeline',
   btnRulerH:'H. Ruler', btnRulerV:'V. Ruler',
   btnTypewriter:'Typewriter', btnOmit:'Omit', btnStats:'Goals', btnSprint:'Sprint', btnTrackChanges:'Track', btnChanges:'Changes', btnCompare:'Compare', btnMilestones:'Milestones', btnCharHighlight:'Highlight', btnStructure:'Structure', btnSplitCards:'Cards', btnNavigator:'Navigator',
-  btnSettings:'Preferences', btnRecenter:"I'm lost", btnElements:'Elements', btnDocSetup:'Setup'
+  btnSettings:'Preferences', btnRecenter:"I'm lost", btnElements:'Elements Setup', btnDocSetup:'Setup'
 };
 function captionFromTitle(el){
   // "Find & Replace (Ctrl/Cmd+F, Ctrl/Cmd+H)" -> "Find & Replace"
