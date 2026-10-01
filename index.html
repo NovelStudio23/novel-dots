@@ -55,7 +55,7 @@
   --radius:3px;
   --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  --mono: 'ND Courier', 'Courier Final Draft', Courier, 'Courier New', monospace;
+  --mono: 'ND Courier', Courier, 'Courier New', monospace;
 }
 body.theme-beige{ --canvas:var(--canvas-beige); }
 /* ---------- DARK APPEARANCE ----------
@@ -500,7 +500,7 @@ body.read-only-mode .drawing-hit{cursor:default;}
 .icon-btn:hover{background:var(--chrome-bg-soft); color:var(--text-chrome); border-color:var(--chrome-line);}
 .icon-btn.active{color:var(--accent-bright); background:rgba(43,108,222,.12); border-color:rgba(43,108,222,.3);}
 .icon-btn:disabled{opacity:.35; cursor:default;}
-/* Dual Dialogue, Final Draft's way: the bubbles colour in while the caret
+/* Dual Dialogue, the reference app's way: the bubbles colour in while the caret
    is somewhere Cmd/Ctrl+D would pair two speeches (and stay pressed inside
    a pair, where it would undo one). */
 #btnDualDialogue.dual-ready{color:var(--accent-bright);}
@@ -771,7 +771,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
 .scene-num{color:var(--text-chrome-dim); font-size:10px;}
 .scene-title-nav{margin-bottom:6px; padding-bottom:9px; border-bottom:1px solid var(--chrome-line);}
 /* ---------- OUTLINE EDITOR (left sidebar) ----------
-   Final Draft's lanes, upright: Outline 1, 2, 3, the page ruler, Scene
+   The reference app's lanes, upright: Outline 1, 2, 3, the page ruler, Scene
    Headings. Page 1 at the top; one page is --ppp pixels tall. */
 .oe-head{position:sticky; top:-12px; z-index:4; background:var(--chrome-bg); margin:-12px -12px 0; padding:10px 12px 0; border-bottom:1px solid var(--chrome-line);}
 .oe-toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:8px;}
@@ -914,6 +914,14 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
 #world.animated{transition:transform .5s cubic-bezier(.22,.85,.32,1);}
 
 #connectorLayer{position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; z-index:6;}
+/* A NOTE IS ONE OBJECT. Its connector(s), its dot (or triangles) and its
+   card are drawn together in the note's own wrap: the connector at the
+   bottom (z 1), the marker above it (z 2), the card on top (z 3). Notes
+   stack as wholes -- each wrap has its own z-index (note.z): a newer note
+   lies above an older one, and a note that is clicked comes to the front,
+   connector and marker with it. #connectorLayer / #connectorFrontLayer are
+   left empty. */
+.note-links{position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; z-index:1;}
 /* Notes sit above connectors (z-index 15 vs 6) and must stay there: a card
    you are reading should never be crossed by somebody else's line. But when
    several notes cluster in one spot, the cards cover exactly the connectors
@@ -1049,6 +1057,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
    pops back, causing a visible layout jump. Reserves a full line's height
    (padding-top + line-height) unconditionally so it never needs to move. */
 .line-block[data-title-role]{min-height:32px;}
+#screenplayContent .line-block.tp-line[data-title-role]{min-height:16px;}
 .line-block:first-child{padding-top:0; --pt:0px;}
 .line-block::before{
   content:attr(data-label); position:absolute; left:-118px; top:var(--pt, 16px); width:100px; text-align:right;
@@ -1057,7 +1066,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
 }
 .line-block:first-child::before{top:0;}
 .line-block:hover::before, .line-block:focus-within::before{opacity:.85;}
-/* Regular, as in Final Draft's default Screenplay elements (and as every
+/* Regular, as in the reference app's default Screenplay elements (and as every
    export has always printed it); bold is only what the writer makes bold. */
 .type-scene_heading{text-transform:uppercase;}
 .type-action{}
@@ -1065,7 +1074,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
 /* ---------- Dual dialogue ----------
    Two speeches printed side by side to show characters talking at once.
    The blocks stay flat in document order (Character, Dialogue, Character,
-   Dialogue) exactly as Final Draft's own .fdx stores them -- no wrapper
+   Dialogue) exactly as the reference app's own .fdx stores them -- no wrapper
    element -- because the pagination, note-anchoring, caret and serialization
    code all walk #screenplayContent's own children. The right column is
    lifted alongside the left one by a computed negative margin instead
@@ -1073,7 +1082,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
    Text column is 576px wide: 264 + 48 gutter + 264. */
 /* ---------- Scene numbers ----------
    Printed in BOTH margins beside the heading, which is what a production
-   script looks like and what Final Draft shows. Drawn as pseudo-elements so
+   script looks like and what the reference app shows. Drawn as pseudo-elements so
    they can never be typed into, selected, copied or serialized -- the number
    lives in the element's data, not in its text. */
 /* A paragraph forced to start a page shows where the break falls; Keep With
@@ -1246,11 +1255,11 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
 /* Hovering the Dual Dialogue button previews the result in faint text. */
 .line-block.dual-preview{opacity:.4;}
 .type-dialogue{margin-left:96px; width:336px; padding-top:0;}
-.type-parenthetical{margin-left:154px; width:192px; padding-top:0;} /* plain, in ink: Final Draft's default */
+.type-parenthetical{margin-left:154px; width:192px; padding-top:0;} /* plain, in ink: the reference app's default */
 .type-transition{text-align:right; text-transform:uppercase;}
 .type-shot{text-transform:uppercase;}
 .type-centered{text-align:center;}
-/* Final Draft-style dialogue continuation: a non-editable break injected
+/* Industry-standard dialogue continuation: a non-editable break injected
    inside a Dialogue block's own flow when its text would otherwise cross a
    page boundary — never part of the block's real text (see cleanBlockText/
    cleanBlockHTML), purely a visual "(MORE)" / margin-gap / "CHARACTER
@@ -1285,10 +1294,28 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
    page, so unlike a real Character cue (padding-top:16px, for the normal
    gap above it when something else precedes it on the same page) it has
    nothing above it to space away from -- it should sit flush at the page's
-   own top margin, matching Final Draft. See CONTD_LABEL_H, which this
+   own top margin, matching the reference app. See CONTD_LABEL_H, which this
    height must stay equal to. */
 .dlg-contd-label-overlay{height:16px; line-height:16px; left:355px; text-transform:uppercase;}
 .line-block[data-title-role="title"]{text-transform:uppercase;}
+/* TITLE PAGE (see TITLE PAGE: THE STANDARD LAYOUT, FIXED): the reference app's
+   title page is set 1.00in to 7.50in across the sheet -- centred on the
+   paper -- one row per line, in plain Courier whatever the Centered
+   element is set to. Its title is underlined capitals. Spacing lines are
+   locked: no caret, no text. */
+#screenplayContent .line-block.tp-line, #printRoot .line-block.tp-line{
+  margin-left:-48px !important; width:624px !important; padding-top:0 !important; --pt:0px;
+  min-height:16px; line-height:16px !important; text-align:center !important;
+  font-weight:400 !important; font-style:normal !important; text-transform:none !important; text-decoration-line:none !important;
+}
+#screenplayContent .line-block.tp-line[data-align="left"], #printRoot .line-block.tp-line[data-align="left"]{text-align:left !important;}
+#screenplayContent .line-block.tp-line[data-align="right"], #printRoot .line-block.tp-line[data-align="right"]{text-align:right !important;}
+#screenplayContent .line-block.tp-line[data-title-role="title"], #printRoot .line-block.tp-line[data-title-role="title"]{
+  text-transform:uppercase !important; text-decoration-line:underline !important;
+}
+#screenplayContent .line-block.tp-line::before{top:0;}
+#screenplayContent .line-block.tp-line:not(.ph-empty)::before{display:none;}
+#screenplayContent .line-block.tp-locked{cursor:default; caret-color:transparent;}
 /* Fully reset every property the type-label ::before rule above sets — both
    rules target the same pseudo-element, and without this the placeholder
    would inherit the label's off-canvas gutter position (left:-118px) and
@@ -1311,7 +1338,7 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
 .note-body strike, .note-body s{text-decoration-line:line-through;}
 .type-lyrics{margin-left:96px; width:336px; font-style:italic;}
 .type-general{}
-/* ---------- Final Draft's other printing elements ----------
+/* ---------- the reference app's other printing elements ----------
    Cast List sits under the slug in a multi-camera sitcom; the act elements
    are the spine of a TV script. New Act starts its own page (the element
    sets the paragraph's Page Break Before flag when you apply it, so it is
@@ -1331,7 +1358,7 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
 .type-outline2{margin-left:24px; width:552px; font-weight:bold;}
 .type-outline3{margin-left:48px; width:528px;}
 .type-summary{margin-left:72px; width:504px; font-style:italic;}
-/* Final Draft's Outline Body: the body of a beat sent from the Outline
+/* The reference app's Outline Body: the body of a beat sent from the Outline
    Editor, under its Outline 1-3 title. */
 .type-outline_body{margin-left:24px; width:552px;}
 .type-summary::after, .type-outline1::after, .type-outline2::after, .type-outline3::after, .type-outline_body::after{
@@ -1463,12 +1490,15 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
    cursor to a closed/"grabbing" hand everywhere on screen — not just over the
    handle — matching how native drag interactions behave. */
 body.note-dragging, body.note-dragging *{cursor:grabbing !important;}
-.note-head .kind-tag{font-size:9px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft);}
+.note-head .kind-tag{font-size:9px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); flex:none; white-space:nowrap;}
 .note-category-select{
   margin-left:auto; font-size:10px; border:none; background:rgba(0,0,0,.06); border-radius:10px; padding:2px 6px;
   color:var(--ink); appearance:none;
+  /* On a narrow note the category gives way first (its name is cut short),
+     so the header always stays one line inside the card. */
+  flex:0 1 auto; min-width:0; text-overflow:ellipsis;
 }
-.note-close-btn{width:18px; height:18px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--ink-soft); border-radius:4px;}
+.note-close-btn{flex:none; width:18px; height:18px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:var(--ink-soft); border-radius:4px;}
 .note-close-btn:hover{background:rgba(0,0,0,.08); color:var(--ink);}
 .note-body{
   padding:8px 9px; min-height:44px; font-size:16px; line-height:1.35; outline:none; white-space:pre-wrap;
@@ -1479,10 +1509,13 @@ body.note-dragging, body.note-dragging *{cursor:grabbing !important;}
 .note-canvas-wrap canvas{width:100%; height:110px; background:#fff; border-radius:3px; border:1px solid rgba(0,0,0,.1); touch-action:none; cursor:crosshair;}
 .note-canvas-tools{display:flex; justify-content:flex-end; margin-top:4px;}
 .note-canvas-tools button{font-size:9.5px; background:none; border:none; color:var(--ink-soft); text-decoration:underline; padding:0;}
-.note-foot{display:flex; flex-wrap:wrap; gap:5px; padding:6px 8px 8px; border-top:1px solid rgba(0,0,0,.06);}
+.note-foot{display:flex; flex-wrap:nowrap; gap:5px; padding:6px 8px 8px; border-top:1px solid rgba(0,0,0,.06);}
+/* Shot # and Shoot day always share one row: 100px each when there is room,
+   narrower together on a narrow note -- never wrapped onto a second row
+   that would push out past the card's bottom edge. */
 .note-foot select, .note-foot input{
   font-size:10px; border:1px solid rgba(0,0,0,.12); background:rgba(255,255,255,.5); border-radius:4px; padding:2px 5px;
-  color:var(--ink); max-width:100px;
+  color:var(--ink); max-width:100px; flex:0 1 100px; min-width:0;
 }
 .note-chip-label{display:none; font-size:11px; padding:4px 9px; white-space:nowrap; max-width:150px; overflow:hidden; text-overflow:ellipsis;}
 
@@ -1682,7 +1715,7 @@ body.ruler-h-on #canvasHint{top:32px;}
 }
 #app.portrait-mode .sidebar-content > *{flex:0 0 auto; max-width:min(62vw, 300px);}
 /* ...except the Outline Editor, which is one continuous strip rather than a
-   row of cards: it scrolls sideways as a whole, in Final Draft's own
+   row of cards: it scrolls sideways as a whole, in the reference app's own
    orientation (lanes stacked, the script running left to right). */
 #app.portrait-mode #leftContent{
   display:block; overflow-x:auto; overflow-y:hidden; padding:0 0 6px;
@@ -2683,7 +2716,7 @@ body.theme-dark .split-seg button.on{background:#4A4A52;}
 /* =========================================================
    SCRIPT FONT -- ND Courier (Bitstream Courier 10 Pitch)
    ---------------------------------------------------------
-   Final Draft's own Courier Final Draft is a version of Bitstream's
+   The reference app's own Courier the reference app is a version of Bitstream's
    Courier 10 BT. That design was donated to the X Consortium and may be
    used, modified and redistributed freely, so the script is set in it here,
    with its real Regular, Bold, Italic and Bold Italic. The weights are the
@@ -2754,10 +2787,10 @@ let PAGE_W=816, PAGE_H=1056, M_TOP=96, M_BOTTOM=96, BUDGET=PAGE_H-M_TOP-M_BOTTOM
 const GAP=28;
 const LINE_H=16, MORE_TEXT='(MORE)', MORE_LABEL_H=16, CONTD_LABEL_H=16;
 
-/* The element list, in Final Draft's own order and with its own shortcut
+/* The element list, in the reference app's own order and with its own shortcut
    numbers: General 0, Scene Heading 1 ... New Act 9, then the second bank
    (Sequence, End of Act, Summary, Outline 1-3, Note). Centered and Lyrics
-   are Novel Dots' own -- Final Draft leaves those to Custom Elements -- so
+   are Novel Dots' own -- the reference app leaves those to Custom Elements -- so
    they sit at the end rather than displacing anything. */
 const TYPES=['general','scene_heading','action','character','parenthetical','dialogue','transition','shot',
   'cast_list','new_act','sequence','end_of_act','summary','outline1','outline2','outline3','outline_body','note',
@@ -2799,7 +2832,7 @@ const TYPE_LABELS={
   summary:'Summary', outline1:'Outline 1', outline2:'Outline 2', outline3:'Outline 3', outline_body:'Outline Body',
   note:'Note', centered:'Centered', lyrics:'Lyrics'
 };
-/* What Return gives you next, from Final Draft's published defaults. */
+/* What Return gives you next, from the reference app's published defaults. */
 const ENTER_MAP={
   general:'general', scene_heading:'action', action:'action', character:'dialogue', dialogue:'action',
   parenthetical:'dialogue', transition:'scene_heading', shot:'action', cast_list:'action',
@@ -2807,32 +2840,32 @@ const ENTER_MAP={
   outline1:'outline1', outline2:'outline2', outline3:'outline3', outline_body:'outline_body',
   centered:'action', lyrics:'lyrics', note:'action'
 };
-/* Final Draft-style Tab: jumps to a new line of the likely next element for these types;
+/* Industry-standard Tab: jumps to a new line of the likely next element for these types;
    all other types fall back to cycling the current line's type in place.
    Character and Dialogue both jump to a fresh Parenthetical (auto-filled with "()"), per explicit request.
    Parenthetical jumps to Dialogue (matching Enter's target) — pressing Tab twice from Dialogue is handled
    as its own special case (see the Tab keydown handler) so it lands on Character instead. */
 const TAB_JUMP_MAP={
-  // Final Draft 13's published Tab defaults. Character goes to Parenthetical
+  // The reference app's published Tab defaults. Character goes to Parenthetical
   // once it has a name, and to Transition while it is still blank (handled
   // in the Tab key code); Scene Heading steps through its own parts first.
   scene_heading:'action', action:'character', dialogue:'parenthetical', character:'parenthetical', parenthetical:'dialogue',
   transition:'scene_heading',
-  // Final Draft's outline chain: Tab walks down the levels and ends on a Note.
+  // The reference app's outline chain: Tab walks down the levels and ends on a Note.
   outline1:'outline2', outline2:'outline3', outline3:'note', note:'note'
 };
-/* Final Draft's element shortcuts, first bank: Ctrl/Cmd+0..9 (Alt+0..9 as the
+/* The reference app's element shortcuts, first bank: Ctrl/Cmd+0..9 (Alt+0..9 as the
    always-works equivalent). The second bank, with Shift, is below. */
 const NUMBER_TYPE_MAP={
   '0':'general', '1':'scene_heading', '2':'action', '3':'character', '4':'parenthetical',
   '5':'dialogue', '6':'transition', '7':'shot', '8':'cast_list', '9':'new_act'
 };
-/* Final Draft's second bank (its ⌘⌃ / Ctrl+Shift row), with Novel Dots'
+/* The reference app's second bank (its ⌘⌃ / Ctrl+Shift row), with Novel Dots'
    own two elements and Outline Body on the free numbers after it. */
 const SHIFT_NUMBER_TYPE_MAP={
   '8':'sequence', '9':'end_of_act', '0':'summary',
   '1':'outline1', '2':'outline2', '3':'outline3', '4':'note',
-  '5':'centered', '6':'lyrics', '7':'outline_body' // Final Draft's Outline Body, on the one free number
+  '5':'centered', '6':'lyrics', '7':'outline_body' // The reference app's Outline Body, on the one free number
 };
 const IS_MAC=/Mac|iPhone|iPad|iPod/.test(navigator.platform||navigator.userAgent||'');
 /* iPad, including iPadOS Safari in its default desktop mode (it reports
@@ -2851,11 +2884,11 @@ function shortcutLabel(n){ return MOD_KEY+n; }
    equivalent alongside the primary chord. (The primary chord DOES reach the
    page when Novel Dots runs as an installed app or in locked fullscreen --
    see engagePortableKeyboardLock below.) */
-/* Final Draft (Mac) key layout -- a Mac-only app preference, off by default.
-   Final Draft on a Mac runs its macros on Option+number. With this layout on,
+/* The reference app (Mac) key layout -- a Mac-only app preference, off by default.
+   The reference app on a Mac runs its macros on Option+number. With this layout on,
    the always-works element chord moves from Option+number to Control+number
    (browsers don't reserve Control+number on a Mac), and Option+number goes to
-   the macros, as in Final Draft. Off, nothing changes: Option+number sets
+   the macros, as in the reference app. Off, nothing changes: Option+number sets
    elements and the macros stay on Control+Option+number. Macro keys are still
    stored in their Windows form ('Ctrl+Alt+1'); only the chord that reaches
    them on a Mac differs. */
@@ -2888,7 +2921,12 @@ function digitFromEvent(e){
   if(m) return m[1];
   return /^[0-9]$/.test(e.key) ? e.key : null;
 }
-const CARD_W_DEFAULT=264, CARD_W_MIN=180, CARD_W_MAX=560, CARD_H_MIN=90;
+const CARD_W_DEFAULT=264, CARD_W_MAX=560;
+/* The smallest any note (Dot, Sticky or Additional) can be resized to.
+   Width: its header (kind, category, ×) and its Shot # / Shoot day row
+   each still fit on one line. Height: measured, not a fixed number -- see
+   noteMinHeight(). */
+const NOTE_W_MIN=180;
 /* A root Dot Note's card sits in its margin, cardOffsetX from the page
    edge. Its connector attaches to the card edge nearest the page,
    CARD_CONNECT_Y px below the card's top, and that point is cardYOffset
@@ -2903,7 +2941,7 @@ function noteCardGeom(note, width){
   const connectY = note.dotY+(note.cardYOffset||0);
   return {left, top:connectY-CARD_CONNECT_Y, width:w, nearX: note.side==='left' ? left+w : left, connectY};
 }
-const STICKY_SIZE_DEFAULT=190, STICKY_W_DEFAULT=240, STICKY_MIN=110, STICKY_MAX=640;
+const STICKY_SIZE_DEFAULT=190, STICKY_W_DEFAULT=240, STICKY_MAX=640;
 const CATEGORIES=[
   {id:'director', label:"Director's Notes", color:'#B8860B'},
   {id:'blocking', label:'Blocking', color:'#2A9D8F'},
@@ -2983,16 +3021,10 @@ const SAMPLE_LINES=[
   {type:'lyrics', text:'(V.O., faint, a radio down below) ...that healing, healing, watching over you...'},
   {type:'general', text:'The beam catches something pale in the waves. Gone before it registers.'}
 ];
+/* A new script's title page: the reference app's own (see TITLE PAGE: FINAL
+   DRAFT'S LAYOUT, FIXED). */
 function titlePageLines(title, author){
-  const blanks=[];
-  for(let i=0;i<12;i++){ blanks.push({type:'centered', text:''}); }
-  return blanks.concat([
-    {type:'centered', text:title||'', titleRole:'title'},
-    {type:'centered', text:''},
-    {type:'centered', text:'Written by'},
-    {type:'centered', text:''},
-    {type:'centered', text:author||'', titleRole:'author', forceBreakAfter:true}
-  ]);
+  return fdTitlePageGrid({title:title||'', author:author||''}, TP_FEATURE_ROLES);
 }
 
 /* =========================================================
@@ -3015,18 +3047,10 @@ function titlePageLines(title, author){
    the line after it (Keep With Next), opens with FADE IN: and closes with
    FADE OUT. and a matching END OF ... line.
    ========================================================= */
+/* A TV script's: the same grid, with the episode title two lines under the
+   series title (line 20), so "Written by" stays on the reference app's line 22. */
 function tvTitlePageLines(){
-  const blanks=[];
-  for(let i=0;i<12;i++){ blanks.push({type:'centered', text:''}); }
-  return blanks.concat([
-    {type:'centered', text:'', titleRole:'title'},
-    {type:'centered', text:''},
-    {type:'centered', text:'', titleRole:'episode'},
-    {type:'centered', text:''},
-    {type:'centered', text:'Written by'},
-    {type:'centered', text:''},
-    {type:'centered', text:'', titleRole:'author', forceBreakAfter:true}
-  ]);
+  return fdTitlePageGrid({}, TP_TV_ROLES);
 }
 function tvActHeadingLine(name, first){
   // The real New Act element now, rather than a Centered line dressed up as
@@ -3078,7 +3102,7 @@ const state={
   // Production numbering. `locked` is the shooting-script mode: existing
   // numbers never move, and newly inserted scenes get letter numbers.
   sceneNumbers:{on:false, locked:false, style:'us'},
-  // Final Draft's Mores & Continueds options: whether the page-break labels
+  // The reference app's Mores & Continueds options: whether the page-break labels
   // are printed at all. Turning one off hides the label; it never changes
   // where the dialogue actually breaks.
   pageOptions:{more:true, contd:true, autoContd:true},
@@ -3115,22 +3139,24 @@ const viewport=document.getElementById('canvasViewport');
 const notesLayer=document.getElementById('notesLayer');
 const connectorLayer=document.getElementById('connectorLayer');
 const connectorFrontLayer=document.getElementById('connectorFrontLayer');
-/* Which note's connector is currently raised above the cards, if any. */
-let frontConnectorNoteId=null;
-/* A note's paths can be in either layer, so anything that looks them up by
-   note id has to look in both. */
+/* A note's connector paths live in its own wrap (see .note-links). */
 function connectorPathsFor(noteId, extraSelector){
-  const sel='[data-note-id="'+noteId+'"]'+(extraSelector||'');
-  return Array.from(connectorLayer.querySelectorAll(sel))
-    .concat(Array.from(connectorFrontLayer.querySelectorAll(sel)));
+  const els=noteEls[noteId];
+  if(!els || !els.links) return [];
+  return Array.from(els.links.querySelectorAll('path'+(extraSelector||'')));
 }
-function connectorLayerForNote(noteId){
-  return noteId && noteId===frontConnectorNoteId ? connectorFrontLayer : connectorLayer;
-}
-function bringConnectorToFront(noteId){
-  if(frontConnectorNoteId===noteId) return;
-  frontConnectorNoteId=noteId||null;
-  updateConnectors();
+/* NOTE STACKING: note.z orders whole notes (see .note-links). */
+function topNoteZ(){ return state.notes.reduce((m, n)=>Math.max(m, n.z>0 ? n.z : 0), 0); }
+function bringNoteToFront(noteId){
+  const n=state.notes.find(x=>x.id===noteId); if(!n) return;
+  const top=topNoteZ();
+  if(n.z===top && state.notes.filter(x=>x.z===top).length===1) return; // already in front
+  n.z=top+1;
+  if(n.z>100000){ // renumber in the current order now and then, keeping numbers small
+    state.notes.slice().sort((a,b)=>(a.z||0)-(b.z||0)).forEach((x,k)=>{ x.z=k+1; });
+  }
+  state.notes.forEach(x=>{ const e=noteEls[x.id]; if(e) e.wrap.style.zIndex=String(x.z); });
+  scheduleAutosave(); // the order is kept with the project, but it is not an undo step
 }
 const pageDecor=document.getElementById('pageDecor');
 const dialogueLabelsLayer=document.getElementById('dialogueLabelsLayer');
@@ -3219,8 +3245,9 @@ function createLineElement(l){
 }
 function initScreenplay(lines){
   content.innerHTML='';
-  lines.forEach(l=>content.appendChild(createLineElement(l)));
+  upgradeLegacyTitlePage(lines).forEach(l=>content.appendChild(createLineElement(l)));
   if(!content.children.length){ content.appendChild(createLineElement({type:'scene_heading', text:''})); }
+  markTitlePageLines();
   _lastPaginationSig=null;
   _forcePaginationRebuild=false;
   applyShownCaseAll(); // older files, imports and restores held what was typed
@@ -3278,7 +3305,7 @@ function reconcileTitleOnOpen(){
 /* =========================================================
    SPELL CHECK
 
-   Final Draft spell-checks as you write, and so does this now. What it can
+   The reference app spell-checks as you write, and so does this now. What it can
    lean on is the browser's own checker -- the same engine and dictionary the
    rest of the OS uses -- which means squiggles as you type and suggestions
    on right-click, for free and offline.
@@ -3288,12 +3315,12 @@ function reconcileTitleOnOpen(){
    slugs, character names, CUT TO:. Checking those produces a page of red
    underlines that trains the writer to ignore all of them, so the element
    types that are structurally not prose are excluded -- the same idea as
-   Final Draft's per-element spell-check options.
+   The reference app's per-element spell-check options.
 
    What the web genuinely cannot do here: there is no API to add a word to
    the browser's dictionary from a page (the user does that from the
    right-click menu, and it then applies everywhere), and no grammar-check
-   or thesaurus API at all. Those parts of Final Draft's toolset have no
+   or thesaurus API at all. Those parts of the reference app's toolset have no
    in-page equivalent.
    ========================================================= */
 const SPELLCHECK_SKIP_TYPES=['scene_heading','character','transition','shot'];
@@ -3325,9 +3352,18 @@ async function setSpellcheck(on){
 /* A title page with an episode line is a TV script, whose title line is
    the series' name. */
 function titleRolePlaceholder(role){
+  // The reference app's own sample text, shown grey and never printed.
   if(role==='episode') return '"Episode Title"';
-  if(role==='title') return content.querySelector('.line-block[data-title-role="episode"]') ? 'SERIES TITLE' : 'SCREENPLAY TITLE';
-  return 'Author Name';
+  if(role==='title') return content.querySelector('.line-block[data-title-role="episode"]') ? 'SERIES TITLE' : 'SCRIPT TITLE';
+  if(role==='author') return 'Name of First Writer';
+  if(role==='credit') return 'Written by';
+  if(role==='source') return 'Based on, If Any';
+  if(role==='contact_name') return 'Name';
+  if(role==='address') return 'Address';
+  if(role==='address2') return 'City, State ZIP';
+  if(role==='phone') return 'Phone Number';
+  if(role==='email') return 'Email';
+  return '';
 }
 function updateTitlePagePlaceholders(){
   content.querySelectorAll('.line-block[data-title-role]').forEach(el=>{
@@ -3460,7 +3496,7 @@ function serializeLines(){
     pageAnchor: el.dataset.pageAnchor || undefined,
     outline: readOutline(el) || undefined,
     alts: el.dataset.alts ? (currentAlts(el) || undefined) : undefined,
-    // Structure colour, and a scene's index card (Final Draft's scene Title and Summary).
+    // Structure colour, and a scene's index card (the reference app's scene Title and Summary).
     structColor: el.dataset.structColor || undefined,
     cardTitle: el.dataset.cardTitle || undefined,
     cardSummary: el.dataset.cardSummary || undefined,
@@ -3674,12 +3710,13 @@ function selectionElementType(){
   const first=blocks[0].dataset.type;
   return blocks.every(b=>b.dataset.type===first) ? first : null;
 }
-/* Element behaviours that come with the element itself, as Final Draft's
+/* Element behaviours that come with the element itself, as the reference app's
    Elements dialogue attaches them: New Act starts a page and holds the line
    after it. Applied when the element is chosen, as visible paragraph flags
    the writer can still turn off -- never as a hidden rule. */
 const TYPE_DEFAULT_FLAGS={ new_act:{pageBreakBefore:true, keepWithNext:true}, cast_list:{keepWithNext:true}, sequence:{keepWithNext:true} };
 function setBlockType(block,type){
+  if(isTitlePageLine(block)) return; // the title page has no elements (see TITLE PAGE)
   block.dataset.type=type; block.dataset.label=TYPE_LABELS[type];
   block.className='line-block type-'+type;
   const flags=TYPE_DEFAULT_FLAGS[type];
@@ -3781,7 +3818,7 @@ function splitToNewLine(block, sel, newType){
   newBlock.innerHTML='';
   newBlock.appendChild(afterFrag);
   // Stay in the same column when splitting a line inside a dual pair --
-  // Final Draft lets you keep editing a dualed speech in place.
+  // The reference app lets you keep editing a dualed speech in place.
   if(block.dataset.dual) newBlock.dataset.dual=block.dataset.dual;
   block.after(newBlock);
   pruneEmptyInline(block); pruneEmptyInline(newBlock);
@@ -3790,7 +3827,7 @@ function splitToNewLine(block, sel, newType){
   return newBlock;
 }
 function handleEnter(block, sel){
-  // Final Draft-style shortcut: pressing Enter again on a still-empty line that
+  // Industry-standard shortcut: pressing Enter again on a still-empty line that
   // was itself just created by an Enter-from-Dialogue jumps straight to
   // Character (Dialogue -> Enter -> Enter -> Character), instead of piling up
   // blank Action lines — handy for rapid back-and-forth dialogue exchanges.
@@ -3800,7 +3837,7 @@ function handleEnter(block, sel){
     scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
     return;
   }
-  // Return on a paragraph with nothing in it is Final Draft's: it opens the
+  // Return on a paragraph with nothing in it is the reference app's: it opens the
   // Elements menu instead of adding a second blank line under the first
   // (see NO STRAY BLANK LINES). The Title Page's own spacing lines keep the
   // plain behaviour.
@@ -3855,7 +3892,7 @@ function handleEnter(block, sel){
    ---------------------------------------------------------
    A screenplay's spacing comes from its elements (a Scene Heading brings
    its own blank line above it, Dialogue its own after the cue), so an
-   empty paragraph is always an extra blank line on the page. Final Draft
+   empty paragraph is always an extra blank line on the page. The reference app
    never makes one by itself, and neither does this editor:
    - Return on an empty paragraph opens the Elements menu (type a letter,
      arrows, Return) instead of adding another empty paragraph. The one
@@ -3897,6 +3934,366 @@ function isStrayBlank(block){
   const d=block.dataset;
   return !d.titleRole && !d.forceBreak && !d.omitted && !d.pageAnchor && !d.pageBreakBefore && !d.sceneNumber;
 }
+/* =========================================================
+   TITLE PAGE: THE STANDARD LAYOUT, FIXED
+   ---------------------------------------------------------
+   The reference app's own title page (a new file in the reference app) is 54
+   single lines -- 9 inches of text at 6 lines an inch between 1-inch top
+   and bottom margins -- set from 1.00in to 7.50in across the sheet, so it
+   is centred on the paper, not on the script's 1.5in text column:
+     line 18  SCRIPT TITLE           centred, underlined, all capitals
+     line 22  Written by             centred
+     line 25  Name of First Writer   centred
+     line 30  Based on, If Any       centred
+     line 53  Address                left
+     line 54  Phone Number           left
+   Every other line is empty. The page is built the same way here, and its
+   layout is fixed:
+   - A line that holds text, or that is one of the page's fields
+     (data-title-role), is a FIELD: it can be typed in. Every other line
+     is a spacing line: locked, never takes the caret or a character.
+   - No line is ever added to or taken from the page. Return and Tab go to
+     the next field, Shift+Tab to the one before; Backspace at the start of
+     a field and Delete at its end do nothing; a paste becomes one line.
+   - Title-page lines have no space above them (every line is one row),
+     no element can be set on them, and nothing can be dropped on them.
+   A title page imported from a file keeps its own lines; its text lines
+   become fields (role "text") and its empty lines are locked the same way.
+   ========================================================= */
+const TP_LINE_COUNT=54;
+const TP_LEFT_IN=1.00, TP_RIGHT_IN=7.50;   // The reference app's title page LeftIndent / RightIndent
+const TP_ROWS={title:18, episode:20, credit:22, author:25, source:30,
+  contact_name:50, address:51, address2:52, phone:53, email:54};
+/* The contact block: five left-aligned lines in the bottom-left corner,
+   its last line on the page's last row. */
+const TP_CONTACT_ROLES=['contact_name','address','address2','phone','email'];
+const TP_LEFT_ROLES=TP_CONTACT_ROLES;
+const TP_FIELD_ROLES=['title','episode','credit','author','source'].concat(TP_CONTACT_ROLES, ['text']);
+/* The reference app's grid. `vals` fills the fields: {title, episode, credit,
+   author, source, address, phone}; a role left out of `roles` is not on
+   the page at all (episode is only on a TV title page). */
+function fdTitlePageGrid(vals, roles){
+  vals=vals||{};
+  const out=[];
+  for(let row=1; row<=TP_LINE_COUNT; row++) out.push({type:'centered', text:''});
+  roles.forEach(role=>{
+    const l=out[TP_ROWS[role]-1];
+    l.titleRole=role;
+    l.text=vals[role]!=null ? String(vals[role]) : (role==='credit' ? 'Written by' : '');
+    if(TP_LEFT_ROLES.includes(role)) l.align='left';
+  });
+  out[out.length-1].forceBreakAfter=true;
+  return out;
+}
+const TP_FEATURE_ROLES=['title','credit','author','source'].concat(TP_CONTACT_ROLES);
+const TP_TV_ROLES=['title','episode','credit','author','source'].concat(TP_CONTACT_ROLES);
+function isTitlePageLine(el){ return !!(el && el.classList && el.classList.contains('tp-line')); }
+function isTitleField(el){ return isTitlePageLine(el) && !el.classList.contains('tp-locked'); }
+function titlePageBlocks(){
+  const end=content.querySelector('.line-block[data-force-break="1"]');
+  if(!end) return [];
+  const out=[];
+  for(const b of content.children){ if(b.classList && b.classList.contains('line-block')) out.push(b); if(b===end) break; }
+  return out;
+}
+/* Tags every title-page line (tp-line) and locks the spacing lines. Runs
+   before every layout pass, on open and after every undo, so the page is
+   always marked whatever built it. */
+function markTitlePageLines(){
+  const tpList=titlePageBlocks(), tp=new Set(tpList);
+  // Only the title page's own lines, and any line still marked from before
+  // (a page that got shorter), need looking at -- not the whole script.
+  const look=new Set(tpList);
+  content.querySelectorAll('.line-block.tp-line').forEach(b=>look.add(b));
+  look.forEach(b=>{
+    if(!tp.has(b)){
+      if(b.classList.contains('tp-line')){ b.classList.remove('tp-line','tp-locked'); b.removeAttribute('contenteditable'); }
+      return;
+    }
+    b.classList.add('tp-line');
+    const hasText=!!(b.textContent||'').replace(/\u00a0/g,' ').trim() || !!b.querySelector('img');
+    if(hasText && !b.dataset.titleRole) b.dataset.titleRole='text';
+    if(b.dataset.titleRole){
+      b.classList.remove('tp-locked');
+      if(b.getAttribute('contenteditable')==='false') b.removeAttribute('contenteditable');
+    } else {
+      b.classList.add('tp-locked');
+      b.setAttribute('contenteditable','false');
+      if(b.innerHTML) b.innerHTML='';
+    }
+  });
+}
+function titleFields(){ return titlePageBlocks().filter(b=>b.dataset.titleRole); }
+function firstBodyBlock(){
+  const end=content.querySelector('.line-block[data-force-break="1"]');
+  let n=end ? end.nextElementSibling : null;
+  while(n && !(n.classList && n.classList.contains('line-block'))) n=n.nextElementSibling;
+  return n;
+}
+function focusTitleField(el, atStart){
+  if(!el) return;
+  if(atStart) placeCaretAtStart(el); else placeCaretAtEnd(el);
+  el.classList.remove('ph-empty');
+  ensureCaretVisible();
+}
+/* The field nearest a title-page line (the line itself when it is one),
+   preferring the one below on a tie -- where a click on a spacing line
+   lands, and where an arrow key that crossed into the page goes. */
+function nearestTitleField(line){
+  const fields=titleFields();
+  if(!fields.length) return null;
+  if(fields.includes(line)) return line;
+  const all=titlePageBlocks(), at=all.indexOf(line);
+  let best=null, bestD=Infinity;
+  fields.forEach(f=>{ const d=Math.abs(all.indexOf(f)-at)+(all.indexOf(f)<at ? 0.5 : 0); if(d<bestD){ bestD=d; best=f; } });
+  return best;
+}
+function selectionBlocks(sel){
+  if(!sel || !sel.rangeCount) return [null, null];
+  const r=sel.getRangeAt(0);
+  return [blockOfNode(r.startContainer), blockOfNode(r.endContainer)];
+}
+function selectionTouchesTitlePage(sel){
+  if(!sel || !sel.rangeCount) return false;
+  const [a, z]=selectionBlocks(sel);
+  if(isTitlePageLine(a) || isTitlePageLine(z)) return true;
+  if(sel.isCollapsed) return false;
+  const r=sel.getRangeAt(0);
+  return titlePageBlocks().some(b=>r.intersectsNode(b));
+}
+/* A selection that runs from the title page into the script (Select All,
+   a long drag) edits only the script part: like the reference app, where the
+   title page is a document of its own, it is never cut, typed over or
+   deleted along with the script. Returns true when the selection now lies
+   in the script alone. */
+function trimSelectionToScript(sel){
+  const body=firstBodyBlock();
+  if(!body || !sel || !sel.rangeCount) return false;
+  const r=sel.getRangeAt(0);
+  const endIn=blockOfNode(r.endContainer);
+  const endInBody = endIn ? !isTitlePageLine(endIn) : (r.endContainer===content && r.endOffset>Array.prototype.indexOf.call(content.children, body));
+  if(!endInBody) return false;
+  const nr=document.createRange();
+  nr.setStart(body, 0);
+  nr.setEnd(r.endContainer, r.endOffset);
+  sel.removeAllRanges(); sel.addRange(nr);
+  return true;
+}
+let _tpToastAt=0;
+function titlePageFixedToast(){
+  if(Date.now()-_tpToastAt<2500) return;
+  _tpToastAt=Date.now();
+  showToast('The Title Page layout is fixed — type in its fields');
+}
+/* Offsets inside a field, for the boundary checks. */
+function caretOffsetsIn(block, sel){
+  const r=sel.getRangeAt(0);
+  const pre=document.createRange(); pre.selectNodeContents(block); pre.setEnd(r.startContainer, r.startOffset);
+  const post=document.createRange(); post.selectNodeContents(block); post.setStart(r.endContainer, r.endOffset);
+  return {before:pre.toString().length, after:post.toString().length};
+}
+content.addEventListener('keydown', function(e){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return;
+  // The script's only paragraph, empty, under the title page: Backspace
+  // would take it away and leave nowhere to write.
+  if(e.key==='Backspace' && sel.isCollapsed){
+    const b=blockOfNode(sel.anchorNode), body=firstBodyBlock();
+    if(b && b===body && !b.nextElementSibling && isBlankParagraph(b)){ e.preventDefault(); e.stopImmediatePropagation(); return; }
+  }
+  if(!selectionTouchesTitlePage(sel)) return;
+  let [a, z]=selectionBlocks(sel);
+  const stop=()=>{ e.preventDefault(); e.stopImmediatePropagation(); };
+  const mod=e.metaKey || e.ctrlKey;
+  // Select All inside a field selects that field, as in the reference app's own
+  // title page window.
+  if(mod && !e.altKey && !e.shiftKey && (e.key==='a' || e.key==='A') && a===z && isTitleField(a)){
+    stop();
+    const r=document.createRange(); r.selectNodeContents(a);
+    sel.removeAllRanges(); sel.addRange(r);
+    return;
+  }
+  // A selection that reaches past one field would change the page's lines.
+  if(a!==z || (!a && !sel.isCollapsed)){
+    const edits=e.key==='Backspace' || e.key==='Delete' || e.key==='Enter' || e.key==='Tab' ||
+      (e.key.length===1 && !mod) || (mod && /^[xv]$/i.test(e.key));
+    if(!edits) return;
+    if(trimSelectionToScript(sel)) return; // the script part is edited as usual
+    stop(); titlePageFixedToast();
+    return;
+  }
+  const block=a;
+  if(!isTitleField(block)){ // a caret that ended up on a spacing line goes to a field first
+    if((e.key.length===1 && !mod) || ['Backspace','Delete','Enter','Tab'].includes(e.key)){ stop(); focusTitleField(nearestTitleField(block)); }
+    return;
+  }
+  const fields=titleFields(), i=fields.indexOf(block);
+  if(e.key==='Enter' || (e.key==='Tab' && !e.shiftKey)){
+    stop();
+    if(e.isComposing) return;
+    const next=fields[i+1];
+    if(next) focusTitleField(next);
+    else if(e.key==='Tab'){ const b=firstBodyBlock(); if(b) placeCaretAtStart(b); }
+    return;
+  }
+  if(e.key==='Tab' && e.shiftKey){ stop(); if(fields[i-1]) focusTitleField(fields[i-1]); return; }
+  if(e.key==='ArrowDown' && !e.shiftKey && !mod){
+    stop();
+    const next=fields[i+1];
+    if(next) focusTitleField(next); else { const b=firstBodyBlock(); if(b){ placeCaretAtStart(b); ensureCaretVisible(); } }
+    return;
+  }
+  if(e.key==='ArrowUp' && !e.shiftKey && !mod){ stop(); if(fields[i-1]) focusTitleField(fields[i-1]); return; }
+  if((e.key==='Backspace' || e.key==='Delete') && sel.isCollapsed){
+    const o=caretOffsetsIn(block, sel);
+    if((e.key==='Backspace' && o.before===0) || (e.key==='Delete' && o.after===0)) stop();
+    return;
+  }
+  // Element shortcuts (Cmd/Ctrl+digit) never retype a title-page line, and
+  // macros (Option/Alt+digit) never add lines to it.
+  if((mod || e.altKey) && /^Digit[0-9]$/.test(e.code||'')) stop();
+}, true);
+/* The same rules for input that doesn't come from a key (phone keyboards,
+   dictation, autocorrect, the Edit menu). */
+content.addEventListener('beforeinput', function(e){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !selectionTouchesTitlePage(sel)) return;
+  const t=e.inputType||'';
+  const [a, z]=selectionBlocks(sel);
+  const stop=()=>{ e.preventDefault(); e.stopImmediatePropagation(); };
+  if(a!==z || !a){
+    if(trimSelectionToScript(sel)) return;
+    stop(); titlePageFixedToast(); return;
+  }
+  if(!isTitleField(a)){ stop(); focusTitleField(nearestTitleField(a)); return; }
+  if(t==='insertParagraph' || t==='insertLineBreak'){ stop(); const f=titleFields(); const n=f[f.indexOf(a)+1]; if(n) focusTitleField(n); return; }
+  if(t==='insertFromDrop'){ stop(); return; }
+  if(/^delete/.test(t) && sel.isCollapsed){
+    const o=caretOffsetsIn(a, sel);
+    if((/Backward$/.test(t) && o.before===0) || (/Forward$/.test(t) && o.after===0)) stop();
+  }
+}, true);
+/* A paste into a field is one line of plain text. */
+content.addEventListener('paste', function(e){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !selectionTouchesTitlePage(sel)) return;
+  const [a, z]=selectionBlocks(sel);
+  if((a!==z || !a) && trimSelectionToScript(sel)) return; // pasted over the script part, as usual
+  e.preventDefault(); e.stopImmediatePropagation();
+  if(a!==z || !isTitleField(a)){ titlePageFixedToast(); return; }
+  const cd=e.clipboardData||window.clipboardData;
+  const text=((cd && cd.getData('text/plain'))||'').replace(/\s*[\r\n]+\s*/g,' ').replace(/\t/g,' ').trim();
+  if(!text) return;
+  insertTextAtCaret(text);
+  content.dispatchEvent(new InputEvent('input', {inputType:'insertFromPaste', data:text, bubbles:true}));
+}, true);
+content.addEventListener('cut', function(e){
+  const sel=window.getSelection();
+  if(readOnlyMode || !sel || !sel.rangeCount || !selectionTouchesTitlePage(sel)) return;
+  const [a, z]=selectionBlocks(sel);
+  if(a!==z || !a){
+    if(trimSelectionToScript(sel)) return;
+    e.preventDefault(); e.stopImmediatePropagation(); titlePageFixedToast();
+  }
+}, true);
+/* Nothing is dropped onto the title page, and none of its lines is dragged
+   away. */
+content.addEventListener('drop', function(e){
+  if(!_sdd) return;
+  const pos=caretFromPoint(e.clientX, e.clientY);
+  const target=pos ? blockOfNode(pos.node) : null;
+  const fromTp=(_sdd.blocks||[]).some(isTitlePageLine);
+  if(isTitlePageLine(target) || fromTp){ e.preventDefault(); e.stopImmediatePropagation(); _sdd=null; titlePageFixedToast(); }
+}, true);
+/* A caret that lands on a spacing line (a click on the empty part of the
+   page, an arrow key from the script below) moves to the nearest field. */
+document.addEventListener('selectionchange', function(){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !sel.isCollapsed || !content.contains(sel.anchorNode)) return;
+  let b=blockOfNode(sel.anchorNode);
+  if(!b && sel.anchorNode===content){ // the caret sits between two lines
+    const kids=content.children, k=sel.anchorOffset;
+    b=kids[Math.min(k, kids.length-1)] || null;
+    if(!isTitlePageLine(b)) return;
+  }
+  if(!isTitlePageLine(b) || isTitleField(b)) return;
+  const f=nearestTitleField(b);
+  if(f) focusTitleField(f); else { const body=firstBodyBlock(); if(body) placeCaretAtStart(body); }
+});
+/* A project whose title page is still exactly this app's old starting page
+   (twelve blank centred lines, the title, "Written by", the author, and
+   for TV the episode line) gets the reference app's grid, with what was typed
+   kept in its fields. Any other title page -- imported, or rearranged by
+   hand -- is left as it is. */
+/* A title page made while the contact block was two lines (Address on line
+   53, Phone Number on 54, lines 50-52 empty): the block becomes today's
+   five, with what was typed in Address and Phone Number kept in theirs. */
+function upgradeTitleContactBlock(lines){
+  const end=lines.findIndex(l=>l && l.forceBreakAfter);
+  if(end!==TP_LINE_COUNT-1) return lines;
+  const at=r=>lines[r-1];
+  if(!at(53) || at(53).titleRole!=='address' || !at(54) || at(54).titleRole!=='phone') return lines;
+  for(let r=50;r<=52;r++){ const l=at(r); if(l.titleRole || (l.text||'').trim()) return lines; }
+  const oldAddress=at(53), oldPhone=at(54);
+  const out=lines.slice();
+  // Lines 50 and 52 keep their own ids; Address and Phone Number move with
+  // theirs (anything pinned to them follows); Email is new.
+  const field=(r, role, from)=>{
+    const base=from ? Object.assign({}, from) : {id:(r===54 ? uid('ln') : (at(r).id||uid('ln'))), type:'centered', text:''};
+    base.titleRole=role; base.align='left'; delete base.forceBreakAfter;
+    out[r-1]=base;
+  };
+  field(50, 'contact_name');
+  field(51, 'address', oldAddress);
+  field(52, 'address2');
+  field(53, 'phone', oldPhone);
+  field(54, 'email');
+  out[TP_LINE_COUNT-1].forceBreakAfter=true;
+  return out;
+}
+function upgradeLegacyTitlePage(lines){
+  if(!Array.isArray(lines)) return lines;
+  lines=upgradeTitleContactBlock(lines);
+  const end=lines.findIndex(l=>l && l.forceBreakAfter);
+  if(end<0) return lines;
+  const tp=lines.slice(0, end+1);
+  const pattern=tp.some(l=>l.titleRole==='episode')
+    ? [null,'title','','episode','','credit','','author']
+    : [null,'title','','credit','','author'];
+  // 12 blanks, then the fixed shape; every line centred, no alignment
+  if(tp.length!==12+pattern.length-1) return lines;
+  if(tp.some(l=>l.type!=='centered' || (l.align && l.align!=='center'))) return lines;
+  const blank=l=>!(l.text||'').trim() && !l.titleRole;
+  for(let k=0;k<12;k++) if(!blank(tp[k])) return lines;
+  const vals={};
+  for(let k=1;k<pattern.length;k++){
+    const l=tp[12+k-1], want=pattern[k];
+    if(want===''){ if(!blank(l)) return lines; continue; }
+    if(want==='credit'){ if(l.titleRole || !RE_TITLE_BY_LINE.test((l.text||'').trim())) return lines; vals.credit=l; continue; }
+    if(l.titleRole!==want) return lines;
+    vals[want]=l;
+  }
+  const roles=vals.episode ? TP_TV_ROLES : TP_FEATURE_ROLES;
+  const grid=fdTitlePageGrid({}, roles).map(g=>{
+    const was=g.titleRole && vals[g.titleRole];
+    if(!was) return Object.assign({id:uid('ln')}, g);
+    // the old line itself, moved to its row: same id (notes stay pinned), same text and styling
+    return Object.assign({}, was, {titleRole:g.titleRole, forceBreakAfter:g.forceBreakAfter||undefined});
+  });
+  // The old last line (the author) carried the page break; the grid's last
+  // line carries it now.
+  grid.forEach((g,k)=>{ if(k<grid.length-1) delete g.forceBreakAfter; });
+  const blanksKept=tp.filter(l=>blank(l));
+  // keep the ids of the old blank lines on grid blanks, so nothing pinned to them is lost
+  let bi=0;
+  grid.forEach(g=>{ if(!g.titleRole && bi<blanksKept.length && blanksKept[bi].id) g.id=blanksKept[bi++].id; });
+  return grid.concat(lines.slice(end+1));
+}
+
 /* The empty paragraph right after `block`, made ready for the caret --
    retyped to `type` when one is given (Tab, a macro's Transition To), kept
    as it is when not (Return) -- or null when there isn't one. */
@@ -3910,7 +4307,7 @@ function reuseBlankAfter(block, type){
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
   return next;
 }
-/* Final Draft's Elements menu for an empty line: Return (or Tab) takes the
+/* The reference app's Elements menu for an empty line: Return (or Tab) takes the
    highlighted element, a letter jumps to the elements starting with it
    (again to cycle), the arrows move, Escape closes. The caret stays in the
    script the whole time. */
@@ -4104,7 +4501,7 @@ function removeCharacterExtension(block, ext){
 }
 /* Typing "(" for a Character-line extension immediately after the name with
    no space first ("BOB(V.O.") auto-inserts a single space between the name
-   and the opening paren, matching Final Draft's own convention
+   and the opening paren, matching the reference app's own convention
    ("BOB (V.O."), so the writer doesn't have to remember to space it
    themselves. Only fires for a genuinely fresh "(" with nothing but
    non-whitespace text directly before it -- one already preceded by
@@ -4160,7 +4557,7 @@ function applyInlineFormat(kind){
 /* Auto-detect INT. / EXT. / INT./EXT. at the start of a line and retype it as a Scene Heading. */
 const SCENE_HEADING_PREFIX_RE=/^(int\.\/ext\.|int\.|ext\.)\s?$/i;
 /* "int." or "ext." typed at the start of an ACTION paragraph makes it a
-   Scene Heading, as in Final Draft -- only Action (and General): typing
+   Scene Heading, as in the reference app -- only Action (and General): typing
    "int." to open a line of dialogue must stay dialogue. */
 function autoDetectSceneHeading(block){
   if(!block || !['action','general'].includes(block.dataset.type)) return;
@@ -4404,7 +4801,7 @@ function sanitizeDirtyBlocks(){
   blocks.forEach(b=>{ if(sanitizeBlockMarkup(b)) changed=true; });
   return changed;
 }
-/* Deletes a selection that runs across paragraphs the way Final Draft (and
+/* Deletes a selection that runs across paragraphs the way the reference app (and
    any word processor) does: the first paragraph keeps its element and takes
    in what is left of the last one; everything between goes. Returns the
    surviving paragraph, or null if the selection is inside one paragraph. */
@@ -4435,7 +4832,7 @@ function selectionSpansBlocks(sel){
 /* =========================================================
    SMARTTYPE
 
-   Final Draft's most-used feature, reproduced as closely as the element
+   The reference app's most-used feature, reproduced as closely as the element
    model here allows: while you type in a Character, Scene Heading or
    Transition element, the rest of a known entry is filled in ahead of the
    caret and left selected, so carrying on typing simply replaces it and
@@ -4447,7 +4844,7 @@ function selectionSpansBlocks(sel){
    after the " - " separator. A Character element offers names, and switches
    to extensions the moment you open a parenthesis.
 
-   The lists build themselves from the script, like Final Draft's do: every
+   The lists build themselves from the script, like the reference app's do: every
    character name, location, time and transition already written is
    available from then on, on top of the standard defaults below.
    ========================================================= */
@@ -4590,7 +4987,7 @@ function ensureSmartTypeLists(){
 function smartTypeContext(block, caret){
   const type=block.dataset.type;
   const text=block.textContent||'';
-  if(caret!==text.length) return null; // Final Draft only completes at the end of what you're typing
+  if(caret!==text.length) return null; // The reference app only completes at the end of what you're typing
   const before=text.slice(0, caret);
   if(type==='character'){
     const open=before.lastIndexOf('(');
@@ -4622,7 +5019,7 @@ function offerSmartTypeList(block, listName){
   showSmartTypeMatch();
   return true;
 }
-/* Tab inside a Scene Heading, as Final Draft documents it:
+/* Tab inside a Scene Heading, as the reference app documents it:
      after the intro (INT, EXT)  -> adds ". " and moves to the location;
      at an empty location        -> calls up the Location SmartType list;
      after the location          -> adds " - " and moves to the time;
@@ -4740,7 +5137,7 @@ function smartTypeHandleKey(e){
   if(!smartTypeActive()) return false;
   if(e.key==='Tab' || e.key==='Enter'){
     // Accept, then let Tab/Enter do their normal structural job on the
-    // now-completed text -- the same as Final Draft.
+    // now-completed text -- the same as the reference app.
     _smartTypeTabAccepted=(e.key==='Tab');
     acceptSmartType();
     return false;
@@ -4753,7 +5150,7 @@ function smartTypeHandleKey(e){
   return false;
 }
 /* =========================================================
-   AUTO-GUESS NEXT CHARACTER (Final Draft's SmartType option)
+   AUTO-GUESS NEXT CHARACTER (the reference app's SmartType option)
    ---------------------------------------------------------
    Arriving in an empty Character paragraph while two people are talking
    offers the OTHER one -- the speaker before the last -- as a SmartType
@@ -4763,7 +5160,7 @@ function smartTypeHandleKey(e){
    only a suggestion: leaving the line takes it away again, and it is never
    saved (serializeLines reads the line as empty).
    Only speakers in the current scene count, which is where "two people
-   talking" can be seen. An app preference, on by default, as in Final Draft.
+   talking" can be seen. An app preference, on by default, as in the reference app.
    ========================================================= */
 let autoGuessOn=true;
 async function loadAutoGuessPref(){
@@ -4910,7 +5307,7 @@ content.addEventListener('keydown', function(e){
     createNoteForBlock('sticky', block);
     return;
   }
-  // Dual Dialogue. Cmd+D is Final Draft's own shortcut; Alt+D is offered
+  // Dual Dialogue. Cmd+D is the reference app's own shortcut; Alt+D is offered
   // alongside it because Cmd/Ctrl+D is the browser's bookmark shortcut and
   // not every browser lets a page keep it.
   if((mod !== e.altKey) && !e.shiftKey && (e.code==='KeyD' || e.key==='d' || e.key==='D')){
@@ -4923,7 +5320,7 @@ content.addEventListener('keydown', function(e){
   // Either modifier, never both, and Alt+digit must not also insert the
   // character it would otherwise type (preventDefault covers that).
   const digit=digitFromEvent(e);
-  // Final Draft (Mac) layout: Cmd or Control, never Option (Option+number
+  // Control-key layout: Cmd or Control, never Option (Option+number
   // belongs to the macros there).
   const typeChord = digit && (macFdKeysOn() ? (mod && !e.altKey) : (mod !== e.altKey)); // exactly one of the two
   if(typeChord && !e.shiftKey && NUMBER_TYPE_MAP[digit]){
@@ -4938,7 +5335,7 @@ content.addEventListener('keydown', function(e){
     ensureCaretVisible();
     return;
   }
-  // Final Draft: Insert > Add / Remove Alt Dialogue (Cmd+Shift+. / Cmd+Shift+,
+  // The reference app: Insert > Add / Remove Alt Dialogue (Cmd+Shift+. / Cmd+Shift+,
   // on Mac; Ctrl+Alt+L / Ctrl+Alt+Shift+L on Windows).
   if((mod && e.shiftKey && !e.altKey && (e.code==='Period' || e.code==='Comma')) || (e.ctrlKey && e.altKey && e.code==='KeyL')){
     e.preventDefault();
@@ -4966,7 +5363,7 @@ content.addEventListener('keydown', function(e){
     scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); markSmartTypeDirty();
     return;
   }
-  // Format > Strikethrough (Cmd+Shift+X in Final Draft).
+  // Format > Strikethrough (Cmd+Shift+X in the reference app).
   if(mod && e.shiftKey && !e.altKey && e.code==='KeyX'){ e.preventDefault(); applyInlineFormat('strike'); return; }
   // Edit > Select Current Scene (Cmd+Shift+A): its heading to the line before the next one.
   if(mod && e.shiftKey && !e.altKey && e.code==='KeyA'){
@@ -5008,7 +5405,7 @@ content.addEventListener('keydown', function(e){
     let newType=!e.shiftKey ? TAB_JUMP_MAP[block.dataset.type] : null;
     if(!e.shiftKey && block.dataset.type==='character' && empty) newType='transition'; // "only when character is blank"
     if(newType && empty){
-      // An empty paragraph is simply retyped in place -- Final Draft's
+      // An empty paragraph is simply retyped in place -- the reference app's
       // Return + Tab (Action -> Character, Dialogue -> Character).
       setBlockType(block, newType);
       if(newType==='parenthetical'){ block.textContent='()'; placeCaretAt(block, 1); }
@@ -5294,12 +5691,13 @@ function naturalBlockHeight(el){
    Draft's screenplay settings: two blank lines above a Scene Heading and a
    Shot (and the act elements), none above Dialogue or a Parenthetical, one above
    everything else. The first paragraph on a page never has any: the page
-   starts at its top margin, as in Final Draft. */
+   starts at its top margin, as in the reference app. */
 const SPACE_BEFORE_LINES={scene_heading:2, shot:2, new_act:2, end_of_act:2, sequence:2, dialogue:0, parenthetical:0};
 function spaceBeforeLines(type){ return SPACE_BEFORE_LINES[type]!=null ? SPACE_BEFORE_LINES[type] : 1; }
 /* What this paragraph's spacing above is by its element (the model). */
 function typePaddingTop(el){
   if(el===content.firstElementChild) return 0;
+  if(el.classList && el.classList.contains('tp-line')) return 0; // one row per title-page line
   return spaceBeforeLines(el.dataset.type)*16;
 }
 /* What it is on the page right now (0 at the top of a page). */
@@ -5365,7 +5763,7 @@ function findPrecedingCharacterName(block){
   return null;
 }
 /* Where a speech may be broken for "(MORE)" / "CHARACTER (CONT'D)": only at
-   the end of a sentence, as Final Draft does by default ("Dialogue will be
+   the end of a sentence, as the reference app does by default ("Dialogue will be
    broken for a page break only at the end of a sentence") -- the next
    sentence starts the next page. A full stop after a common title
    (Mr. Dr. St. ...) is not a sentence end. The offset returned is where the
@@ -5426,10 +5824,10 @@ function measureWrappedLines(block, fromOffset){
   } finally { box.remove(); }
   return lines;
 }
-/* Final Draft-style dialogue continuation: is there a good place to break
+/* Industry-standard dialogue continuation: is there a good place to break
    this Dialogue block's text so it can continue onto the next page with
    "(MORE)" here and "CHARACTER (CONT'D)" there, instead of the whole block
-   moving down? The rules, Final Draft's and the page-break conventions it
+   moving down? The rules, the reference app's and the page-break conventions it
    follows:
    - only at the end of a sentence (sentenceBreakOffsets);
    - at least two lines of the speech stay on this page, with "(MORE)"
@@ -5553,7 +5951,7 @@ function renderDialogueLabelsLayer(dialogueSplits, contdBreaks){
 /* =========================================================
    DUAL DIALOGUE
 
-   Final Draft's rule, reproduced: you need a Character element followed by
+   The reference app's rule, reproduced: you need a Character element followed by
    its Dialogue, immediately followed by another Character and its Dialogue.
    Put the caret in the first speech and Cmd/Ctrl+D sets them side by side;
    pressing it again inside a dualed pair undoes it.
@@ -5647,7 +6045,7 @@ function dualTargetFor(block){
   if(idx<0) return {mode:'none', reason:'Put the cursor in a character\u2019s dialogue first'};
   const start=speechStartIndex(blocks, idx);
   if(start<0) return {mode:'none', reason:'Dual dialogue needs a character cue and its dialogue'};
-  // Final Draft wants the caret in the FIRST of the two speeches. If it's in
+  // The reference app wants the caret in the FIRST of the two speeches. If it's in
   // the second one, pair it with the speech above instead of refusing --
   // the intent is unambiguous either way.
   let pair=canDualAt(blocks, start);
@@ -5734,7 +6132,7 @@ function endDualPreview(){
 /* =========================================================
    AUTOMATIC CHARACTER (CONT'D)
    ---------------------------------------------------------
-   Final Draft's Document > Mores & Continueds option: when the same
+   The reference app's Document > Mores & Continueds option: when the same
    character speaks again in a scene with only action between, the second
    cue carries (CONT'D). It is worked out, not typed -- the cue's text never
    changes, so turning the option off takes every one away again. A scene
@@ -5743,7 +6141,7 @@ function endDualPreview(){
    card are left alone.
    Shown on screen and in Print by a pseudo-element (data-auto-contd); the
    writers that make files add the words through exportLines(). FDX is the
-   exception: Final Draft works these out itself from its own option.
+   exception: the reference app works these out itself from its own option.
    ========================================================= */
 const AUTO_CONTD_TEXT="(CONT'D)";
 const RE_HAS_CONTD=/\(\s*(?:CONT(?:'|\u2019)?D|CONTINUING)\s*\)/i;
@@ -5788,7 +6186,7 @@ function exportLines(){
 }
 
 /* =========================================================
-   ALTERNATE DIALOGUE (Final Draft's View > Show Alts)
+   ALTERNATE DIALOGUE (the reference app's View > Show Alts)
    ---------------------------------------------------------
    A Dialogue paragraph can hold several versions of its speech. Only the
    one showing is the script: it is what is on the page, in every output,
@@ -5941,7 +6339,7 @@ async function loadShowAltsPref(){
 document.addEventListener('selectionchange', scheduleAltsWidget);
 
 /* =========================================================
-   FORMAT ASSISTANT (Final Draft's Tools > Format Assistant)
+   FORMAT ASSISTANT (the reference app's Tools > Format Assistant)
    ---------------------------------------------------------
    Reads the script for the formatting mistakes that are easy to make and
    hard to see: blank paragraphs, stray spaces, line breaks typed inside a
@@ -6125,8 +6523,8 @@ function openFormatAssistant(){
   };
 }
 /* =========================================================
-   TOOLS -- Final Draft's Names Database, Macros, dictation (Speech to
-   Script) and Speech Control, each after Final Draft 13's own manual.
+   TOOLS -- the reference app's Names Database, Macros, dictation (Speech to
+   Script) and Speech Control, each after the reference app's own manual.
    ========================================================= */
 function toolsCaretBlock(){
   const sel=window.getSelection();
@@ -6278,11 +6676,11 @@ async function openNamesDatabase(){
    paragraph becomes the element; in a paragraph with text, a new one is
    added AFTER it -- a macro never splits the paragraph. Transition To then
    adds a paragraph of that kind after the text. None leaves either alone.
-   Keys are Final Draft's Windows set, Control+Alt(+Shift)+key, which on a
+   Keys are the reference app's Windows set, Control+Alt(+Shift)+key, which on a
    Mac is Control+Option: Option alone already chooses elements here.
    An Alias is typed text that runs the macro ("abs" -> "Absolutely!",
    "thier" -> "their"), with Activate In, Smart Replace, Confirm Macro,
-   Word Only and Match Case as in Final Draft. Macros are part of the
+   Word Only and Match Case as in the reference app. Macros are part of the
    script, and Apply Macros From copies another script's set.
    --------------------------------------------------------- */
 function macroDefaults(){
@@ -6328,7 +6726,7 @@ function macroKeyFromEvent(e){
   if(!k) return '';
   const fkey=k[0]==='F' && k.length>1;
   if(e.metaKey) return '';
-  // Final Draft (Mac) layout: Option+key is the macro chord, and it is stored
+  // Control-key layout: Option+key is the macro chord, and it is stored
   // as Ctrl+Alt+key, so a script's macros are the same on every machine.
   if(macFdKeysOn() && e.altKey && !fkey) return 'Ctrl+Alt+'+(e.shiftKey?'Shift+':'')+k;
   if(!fkey && !(e.ctrlKey && e.altKey)) return '';
@@ -6558,9 +6956,9 @@ content.addEventListener('input', checkAliasAfterInput);
 
 /* ---------------------------------------------------------
    SPEECH TO SCRIPT (dictation)
-   The browser's speech recognition, English only, as in Final Draft.
+   The browser's speech recognition, English only, as in the reference app.
    Start and stop with the Dictate button or by pressing Control twice.
-   Spoken commands, as Final Draft documents them:
+   Spoken commands, as the reference app documents them:
      "return", "tab"            -- those keys
      "new paragraph"            -- breaks the line and waits for its type:
                                    "new paragraph ... scene heading"
@@ -6753,7 +7151,7 @@ document.addEventListener('keyup', e=>{
 /* ---------------------------------------------------------
    SPEECH CONTROL (Tools > Speech Control, Tools > Assign Voices)
    Reads the script aloud from the caret with the device's own voices,
-   as Final Draft uses the operating system's. Actors are voices with a
+   as the reference app uses the operating system's. Actors are voices with a
    pitch and speed; each character is played by an actor; the Narrator is
    an actor who reads the elements ticked for it. The toolbar has Play/
    Pause, back and forward a line, and Stop. Assignments are part of the
@@ -7008,7 +7406,7 @@ if(typeof speechSynthesis!=='undefined' && speechSynthesis.addEventListener){
 /* =========================================================
    SCENE NUMBERS (production numbering)
 
-   Two modes, matching Final Draft's Production > Scene Numbers:
+   Two modes, matching the reference app's Production > Scene Numbers:
 
    * Unlocked -- numbers are just a running count. Every scene heading is
      renumbered 1..n whenever the script changes, so they always read
@@ -7114,7 +7512,7 @@ function setSceneNumbersOn(on){
   state.sceneNumbers.on=!!on;
   if(on){
     // Turning numbering on always starts from a clean sequential pass, as
-    // Final Draft does; locking is a separate, later decision.
+    // The reference app does; locking is a separate, later decision.
     state.sceneNumbers.locked=false;
     clearSceneNumbers();
     renumberScenes();
@@ -7144,7 +7542,7 @@ function setSceneNumberStyle(style){
    *revised*. Each issue goes out on the next colour of paper, every line
    that changed carries a mark in the margin, and only the pages that
    actually changed are reprinted -- so a page that last moved in the Pink
-   issue stays pink through Yellow, Green and everything after. Final Draft
+   issue stays pink through Yellow, Green and everything after. The reference app
    keeps all of this under Production > Revisions; the same model here.
 
    Three rules hold the feature together:
@@ -7568,7 +7966,7 @@ function applyPageLockState(){
 /* =========================================================
    PARAGRAPH PAGE CONTROL
 
-   Final Draft's Format > Paragraph flags, plus its Mores & Continueds
+   The reference app's Format > Paragraph flags, plus its Mores & Continueds
    options:
 
    * Page Break Before -- this paragraph always starts a page. Useful for
@@ -7578,7 +7976,7 @@ function applyPageLockState(){
      up so the two travel together. Chains: marking three in a row keeps all
      four paragraphs together.
    * Print (MORE) / Print (CONT'D) -- whether the labels around a dialogue
-     that spans a page break are shown. Following Final Draft, these control
+     that spans a page break are shown. Following the reference app, these control
      the LABELS only: the dialogue still breaks in the same place, it just
      isn't annotated. Nothing about pagination changes.
    ========================================================= */
@@ -7597,7 +7995,7 @@ function keepWithNextBreakIndex(blocks, breakIdx, pageStart){
   return idx;
 }
 /* Where a page break that would fall before blocks[i] actually goes, and
-   whether it breaks a speech. Final Draft's rules and the conventions it
+   whether it breaks a speech. The reference app's rules and the conventions it
    follows, applied until none of them moves the break any more:
    - a Character cue is never the last thing on a page: it goes to the next
      page with its dialogue ("the program will force the character name to
@@ -7658,7 +8056,7 @@ function setParagraphFlag(flag, on){
   return blocks;
 }
 /* A flag reads as "on" only when EVERY selected paragraph has it, the same
-   way a checkbox in Word or Final Draft shows unchecked for a mixed run. */
+   way a checkbox in Word or the reference app shows unchecked for a mixed run. */
 function paragraphFlagState(flag){
   const blocks=blocksForParagraphCommand(lastActiveBlock);
   return blocks.length>0 && blocks.every(b=>b.dataset[flag]==='1');
@@ -7704,7 +8102,7 @@ function computePageLayout(blocks){
       // chance to claim this case — a Dialogue block is *always* preceded by
       // a Character cue, so if orphan control ran first it would shadow the
       // split path entirely, moving the whole cue+dialogue pair down instead
-      // of ever trying a Final Draft-style (MORE)/(CONT'D) continuation.
+      // of ever trying a Industry-standard (MORE)/(CONT'D) continuation.
       // Side-by-side dialogue is never split: the pair moves as one.
       if(blocks[i].dataset.type==='dialogue' && !blocks[i].dataset.dual){
         const spaceLeft=BUDGET-(used-heights[i]);
@@ -7747,9 +8145,10 @@ function computePageLayout(blocks){
 }
 /* Everything drawn beside the text (highlights, structure lines, the
    typewriter line, cards, Navigator) follows every layout. */
-function recomputePagination(){ recomputePaginationCore(); scheduleViewAids(); scheduleMinimap(); scheduleCanvasScrollbar(); }
+function recomputePagination(){ recomputePaginationCore(); noteLayoutSettled(); scheduleViewAids(); scheduleMinimap(); scheduleCanvasScrollbar(); }
 function recomputePaginationCore(){
   sanitizeDirtyBlocks();     // nothing the browser slipped in may escape measurement
+  markTitlePageLines();      // before anything is measured: title-page lines have no space above
   applyShownCaseAll();       // Replace, macros, dictation, the Navigator: text reads as the page shows it
   const blocks=Array.from(content.children).filter(el=>el.classList.contains('line-block'));
   renumberScenes();          // a new or deleted scene heading changes the numbering
@@ -8014,7 +8413,46 @@ function setContinuousView(on){
   btn.title = on ? 'Exit Continuous Page View' : 'Continuous Page View';
   saveProjectViewState();
 }
-const scheduleReflow=debounce(function(){
+/* ONE STEP, NOT TWO.
+   An edit is drawn by the browser at once, but the page that follows from
+   it -- where the page breaks fall, the (MORE)/(CONT'D) lines, where every
+   note's dot, connector and card sit, the highlights -- used to be worked
+   out only by the debounced pass below, about a quarter of a second later.
+   An edit that moved anything (deleting a sentence or a paragraph, a line
+   that wraps or unwraps, Return, a paste) was therefore seen twice: the
+   text changed, then everything around it jumped into place.
+   Now every edit also books a pass for the same frame, before it is
+   painted (requestAnimationFrame runs after the edit and before the
+   paint). It does the page's own layout only if the edit moved something
+   -- the script's height or number of paragraphs differs from what the
+   last layout left -- so plain typing within a line costs nothing extra
+   and stays smooth on a long script. The debounced pass still follows for
+   the sidebars and the rest, and finds the page already laid out.
+   Skipped while an input method (Korean, Japanese ...) is composing a
+   character: the page is left alone until the character is committed. */
+var _laidOutHeight=-1, _laidOutCount=-1, _prePaintRaf=0;
+function noteLayoutSettled(){ _laidOutHeight=content.offsetHeight; _laidOutCount=content.childElementCount; }
+function scheduleReflow(){
+  scheduleReflowLater();
+  if(!_prePaintRaf) _prePaintRaf=requestAnimationFrame(reflowBeforePaint);
+}
+function reflowBeforePaint(){
+  _prePaintRaf=0;
+  if(_scriptComposing || !state.projectId) return;
+  if(content.offsetHeight===_laidOutHeight && content.childElementCount===_laidOutCount) return; // nothing moved
+  recomputePaginationCore();
+  noteLayoutSettled();
+  // What the page draws around the text, in this same frame (a pass booked
+  // from here with requestAnimationFrame would land a frame late).
+  if(_vaRaf){ cancelAnimationFrame(_vaRaf); _vaRaf=0; }
+  runViewAids();
+  scheduleMinimap(); scheduleCanvasScrollbar();
+  layoutAllNotes(); renderDrawLayer(); renderTextHighlights();
+  if(_altsFrame){ cancelAnimationFrame(_altsFrame); _altsFrame=0; }
+  updateAltsWidget();
+  ensureCaretVisible();
+}
+const scheduleReflowLater=debounce(function(){
   recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderTextHighlights();
   if(state.activeTab.left==='outline') renderSidebar('left');
   // The outline's lanes are measured against scene lengths, so any edit can
@@ -8269,7 +8707,7 @@ canvasScrollbarH.addEventListener('wheel', e=>{ e.preventDefault(); pan.x-=(e.de
 /* =========================================================
    RULERS (horizontal / vertical)
    ---------------------------------------------------------
-   Final Draft's rulers, drawn in inches from the live camera: the page's
+   The reference app's rulers, drawn in inches from the live camera: the page's
    own left edge is 0 on the horizontal ruler and each page's top edge is 0
    on the vertical one, so they read true at any zoom and while panning.
    The margins are shaded on both, and the horizontal ruler carries two
@@ -9135,6 +9573,9 @@ function createNoteForBlock(kind, block){
 }
 
 function migrateNote(note){
+  // Mid-animation flags (_foldBusy, _folding, _extraDrag ...) belong to a
+  // moment, never to a saved or restored note.
+  Object.keys(note).forEach(k=>{ if(k[0]==='_') delete note[k]; });
   if(note.pendingShotNumber===undefined) note.pendingShotNumber=null;
   if(note.kind==='sticky'){
     if(note.stickyX===undefined){ note.stickyX = note.dotX!==undefined ? note.dotX : (note.side==='left'?-100:PAGE_W+100); note.stickyY = note.dotY!==undefined ? note.dotY : 200; }
@@ -9229,10 +9670,15 @@ function createNoteDOM(note){
   card.appendChild(body); card.appendChild(foot);
   card.appendChild(resizeBL); card.appendChild(resizeBR);
 
-  wrap.appendChild(dot); wrap.appendChild(card); wrap.appendChild(selectCheck);
+  const links=document.createElementNS('http://www.w3.org/2000/svg','svg'); links.setAttribute('class','note-links');
+  wrap.appendChild(links); wrap.appendChild(dot); wrap.appendChild(card); wrap.appendChild(selectCheck);
   notesLayer.appendChild(wrap);
+  if(!(note.z>0)) note.z=topNoteZ()+1; // a new note (or one from before stacking was kept) goes on top
+  wrap.style.zIndex=String(note.z);
+  // Pressing any part of a note -- card, dot, triangle -- brings the whole note to the front.
+  wrap.addEventListener('pointerdown', ()=>bringNoteToFront(note.id), true);
 
-  noteEls[note.id]={wrap,dot,card,body,categorySel,shotInput,dayInput,chip,closeBtn};
+  noteEls[note.id]={wrap,dot,card,body,categorySel,shotInput,dayInput,chip,closeBtn,links};
 
   if(note.kind==='sticky'){
     wrap.classList.add('is-open');
@@ -9310,9 +9756,6 @@ function createNoteDOM(note){
       endConnectMode();
       return;
     }
-    // Raise this note's own connector above the cards for as long as it is
-    // the one being looked at -- see #connectorFrontLayer.
-    bringConnectorToFront(note.id);
     if(note.anchorLineIds && note.anchorLineIds.length) setNoteHighlight(note.anchorLineIds);
   }, true);
 
@@ -9422,7 +9865,7 @@ function animateConnectorForNote(note, duration, growing, cb){
     path.style.transition='none';
     path.style.strokeDashoffset = growing ? len : 0;
   });
-  void connectorLayer.getBoundingClientRect();
+  void paths[0].getBoundingClientRect();
   paths.forEach(path=>{
     path.style.transition='stroke-dashoffset '+duration+'ms ease-'+(growing?'out':'in');
   });
@@ -9528,14 +9971,15 @@ function foldOneAnimated(n){
   const origin=foldOrigin(n);
   function finish(){
     card.style.transition=''; card.style.transform=''; card.style.opacity=''; card.style.pointerEvents=''; card.style.transformOrigin='';
-    n.folded=true; n._foldBusy=false;
+    n.folded=true; n._foldBusy=false; n._folding=false;
     layoutAllNotes();
     scheduleSnapshot(); scheduleAutosave();
   }
   // Any dashed Additional-Note hierarchy links touching this note vanish
   // immediately, synchronously, right now -- not deferred to finish() like
   // the rest of the fold cleanup, and not animated like the solid
-  // paragraph-connector below.
+  // paragraph-connector below. _folding keeps them off until it is done.
+  n._folding=true;
   removeExtraConnectorsFor(n);
   card.style.transformOrigin=origin;
   card.style.transition='transform '+SHRINK_MS+'ms cubic-bezier(.4,0,.7,1), opacity '+SHRINK_MS+'ms ease-in';
@@ -10026,9 +10470,9 @@ function attachResizeHandle(handleEl, note, corner){
   handleEl.addEventListener('pointermove', function(e){
     if(!down) return;
     const w=screenToWorld(e.clientX,e.clientY);
-    const minW = note.kind==='sticky' ? STICKY_MIN : CARD_W_MIN;
+    const minW = NOTE_W_MIN;
     const maxW = note.kind==='sticky' ? STICKY_MAX : CARD_W_MAX;
-    const minH = note.kind==='sticky' ? STICKY_MIN : CARD_H_MIN;
+    const minH = noteMinHeight(noteEls[note.id]);
     let newLeft, newWidth;
     if(corner==='br'){
       newWidth=clamp(w.x-startLeftWorld, minW, maxW);
@@ -10074,8 +10518,32 @@ function attachLongPressFold(el, note){
   el.addEventListener('pointerleave', clear);
 }
 
+/* The shortest a note's card can be: its header, its Shot # / Shoot day
+   row and at least one line of note text (the text area's own min-height),
+   plus the card's border. Added up from the card's actual parts, so it
+   stays right if a font or padding ever changes. */
+function noteMinHeight(els){
+  const card=els.card;
+  let h=card.offsetHeight-card.clientHeight; // top + bottom border
+  for(const el of card.children){
+    if(el===els.body){ h+=parseFloat(getComputedStyle(el).minHeight)||0; continue; }
+    if(getComputedStyle(el).position==='absolute') continue; // resize handles sit on top
+    h+=el.offsetHeight;
+  }
+  return Math.ceil(h);
+}
+/* A note saved smaller than the minimum (before there was one) is grown to
+   it when it is laid out, so its fields never hang outside the card. */
+function clampNoteSize(note, els){
+  if(note.width && note.width<NOTE_W_MIN) note.width=NOTE_W_MIN;
+  if(note.height && els.card.offsetWidth){ // offsetWidth 0: card hidden (filtered out), can't measure
+    const m=noteMinHeight(els);
+    if(note.height<m) note.height=m;
+  }
+}
 function layoutNote(note){
   const els=noteEls[note.id]; if(!els) return;
+  clampNoteSize(note, els);
   els.wrap.dataset.kind=note.kind;
 
   if(note.kind==='sticky'){
@@ -10219,6 +10687,7 @@ function layoutAllNotes(){
   reanchorDotsToParagraphs();
   state.notes.forEach(n=>{ layoutNote(n); });
   applyFilters();
+  refreshFoldToggle(); // a note folded or opened by hand may settle what the Fold button says
 }
 /* Where a note's dot is drawn: always its stored, freely-dragged
    dotX/dotY, beside its first paragraph -- also once more paragraphs are
@@ -10378,93 +10847,68 @@ function attachExtraDotBehaviour(d, note){
   d.addEventListener('pointercancel', up);
 }
 const MARKER_EDGE=8.5; // a dot's radius plus its halo
-let connectorsPendingAnim=false;
 function updateConnectors(){
-  if(world.classList.contains('animated')){
-    // Same deferral as renderTextHighlights() below, with the same history:
-    // connector ends come from lineTextEdgeWorldX (now domToWorld) and
-    // noteCardBox (world coordinates already), and this is reachable from
-    // the same delayed fold/unfold finish() callback mid pan.
-    if(!connectorsPendingAnim){
-      connectorsPendingAnim=true;
-      requestAnimationFrame(()=>{ connectorsPendingAnim=false; updateConnectors(); });
-    }
-    return;
-  }
+  // Drawn in place in each note's own wrap, never torn down and rebuilt: a
+  // path that is part way through its fold/unfold animation keeps its
+  // element (and so its animation) while its shape is brought up to date.
+  // Rebuilding every path used to cut off the other notes' animations --
+  // the flicker when a Shot List click folds some notes and opens others.
+  // No waiting for a pan to finish, either: the ends are measured against
+  // the page's live position (domFrame), so they are right mid-pan.
   connectorLayer.innerHTML='';
   connectorFrontLayer.innerHTML='';
-  // A raised note that has since been deleted or folded leaves nothing to
-  // raise; drop the flag rather than keeping an empty layer alive.
-  if(frontConnectorNoteId && !state.notes.some(n=>n.id===frontConnectorNoteId)) frontConnectorNoteId=null;
+  const SVG='http://www.w3.org/2000/svg';
   state.notes.forEach(n=>{
-    const layer=connectorLayerForNote(n.id);
-    if(n.kind==='sticky') return; // sticky notes have no dot and no connector
-    if(n.folded) return; // folded: only the dot remains — no card, no connector
-    const els=noteEls[n.id]; if(!els) return;
-    if(els.wrap.classList.contains('filtered-out')) return; // hidden by an active filter — dot stays, connector doesn't
-    const emphasized = !!(state.activeShotId && n.shotId===state.activeShotId);
-
-    if(n.parentNoteId){
-      // Additional Note: no dot, no paragraph connector — just a short link
-      // straight between this card's center and its parent's center, clipped
-      // to only the gap between them (see rectEdgePointToward()), so it
-      // always looks right regardless of their relative position and stays
-      // correct automatically as either one is dragged.
+    const els=noteEls[n.id]; if(!els || !els.links) return;
+    const want=[]; // {key, cls, d}
+    const hidden = n.kind==='sticky' || n.folded || els.wrap.classList.contains('filtered-out');
+    if(!hidden && n.parentNoteId){
+      // Additional Note: a short dashed link between this card's centre and
+      // its parent's, clipped to the gap between them (rectEdgePointToward).
+      // It snaps off the moment either note starts to fold.
       const parent=state.notes.find(p=>p.id===n.parentNoteId);
-      if(parent && noteEls[parent.id] && !parent.folded){
+      if(parent && noteEls[parent.id] && !parent.folded && !n._folding && !parent._folding){
         const myBox=noteCardBox(n), pBox=noteCardBox(parent);
         if(myBox && pBox){
           const myCenter={x:myBox.left+myBox.width/2, y:myBox.top+myBox.height/2};
           const pCenter={x:pBox.left+pBox.width/2, y:pBox.top+pBox.height/2};
           const p1=rectEdgePointToward(myBox, pCenter);
           const p2=rectEdgePointToward(pBox, myCenter);
-          const linkPath=document.createElementNS('http://www.w3.org/2000/svg','path');
-          linkPath.setAttribute('class','connector-path connector-extra');
-          linkPath.dataset.noteId=n.id;
-          linkPath.setAttribute('d','M '+p1.x+' '+p1.y+' L '+p2.x+' '+p2.y);
-          layer.appendChild(linkPath);
+          want.push({key:'link', cls:'connector-path connector-extra', d:'M '+p1.x+' '+p1.y+' L '+p2.x+' '+p2.y});
         }
       }
-      return;
+    } else if(!hidden && n.anchorLineIds && n.anchorLineIds.length){
+      const emphasized = !!(state.activeShotId && n.shotId===state.activeShotId);
+      const pos=noteDotDrawPos(n);
+      // One connector per marker: the dot alone, or -- for a note connected
+      // to two or more paragraphs -- the dot plus one triangle beside each
+      // other connected paragraph, every one of them joined to the card.
+      const markers=[pos].concat(noteIsMulti(n) ? noteExtraDotPositions(n, pos) : []);
+      const {nearX:cardNearX, connectY:cardConnectY}=noteCardGeom(n);
+      markers.forEach((m, k)=>{
+        // A connector starts at the marker's outer edge, never across it.
+        const dir=cardNearX>=m.x ? 1 : -1;
+        const sx=Math.abs(cardNearX-m.x)>MARKER_EDGE*2 ? m.x+dir*MARKER_EDGE : m.x;
+        let d;
+        if(Math.abs(m.y-cardConnectY)<2) d='M '+sx+' '+m.y+' L '+cardNearX+' '+cardConnectY;
+        else { const cx=(sx+cardNearX)/2; d='M '+sx+' '+m.y+' C '+cx+' '+m.y+', '+cx+' '+cardConnectY+', '+cardNearX+' '+cardConnectY; }
+        want.push({key:'m'+k, cls:'connector-path'+(emphasized ? ' connector-emphasized' : ''), d});
+      });
     }
-
-    if(!n.anchorLineIds || !n.anchorLineIds.length) return; // e.g. an ex-Additional-Note whose parent was deleted (unlinked, not deleted) — nothing meaningful to connect to
-    const pos=noteDotDrawPos(n);
-    // One connector per marker: the dot alone, or -- for a note connected
-    // to two or more paragraphs -- the dot plus one triangle beside each
-    // other connected paragraph, every one of them joined to the card.
-    const markers=[pos].concat(noteIsMulti(n) ? noteExtraDotPositions(n, pos) : []);
-    const {nearX:cardNearX, connectY:cardConnectY}=noteCardGeom(n);
-    markers.forEach(m=>{
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('class','connector-path');
-      path.dataset.noteId=n.id;
-      if(emphasized) path.classList.add('connector-emphasized');
-      // A connector starts at the marker's outer edge, never across it: it
-      // must always read as UNDER the dot, even while it is drawn in the
-      // raised layer above the cards (a clicked note, a fold animation).
-      const dir=cardNearX>=m.x ? 1 : -1;
-      const sx=Math.abs(cardNearX-m.x)>MARKER_EDGE*2 ? m.x+dir*MARKER_EDGE : m.x;
-      if(Math.abs(m.y-cardConnectY)<2){
-        path.setAttribute('d','M '+sx+' '+m.y+' L '+cardNearX+' '+cardConnectY);
-      } else {
-        const cx=(sx+cardNearX)/2;
-        path.setAttribute('d','M '+sx+' '+m.y+' C '+cx+' '+m.y+', '+cx+' '+cardConnectY+', '+cardNearX+' '+cardConnectY);
-      }
-      layer.appendChild(path);
+    const have=new Map();
+    Array.from(els.links.children).forEach(p=>{ have.set(p.dataset.key, p); });
+    want.forEach(w=>{
+      let p=have.get(w.key);
+      if(!p){ p=document.createElementNS(SVG,'path'); p.dataset.key=w.key; p.dataset.noteId=n.id; els.links.appendChild(p); }
+      have.delete(w.key);
+      if(p.getAttribute('class')!==w.cls) p.setAttribute('class', w.cls);
+      if(p.getAttribute('d')!==w.d) p.setAttribute('d', w.d);
     });
+    have.forEach(p=>p.remove());
   });
   reapplyHighlightedLine();
   renderTextHighlights();
 }
-/* Clicking anywhere that isn't a note puts the raised connector back under
-   the cards. On capture, so it runs whatever else the click does. */
-document.addEventListener('pointerdown', function(e){
-  if(!frontConnectorNoteId) return;
-  const wrap=e.target && e.target.closest ? e.target.closest('.note-wrap') : null;
-  if(wrap) return; // a note was hit: its own handler decides which one is raised
-  bringConnectorToFront(null);
-}, true);
 let highlightedLineId=null;
 function setHighlightedLine(id){
   if(highlightedLineId===id) return;
@@ -12121,7 +12565,7 @@ function openReportsModal(){
 
    The production department's read of the script: every prop, vehicle,
    costume and effect marked in the text, then pulled out per department so
-   each one can order what it needs. Final Draft keeps this under Production
+   each one can order what it needs. The reference app keeps this under Production
    > Tag Script.
 
    How a tag is stored is the whole design. A tag is an inline
@@ -12141,10 +12585,10 @@ function openReportsModal(){
    lives with the text.
 
    The spans ride along in each line's serialized html, so tags survive
-   reload, undo/redo and copy/paste for free. Final Draft's own tagging
+   reload, undo/redo and copy/paste for free. The reference app's own tagging
    format is not published, so an .fdx export carries each tagged run under
    Novel Dots' own NDTag attributes: the tags come back through Novel Dots'
-   round trip, and Final Draft shows the words untagged.
+   round trip, and the reference app shows the words untagged.
    ========================================================= */
 const BREAKDOWN_CATEGORIES=[
   {id:'cast',        name:'Cast',              color:'#D64545'},
@@ -12478,9 +12922,9 @@ async function deleteScene(sceneId, heading){
   showToast('Scene deleted');
 }
 /* =========================================================
-   OUTLINE EDITOR — Final Draft's, standing vertically
+   OUTLINE EDITOR — The reference app's, standing vertically
    ---------------------------------------------------------
-   Final Draft's Outline Editor is a PLAN laid against page positions: beat
+   The reference app's Outline Editor is a PLAN laid against page positions: beat
    markers sit in Outline lanes over a page ruler, each covering the page
    range the writer intends that act / sequence / scene to take, over a
    target script length (120 pages by default). Under them runs the Script
@@ -12496,7 +12940,7 @@ async function deleteScene(sceneId, heading){
    Storage follows from that: beats are PROJECT DATA in page positions
    (state.outline = {target, beats:[{id, lane, start, end, ...}]}),
    measured in eighths of a page from the top of script page 1 -- the unit
-   a production measures length in, and the finest step Final Draft's
+   a production measures length in, and the finest step the reference app's
    zoom offers. They deliberately do NOT move when the script changes; a
    plan that silently rewrote itself to match the draft would stop being a
    plan. The Script lane, the ruler's labels and the location line are
@@ -12629,7 +13073,7 @@ function firstFreeOutlineSlot(lane, len){
   for(const b of lb){ if(b.start-pos>=len) break; pos=Math.max(pos, b.end); }
   return pos;
 }
-/* Beat Board -> Outline Editor (Final Draft drags a beat into a lane). The
+/* Beat Board -> Outline Editor (the reference app drags a beat into a lane). The
    beat is copied into the chosen lane, one page long, at the first free
    place so it never lands on another beat there; its first line is the
    title, the rest the body, and its colour comes along. The sidebar opens
@@ -12863,7 +13307,7 @@ function showScenePopover(row, anchor){
   _oePop=pop;
 }
 document.addEventListener('pointerdown', e=>{ if(_oePop && !_oePop.contains(e.target)) closeOutlinePopover(); });
-/* The page position of the caret -- Final Draft's location line. */
+/* The page position of the caret -- the reference app's location line. */
 function outlineCaretPos(){
   const m=_oeModel;
   if(!m) return null;
@@ -12874,7 +13318,7 @@ function outlineCaretPos(){
 /* The Outline Editor draws the same model in whichever direction the chrome
    gives it room. Upright in the left sidebar (page 1 at the top, lanes side
    by side); flat on its back in portrait, where that sidebar becomes a strip
-   across the top of the screen -- which is Final Draft's own orientation,
+   across the top of the screen -- which is the reference app's own orientation,
    lanes stacked with the script running left to right. Only the axis
    changes: the model, the beats and every interaction are the one code
    path. */
@@ -12887,7 +13331,7 @@ function updateOutlineIndicator(){
   if(!line) return;
   const p=outlineCaretPos();
   if(p==null){ line.style.display='none'; return; }
-  // The line marks the PAGE containing the cursor, as Final Draft's does.
+  // The line marks the PAGE containing the cursor, as the reference app's does.
   line.style.display='';
   const at=(Math.floor(p/8)*outlineZoom)+'px';
   if(document.querySelector('.oe-hbody')){ line.style.left=at; line.style.top=''; }
@@ -12970,7 +13414,7 @@ function outlineBodyNode(el, horiz){
       showContextMenu(x, y, items);
     };
     lane.addEventListener('contextmenu', e=>{ if(e.target!==lane) return; e.preventDefault(); laneMenu(e.clientX, e.clientY, e); });
-    // Final Draft: double-clicking empty Outline Editor space sets the target length.
+    // The reference app: double-clicking empty Outline Editor space sets the target length.
     lane.addEventListener('dblclick', e=>{ if(e.target===lane) changeOutlineTarget(); });
     let lp=null;
     lane.addEventListener('pointerdown', e=>{
@@ -13345,8 +13789,6 @@ let allHidden=false;
 function setHideAll(hidden){
   allHidden=hidden;
   notesLayer.style.display = hidden ? 'none' : '';
-  connectorLayer.style.display = hidden ? 'none' : '';
-  connectorFrontLayer.style.display = hidden ? 'none' : '';
   drawLayer.style.display = hidden ? 'none' : '';
   const btn=document.getElementById('btnHideAll');
   btn.classList.toggle('active', hidden);
@@ -13967,7 +14409,7 @@ function showToast(msg){
 function snapshotState(){
   return JSON.stringify({
     lines:serializeLines(),
-    notes:state.notes.map(n=>({...n})),
+    notes:state.notes.map(n=>{ const o={...n}; Object.keys(o).forEach(k=>{ if(k[0]==='_') delete o[k]; }); return o; }),
     shots:state.shots.map(s=>({...s})),
     drawings:state.drawings.map(d=>({...d})),
     images:state.images.map(i=>({...i})),
@@ -13987,6 +14429,7 @@ const scheduleSnapshot=debounce(function(){
 function restoreSnapshot(snapStr){
   const data=JSON.parse(snapStr);
   initScreenplay(data.lines);
+  syncProjectTitleFromTitlePage(); // the project's name follows the title it undid back to
   notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
   state.notes=migrateNotes(data.notes); state.shots=data.shots; state.drawings=migrateDrawings(data.drawings||[]); state.images=data.images||[];
   state.outline=normalizeOutlinePlan(data.outline);
@@ -14065,7 +14508,7 @@ let findMatches=[], findCurrentIndex=-1, findTerm='';
 /* Find & Replace options, for the session (like the print dialog's):
    - matchCase: find only text with exactly the typed capitals.
    - keepCase: a replacement takes the shape of the text it replaces --
-     MAREN -> NORA, Maren -> Nora, maren -> nora (Final Draft's behaviour),
+     MAREN -> NORA, Maren -> Nora, maren -> nora (the reference app's behaviour),
      so a character's introduction in capitals stays in capitals. */
 const findOpts={matchCase:false, keepCase:true};
 function caseShapeOf(s){
@@ -14417,8 +14860,8 @@ function exportScriptTXT(){
 }
 
 /* =========================================================
-   EXPORT: FDX (Final Draft) — an editable, industry-standard interchange
-   format importable into Final Draft and most other screenwriting software
+   EXPORT: FDX (the reference app) — an editable, industry-standard interchange
+   format importable into the reference app and most other screenwriting software
    (Celtx, WriterDuet, Highland, Fade In, etc.) so the script can continue
    being edited elsewhere.
    ========================================================= */
@@ -14426,7 +14869,7 @@ const FDX_TYPE_MAP={
   scene_heading:'Scene Heading', action:'Action', character:'Character',
   dialogue:'Dialogue', parenthetical:'Parenthetical', transition:'Transition',
   shot:'Shot', general:'General',
-  // Final Draft's own element names for these three. They are taken from the
+  // The reference app's own element names for these three. They are taken from the
   // published element list rather than from a schema, so a file that comes
   // back with them unrecognised falls through to Action -- the text is never
   // at risk either way.
@@ -14471,19 +14914,19 @@ function htmlToStyledRuns(html){
   })(holder, false, false, false, false, null);
   return runs.length ? runs : [{text:holder.textContent||'', bold:false, italic:false, underline:false, strike:false}];
 }
-/* Final Draft writes colours as 48-bit #RRRRGGGGBBBB rather than the 24-bit
+/* The reference app writes colours as 48-bit #RRRRGGGGBBBB rather than the 24-bit
    web form, so each channel is simply doubled. */
 function fdxColorHex(hex){
   const m=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex||''));
   if(!m) return '#FFFFFFFFFFFF';
   return '#'+m.slice(1).map(h=>(h+h).toUpperCase()).join('');
 }
-/* The revision set list, written as Final Draft's own <Revisions> header so
+/* The revision set list, written as the reference app's own <Revisions> header so
    the colours and their ORDER survive the trip -- the order is the whole
    point of a revision history, and a file that carried only the marks would
    arrive with no way to tell Blue from Cherry. Paragraph marks are carried
-   on each <Text> run as RevisionID, which is where Final Draft keeps them.
-   Modelled on Final Draft's schema rather than verified against it; anything
+   on each <Text> run as RevisionID, which is where the reference app keeps them.
+   Modelled on the reference app's schema rather than verified against it; anything
    it doesn't recognise it ignores, so the worst case is that the marks come
    back only through Novel Dots' own round trip. */
 function fdxRevisionsXml(){
@@ -14506,11 +14949,11 @@ function fdxStyleAttr(run){
   if(run.underline) parts.push('Underline');
   return parts.length ? ' Style="'+parts.join('+')+'"' : '';
 }
-/* What Final Draft publishes is written in Final Draft's own terms (Type,
+/* What the reference app publishes is written in the reference app's own terms (Type,
    Number, Alignment, StartsNewPage, Style, RevisionID). What it has no
    published form for is written under ND-prefixed attributes and elements,
    the convention NDPageAnchor already set: they cannot collide with a real
-   Final Draft name, Final Draft ignores what it does not recognise, and
+   The reference app name, the reference app ignores what it does not recognise, and
    they bring the script back whole through Novel Dots' own round trip.
      Text runs:   NDStrike, NDTag / NDTagName / NDTagSpan (breakdown tags)
      Paragraphs:  NDKeepWithNext, NDType (lyrics, sequence), NDTitleRole,
@@ -14531,7 +14974,7 @@ function fdxRunsXml(html, revAttr){
   }).join('');
 }
 /* The Outline Editor's plan, as Novel Dots' own element outside <Content>
-   (Final Draft publishes no form for its outline lanes): the target length
+   (the reference app publishes no form for its outline lanes): the target length
    and each beat's lane and page range in eighths. */
 function fdxOutlinePlanXml(){
   const pl=state.outline;
@@ -14546,7 +14989,7 @@ function fdxOutlinePlanFromRoot(root){
     lane:b.getAttribute('Lane'), start:b.getAttribute('Start'), end:b.getAttribute('End'),
     color:b.getAttribute('Color'), title:b.getAttribute('Title')||'', body:b.textContent||''}))});
 }
-/* The Beat Board, as Novel Dots' own element (Final Draft publishes no
+/* The Beat Board, as Novel Dots' own element (the reference app publishes no
    form for its Beat Board): each beat's cell, size in cells, colour, text. */
 function fdxBeatBoardXml(){
   const bb=state.beatBoard;
@@ -14571,16 +15014,16 @@ function fdxParagraph(line){
   let ndType='';
   if(line.type==='centered'){ type='Action'; alignAttr=' Alignment="Center"'; }
   else if(line.type==='lyrics'){ type='Dialogue'; ndType=' NDType="lyrics"'; } // closest native equivalent; NDType brings the element back
-  // Sequence has no FDX name confirmed from Final Draft's published list, so
-  // it goes out the way Final Draft would show it (a centred Action line)
+  // Sequence has no FDX name confirmed from the reference app's published list, so
+  // it goes out the way the reference app would show it (a centred Action line)
   // and NDType brings the element itself back on our own round trip.
   else if(line.type==='sequence'){ type='Action'; alignAttr=' Alignment="Center"'; ndType=' NDType="sequence"'; }
   else if(!type){ type='Action'; } // fallback for any unexpected type
-  // Final Draft carries a production scene number on the paragraph itself.
+  // The reference app carries a production scene number on the paragraph itself.
   const numberAttr = (line.type==='scene_heading' && line.sceneNumber) ? ' Number="'+fdxEscape(String(line.sceneNumber))+'"' : '';
-  // Final Draft has no published attribute for "this paragraph starts locked
+  // The reference app has no published attribute for "this paragraph starts locked
   // page N", so this is Novel Dots' own, under a prefixed name that cannot
-  // collide with a real one. Final Draft ignores attributes it doesn't know,
+  // collide with a real one. The reference app ignores attributes it doesn't know,
   // so the file stays valid there and the lock survives our own round trip.
   const anchorAttr = line.pageAnchor ? ' NDPageAnchor="'+fdxEscape(String(line.pageAnchor))+'"' : '';
   if(line.align==='center') alignAttr=' Alignment="Center"';
@@ -14592,7 +15035,7 @@ function fdxParagraph(line){
     // Alternate dialogue: every version, as Novel Dots' own attribute. Final
     // Draft reads the paragraph's text, which is the version showing.
     (line.alts ? ' NDAlts="'+fdxEscape(JSON.stringify(line.alts))+'"' : '');
-  // A scene's index card is Final Draft's own SceneProperties (Title and
+  // A scene's index card is the reference app's own SceneProperties (Title and
   // Summary); the structure colour has no published FDX name, so it is ours.
   const colorAttr=(line.structColor ? ' NDColor="'+fdxEscape(line.structColor)+'"' : '')+
     (line.omitted && line.type==='scene_heading' ? ' NDOmitted="'+fdxEscape(JSON.stringify(line.omitted))+'"' : '');
@@ -14604,7 +15047,24 @@ function fdxParagraph(line){
   }
   return '<Paragraph Type="'+type+'"'+numberAttr+anchorAttr+alignAttr+flags+ndType+colorAttr+'>'+sceneProps+textXml+'</Paragraph>';
 }
-/* Final Draft nests a dual pair inside a wrapper paragraph:
+/* A title-page line the way the reference app writes its own: no element, set
+   1.00in to 7.50in, no space above, and the title in Underline+AllCaps. */
+function fdxTitleParagraph(line){
+  const align=line.align==='left' ? 'Left' : line.align==='right' ? 'Right' : 'Center';
+  const isTitle=line.titleRole==='title';
+  const runs=htmlToStyledRuns(line.html!=null ? line.html : escapeHtml(line.text||''));
+  const xml=runs.filter(r=>r.text).map(r=>{
+    const parts=[];
+    if(r.bold) parts.push('Bold');
+    if(r.italic) parts.push('Italic');
+    if(r.underline || isTitle) parts.push('Underline');
+    if(isTitle) parts.push('AllCaps');
+    return '<Text'+(parts.length ? ' Style="'+parts.join('+')+'"' : '')+'>'+fdxEscape(r.text)+'</Text>';
+  }).join('') || '<Text></Text>';
+  return '<Paragraph Alignment="'+align+'" FirstIndent="0.00" Leading="Regular" LeftIndent="'+TP_LEFT_IN.toFixed(2)+'" RightIndent="'+TP_RIGHT_IN.toFixed(2)+'" SpaceBefore="0" Spacing="1" StartsNewPage="No"'+
+    (line.titleRole ? ' NDTitleRole="'+fdxEscape(line.titleRole)+'"' : '')+'>'+xml+'</Paragraph>';
+}
+/* The reference app nests a dual pair inside a wrapper paragraph:
      <Paragraph><DualDialogue><Paragraph .../>...</DualDialogue></Paragraph>
    Both speeches sit inside, in the same order they're written. */
 function fdxBodyParagraphs(lines){
@@ -14631,11 +15091,11 @@ function exportScriptFDX(){
   const {titleLines, bodyLines}=splitTitleAndBody(lines);
   const bodyXml=fdxBodyParagraphs(bodyLines.filter(l=>!isNonPrintingType(l.type))).join('\n    ');
   // The whole title page, blank lines included: those blank lines ARE its
-  // layout (they push the title down the page), and Final Draft's own title
+  // layout (they push the title down the page), and the reference app's own title
   // pages are built the same way.
   const titlePrinted=titleLines.filter(l=>!isNonPrintingType(l.type));
   const titleXml=titlePrinted.length
-    ? '<TitlePage><Content>\n    '+titlePrinted.map(fdxParagraph).join('\n    ')+'\n  </Content></TitlePage>'
+    ? '<TitlePage><Content>\n    '+titlePrinted.map(fdxTitleParagraph).join('\n    ')+'\n  </Content></TitlePage>'
     : '';
   const xml='<?xml version="1.0" encoding="UTF-8" standalone="no" ?>\n'+
     '<FinalDraft DocumentType="Script" Template="No" Version="1">\n'+
@@ -14649,7 +15109,7 @@ function exportScriptFDX(){
     fdxSettingsXml()+
     '</FinalDraft>\n';
   const ok=downloadBlob('screenplay.fdx', xml, 'application/xml');
-  showExportModal('Export Screenplay (.fdx — Final Draft)'+(ok?'':' — download blocked'), xml);
+  showExportModal('Export Screenplay (.fdx)'+(ok?'':' — download blocked'), xml);
 }
 /* Notes are anchored to the body paragraph they sit in front of, counted
    in the same flat order the importer reads paragraphs back in (a dual pair
@@ -14672,7 +15132,7 @@ function fdxSettingsXml(){
   return '  <NDSettings SceneNumbers="'+yn(sn.on)+'" SceneNumbersLocked="'+yn(sn.locked)+'" SceneNumberStyle="'+(sn.style==='uk'?'UK':'US')+'"'+
     ' More="'+yn(po.more)+'" Contd="'+yn(po.contd)+'" AutoContd="'+yn(po.autoContd)+'" ShowTags="'+yn(state.breakdown.show!==false)+'"/>\n'+
     // Macros, names added to SmartType and Speech Control's voices belong to
-    // the script, as in Final Draft; Novel Dots keeps its own form of them.
+    // the script, as in the reference app; Novel Dots keeps its own form of them.
     '  <NDTools>'+fdxEscape(JSON.stringify({macros:normalizeMacros(state.macros), smartTypeNames:state.smartTypeNames||[], speech:normalizeSpeech(state.speech), format:normalizeDocFormat(state.format), charHighlight:normalizeCharHighlight(state.charHighlight), trackChanges:tcForSave()}))+'</NDTools>\n';
 }
 
@@ -14992,7 +15452,7 @@ async function exportScriptPDF(opts){
 
   // --- Title Page ---
   if(hasTitleContent){
-    titleLines.forEach(l=>printParagraph(l, PDF_COLS.centered));
+    titleLines.forEach(l=>printParagraph(l, titlePagePdfCol(l)));
     newPage();
   }
 
@@ -15239,6 +15699,21 @@ const DOC_TEXT_W=6; // inches: 8.5in page, 1.5in left and 1in right margins
    screenplay rhythm the PDF gets from the same element order. */
 const DOC_SPACE_BEFORE=new Proxy({}, {get:(t, type)=>typeof type==='string' ? spaceBeforeLines(type) : undefined}); // the page's own table
 const DOC_KEEP_NEXT={scene_heading:1, character:1, parenthetical:1, shot:1, cast_list:1, new_act:1, sequence:1};
+/* The title page's own geometry for every writer (see TITLE PAGE: FINAL
+   DRAFT'S LAYOUT, FIXED): 1.00in to 7.50in across the sheet, one row per
+   line, no space above, plain -- except the title, underlined capitals --
+   and each line's own alignment (centred unless it says otherwise). */
+function titlePagePdfCol(line){
+  const title=line && line.titleRole==='title';
+  return {left:TP_LEFT_IN-PDF_TEXT_ORIGIN_IN, width:TP_RIGHT_IN-TP_LEFT_IN,
+    align:(line && line.align) || 'center', upper:title, underline:title};
+}
+function titlePageDocSpec(line){
+  const col=titlePagePdfCol(line);
+  // titleUnderline: drawn run by run, since no style carries it
+  return {leftIn:col.left, rightIn:Math.max(0, +(DOC_TEXT_W-col.left-col.width).toFixed(3)), align:col.align,
+    upper:col.upper, italic:false, bold:false, underline:false, titleUnderline:col.underline, before:0, keepNext:false};
+}
 function docElementSpec(type){
   const col=PDF_COLS[type]||PDF_COLS.action;
   return {
@@ -15303,7 +15778,7 @@ function exportRunsForLine(line, spec){
     let text=String(r.text||'').replace(/\u00a0/g,' ').replace(/\s*[\r\n]+\s*/g,' ');
     if(!text) return;
     if(spec && spec.upper) text=text.toUpperCase();
-    const run={text, bold:!!r.bold, italic:!!r.italic, underline:!!r.underline, strike:!!r.strike};
+    const run={text, bold:!!r.bold, italic:!!r.italic, underline:!!r.underline || !!(spec && spec.titleUnderline), strike:!!r.strike};
     const prev=out[out.length-1];
     if(prev && prev.bold===run.bold && prev.italic===run.italic && prev.underline===run.underline && prev.strike===run.strike) prev.text+=run.text;
     else out.push(run);
@@ -15440,7 +15915,7 @@ function buildDocxParts(){
       const last=k===titleLines.length-1;
       // The title page is its own section with no header, so it carries no
       // page number; the script section below restarts numbering at 1.
-      body.push(docxParagraphXml(l, {style:'NDTitlePage', spec:docElementSpec('centered'), sectPr: last ? '<w:sectPr>'+docxPageXml()+'</w:sectPr>' : ''}));
+      body.push(docxParagraphXml(l, {style:'NDTitlePage', spec:titlePageDocSpec(l), sectPr: last ? '<w:sectPr>'+docxPageXml()+'</w:sectPr>' : ''}));
     });
   }
   let first=true;
@@ -15586,8 +16061,7 @@ function buildRtf(){
     '\\paperw'+Math.round(PDF_IN.pageW*1440)+'\\paperh'+Math.round(PDF_IN.pageH*1440)+'\\margl2160\\margr'+Math.round((PDF_IN.pageW-7.5)*1440)+'\\margt'+Math.round(PDF_IN.mTop*1440)+'\\margb'+Math.round(PDF_IN.mBottom*1440)+'\\widowctrl\n';
   if(hasTitle){
     out+='\\sectd\\headery720'+blankHeader('headerr')+'\n';
-    const titleSpec=Object.assign(docElementSpec('centered'), {before:0}); // the title page's own blank lines are its spacing
-    titleLines.forEach(l=>{ out+=rtfParagraph(l, {spec:titleSpec}); });
+    titleLines.forEach(l=>{ out+=rtfParagraph(l, {spec:titlePageDocSpec(l)}); }); // the title page's own blank lines are its spacing
     out+='\\sect';
   }
   // The script section: numbering restarts at 1 and the first page is
@@ -15639,7 +16113,8 @@ function htmlRunsMarkup(runs){
 }
 function htmlSpecStyle(spec, line){
   const parts=[];
-  if(spec.leftIn) parts.push('padding-left:'+spec.leftIn+'in');
+  // A negative indent (the title page reaches out to 1.00in) is a margin: padding can't be negative.
+  if(spec.leftIn) parts.push((spec.leftIn<0 ? 'margin-left:' : 'padding-left:')+spec.leftIn+'in');
   if(spec.rightIn) parts.push('padding-right:'+spec.rightIn+'in');
   const align=docAlignFor(line, spec);
   if(align!=='left') parts.push('text-align:'+align);
@@ -15678,7 +16153,7 @@ function buildScriptHtml(){
     '*{box-sizing:border-box}',
     'html{background:var(--desk)}',
     ndCourierFontFaceCss(), // the page carries the app's own face, so it reads the same anywhere
-    'body{margin:0;padding:24px 12px;color:var(--ink);font:12pt/12pt "ND Courier","Courier Final Draft",Courier,"Courier New",monospace;-webkit-text-size-adjust:100%}',
+    'body{margin:0;padding:24px 12px;color:var(--ink);font:12pt/12pt "ND Courier",Courier,"Courier New",monospace;-webkit-text-size-adjust:100%}',
     '.script{width:8.5in;max-width:100%;margin:0 auto;background:var(--paper);padding:1in 1in 1in 1.5in;box-shadow:0 1px 3px rgba(0,0,0,.18)}',
     '@media (max-width:8.6in){.script{padding:.6in .5in .6in .9in}}',
     '.sp{position:relative;margin:0;font:inherit;white-space:pre-wrap;overflow-wrap:break-word}',
@@ -15701,7 +16176,7 @@ function buildScriptHtml(){
   let html='';
   if(hasTitle){
     html+='<section class="title-page" aria-label="Title page">'+
-      titleLines.map(l=>htmlParagraph(l, Object.assign(docElementSpec('centered'), {before:0}))).join('\n')+
+      titleLines.map(l=>htmlParagraph(l, titlePageDocSpec(l))).join('\n')+
       '</section>\n<hr class="page-rule">\n';
   }
   html+='<section class="body">\n';
@@ -15764,14 +16239,18 @@ const FOUNTAIN_SPEECH_TYPES={parenthetical:1, dialogue:1, lyrics:1};
 function fountainTitlePageBlock(titleLines){
   const solid=titleLines.map(l=>({line:l, text:(l.text||'').replace(/\s+/g,' ').trim()})).filter(x=>x.text);
   if(!solid.length) return '';
-  const fields={title:[], credit:[], author:[], contact:[]};
+  const fields={title:[], credit:[], author:[], source:[], contact:[]};
+  const ROLE_KEY={title:'title', episode:'title', credit:'credit', author:'author', source:'source'};
+  TP_CONTACT_ROLES.forEach(r=>{ ROLE_KEY[r]='contact'; });
   const titleIdx=Math.max(0, solid.findIndex(x=>x.line.titleRole==='title'));
   let authorIdx=solid.findIndex(x=>x.line.titleRole==='author');
   solid.forEach((x, k)=>{
     const val=fountainRuns(exportRunsForLine(x.line, null));
-    if(k===titleIdx) fields.title.push(val);
+    const byRole=ROLE_KEY[x.line.titleRole];
+    if(byRole) fields[byRole].push(val);
+    else if(k===titleIdx) fields.title.push(val);
     else if(RE_TITLE_BY_LINE.test(x.text)) fields.credit.push(val);
-    else if(k===authorIdx) fields.author.push(val);
+    else if(x.line.align==='left') fields.contact.push(val);
     else if(authorIdx<0 || k<authorIdx) (fields.credit.length ? fields.author : fields.title).push(val);
     else fields.contact.push(val);
   });
@@ -15779,7 +16258,7 @@ function fountainTitlePageBlock(titleLines){
     if(!vals.length) return '';
     return vals.length===1 ? key+': '+vals[0]+'\n' : key+':\n'+vals.map(v=>'    '+v).join('\n')+'\n';
   };
-  return block('Title', fields.title)+block('Credit', fields.credit)+block('Author', fields.author)+block('Contact', fields.contact)+'\n';
+  return block('Title', fields.title)+block('Credit', fields.credit)+block('Author', fields.author)+block('Source', fields.source)+block('Contact', fields.contact)+'\n';
 }
 function buildFountain(){
   const {titleLines, bodyLines}=splitTitleAndBody(exportLines());
@@ -16277,7 +16756,7 @@ function finalizeImportedLines(rawLines){
     // Blank lines are dropped as parser noise -- EXCEPT title-page spacers,
     // which are deliberate vertical placement, the same way this app's own
     // new-project title page uses blank centered lines.
-    if(!text && !l.spacer) return;
+    if(!text && !l.spacer && !l.titleRole && !l.forceBreakAfter) return; // a title page's empty fields are kept too
     const type=TYPES.includes(l.type) ? l.type : 'action'; // never let an unrecognized type reach the DOM layer
     if(counts[type]!==undefined) counts[type]++; else counts.other++;
     const out={type, text};
@@ -16380,33 +16859,51 @@ function fountainTitleLines(fields){
   const title=pick('title'), author=pick('author');
   if(!title.length && !author.length) return [];
   const credit=pick('credit');
-  const out=[];
-  const blank=()=>out.push({type:'centered', text:'', spacer:true});
-  const add=(vals, role)=>vals.forEach((v,k)=>{
+  // A quoted second title line is a TV episode title -- the convention the
+  // Fountain exporter writes and TV title pages use.
+  const ep=title.length>1 && /^["\u201c].*["\u201d]$/.test(title[1]) ? [title[1]] : [];
+  const extraTitle=title.slice(1+ep.length);
+  const mk=(v, role, align)=>{
     const em=fountainEmphasis(v);
     const l={type:'centered', text:em.text};
     if(em.html!==escapeHtml(em.text)) l.html=em.html;
-    if(k===0 && role) l.titleRole=role;
-    out.push(l);
+    if(role) l.titleRole=role;
+    if(align) l.align=align;
+    return l;
+  };
+  // The reference app's grid (see TITLE PAGE): each block on its own row, or
+  // lower when the block above it runs longer, two rows apart at least.
+  const rows=[];
+  let last=0;
+  const place=(fdRow, vals, role, align)=>{
+    if(!vals.length) return;
+    let at=Math.max(fdRow, last ? last+2 : fdRow);
+    vals.forEach((v,k)=>{ rows.push({row:at+k, line:mk(v, k===0 ? role : 'text', align)}); });
+    last=at+vals.length-1;
+  };
+  place(TP_ROWS.title, [title[0]||''].concat(extraTitle), 'title');
+  if(ep.length) place(TP_ROWS.episode, ep, 'episode');
+  place(TP_ROWS.credit, credit.length ? credit : ['Written by'], 'credit');
+  place(TP_ROWS.author, author.length ? author : [''], 'author');
+  place(TP_ROWS.source, pick('source').length ? pick('source') : [''], 'source');
+  ['draft date','date','copyright','notes'].forEach(k=>place(last+2, pick(k), 'text'));
+  // Contact sits in the bottom-left corner, its last line on the last row.
+  const contact=pick('contact');
+  // Its five rows are always fields; a longer contact runs on upward.
+  const bottom=TP_CONTACT_ROLES.map(r=>({row:TP_ROWS[r], line:mk('', r, 'left')}));
+  contact.forEach((v,k)=>{
+    const row=TP_LINE_COUNT-contact.length+1+k;
+    const slot=bottom.find(b=>b.row===row);
+    if(slot) slot.line=mk(v, slot.line.titleRole, 'left');
+    else bottom.push({row, line:mk(v, 'text', 'left')});
   });
-  // The same shape as a new project's title page (titlePageLines).
-  for(let k=0;k<12;k++) blank();
-  // A quoted second title line is a TV episode title -- the convention the
-  // Fountain exporter writes and TV title pages use.
-  add(title.slice(0,1).length ? title.slice(0,1) : [''], 'title');
-  if(title.length>1){
-    const ep=/^["\u201c].*["\u201d]$/.test(title[1]) ? [title[1]] : [];
-    add(ep, 'episode');
-    add(title.slice(1+ep.length));
-  }
-  blank();
-  add(credit.length ? credit : ['Written by']);
-  blank();
-  add(author.length ? author : [''], 'author');
-  ['source','draft date','date','contact','copyright','notes'].forEach(k=>{
-    const vals=pick(k);
-    if(vals.length){ blank(); add(vals); }
-  });
+  bottom.sort((a,b)=>a.row-b.row);
+  const top=Math.max(TP_LINE_COUNT, last+1+bottom.length);
+  const shift=top-TP_LINE_COUNT; // only when the centre block runs into the corner
+  bottom.forEach(b=>rows.push({row:b.row+shift, line:b.line}));
+  const out=[];
+  for(let r=1; r<=top; r++) out.push({type:'centered', text:'', spacer:true});
+  rows.forEach(x=>{ out[x.row-1]=x.line; });
   out[out.length-1].forceBreakAfter=true;
   return out;
 }
@@ -16632,7 +17129,7 @@ function fountainTextToLines(text){
 }
 
 /* =========================================================
-   FDX (Final Draft) import — the mirror image of exportScriptFDX above.
+   FDX (the reference app) import — the mirror image of exportScriptFDX above.
    Because FDX explicitly tags every paragraph's type in the file itself,
    this is the single most reliable import path of the bunch: no
    guessing, just reading. Only the top-level <Content> (the body) is
@@ -16641,7 +17138,7 @@ function fountainTextToLines(text){
    leaks into the script body and is no longer thrown away either.
    ========================================================= */
 const FDX_TYPE_MAP_INVERSE=(()=>{ const m={}; Object.keys(FDX_TYPE_MAP).forEach(k=>{ m[FDX_TYPE_MAP[k]]=k; }); return m; })();
-/* A file written by Final Draft itself keeps its outline paragraphs (what
+/* A file written by the reference app itself keeps its outline paragraphs (what
    its Send to Script puts on the page) inside <Content>, under these element
    names. They come in as the same non-printing elements here instead of
    falling through to Action. (Our own writer keeps them in <NDNotes>.) */
@@ -16702,7 +17199,7 @@ function fdxParagraphToLine(p){
   const out={type, text};
   if(html && html!==escapeHtml(text)) out.html=html;
   if(alignAttr==='Right') out.align='right';
-  else if(alignAttr==='Left') out.align='left';
+  else if(alignAttr==='Left' || alignAttr==='Full') out.align='left'; // The reference app's "Full" on a one-line paragraph reads as left (its title page's contact lines)
   const num=p.getAttribute('Number');
   if(type==='scene_heading' && num) out.sceneNumber=num;
   const revRun=Array.from(p.getElementsByTagName('Text')).find(t=>t.getAttribute('RevisionID'));
@@ -16713,7 +17210,7 @@ function fdxParagraphToLine(p){
   if(p.getAttribute('NDKeepWithNext')==='Yes') out.keepWithNext=true;
   if(altsAttr){ try{ const a=normalizeAlts(JSON.parse(altsAttr)); if(a) out.alts=a; }catch(err){} }
   const role=p.getAttribute('NDTitleRole');
-  if(role==='title' || role==='author' || role==='episode') out.titleRole=role;
+  if(TP_FIELD_ROLES.includes(role)) out.titleRole=role;
   const ndColor=p.getAttribute('NDColor');
   if(ndColor && /^#[0-9a-f]{6}$/i.test(ndColor)) out.structColor=ndColor.toUpperCase();
   const ndOmit=p.getAttribute('NDOmitted');
@@ -16733,7 +17230,7 @@ function fdxParagraphToLine(p){
 const fdxChildren=(el, name)=>Array.from(el.childNodes).filter(n=>n.nodeType===1 && n.tagName===name);
 /* The title page, rebuilt as the editor's own Title Page: blank lines kept
    as spacers, the last line carrying the page break. Files that don't name
-   the title and author lines (Final Draft's own) get them the same way the
+   the title and author lines (the reference app's own) get them the same way the
    PDF importer finds them. */
 function fdxTitlePageLines(root){
   const tp=fdxChildren(root, 'TitlePage')[0];
@@ -16754,6 +17251,19 @@ function fdxTitlePageLines(root){
     const author=by>=0 ? out.slice(by+1).find(l=>l.text.trim()) : null;
     if(author && !author.titleRole) author.titleRole='author';
   }
+  // The reference app's own 54-line page: its empty field rows (a writer who
+  // cleared "Based on, If Any", say) stay fields here too.
+  if(out.length===TP_LINE_COUNT){
+    Object.keys(TP_ROWS).filter(r=>r!=='episode').forEach(role=>{
+      const l=out[TP_ROWS[role]-1];
+      if(!out.some(x=>x.titleRole===role) && !l.titleRole && !l.text.trim()){
+        l.titleRole=role; delete l.spacer;
+        if(TP_LEFT_ROLES.includes(role)) l.align='left';
+      }
+    });
+  }
+  // The title's underline and capitals come from the page itself.
+  out.forEach(l=>{ if(l.titleRole==='title') l.html=escapeHtml(l.text||''); });
   out[out.length-1].forceBreakAfter=true; // kept even when blank: it holds the break
   return out;
 }
@@ -16803,7 +17313,7 @@ function fdxTextToLines(xmlText){
   catch(e){ return {lines:[], warnings:['That .fdx file could not be read as XML.']}; }
   if(!doc || doc.getElementsByTagName('parsererror').length) return {lines:[], warnings:['That .fdx file could not be read as XML.']};
   const root=doc.getElementsByTagName('FinalDraft')[0];
-  if(!root) return {lines:[], warnings:['That file did not look like a Final Draft (.fdx) document.']};
+  if(!root) return {lines:[], warnings:['That file did not look like an .fdx screenplay.']};
   const contentEl=Array.from(root.childNodes).filter(n=>n.nodeType===1 && n.tagName==='Content')[0];
   if(!contentEl) return {lines:[], warnings:[]};
   const paras=[];
@@ -17272,7 +17782,7 @@ const UNSUPPORTED_IMPORT_EXT=['.hwp','.hwpx','.pages','.celtx','.rtf','.odt'];
 const SCRIPT_FILE_READERS={
   '.docx': {label:'Reading Word document\u2026', fn:docxFileToLines},
   '.pdf':  {label:'Reading PDF\u2026', fn:pdfFileToLines},
-  '.fdx':  {label:'Reading Final Draft file\u2026', fn: async f=>fdxTextToLines(await f.text())},
+  '.fdx':  {label:'Reading .fdx file\u2026', fn: async f=>fdxTextToLines(await f.text())},
   '.fountain': {label:'Reading Fountain script\u2026', fn: async f=>fountainTextToLines(await f.text())}
 };
 const PLAIN_TEXT_READER={label:null, fn: async f=>parseTextToLines(await f.text())};
@@ -17734,6 +18244,7 @@ async function enterEditor(id, data){
   undoStack=[snapshotState()]; redoStack=[];
   updateUndoButtons();
   if(viewState && viewState.continuous) setContinuousView(true);
+  foldToggleWillFold=null; // a newly opened project starts from what its notes show
   refreshFoldToggle();
   placeOpeningCaret();
   showCanvasHint();
@@ -18387,7 +18898,7 @@ function openShortcutsModal(){
 /* =========================================================
    OUTPUT OPTIONS — Save as PDF / Print
    ---------------------------------------------------------
-   The Final Draft arrangement: choose the destination first (PDF or
+   The the reference app arrangement: choose the destination first (PDF or
    Print), then, in that destination's own dialog, choose what goes out --
    all pages, the current page, a range, or only the pages carrying a
    given revision -- and whether the title page comes with it.
@@ -18554,7 +19065,7 @@ async function openOutputDialog(kind){
 /* =========================================================
    FILE MENU
    ---------------------------------------------------------
-   Grouped the way Final Draft's File menu is: the project (save, new,
+   Grouped the way the reference app's File menu is: the project (save, new,
    import), then output -- Save as PDF… and Print…, each opening its own
    options dialog -- and every other file format under one Export
    submenu, so the menu stays a scannable length however many writers
@@ -18578,7 +19089,7 @@ function showFileMenu(anchorEl){
     {label:'Save as PDF…', onClick:()=>openOutputDialog('pdf')},
     {label:'Print…', onClick:()=>openOutputDialog('print')},
     {label:'Export', submenu:[
-      {label:'Final Draft (.fdx)', onClick:exportScriptFDX},
+      {label:'FDX (.fdx)', onClick:exportScriptFDX},
       {label:'Fountain (.fountain)', onClick:exportScriptFountain},
       {label:'Word (.docx)', onClick:exportScriptDOCX},
       {label:'Rich Text (.rtf)', onClick:exportScriptRTF},
@@ -18616,9 +19127,21 @@ document.getElementById('btnHome').addEventListener('click', goHome);
 document.getElementById('btnRecenter').addEventListener('click', imLost);
 document.getElementById('btnFixCenter').addEventListener('click', ()=>setFixCenter(!fixCenterOn));
 document.getElementById('btnMinimap').addEventListener('click', ()=>setMinimap(!minimapOn));
-/* One button for folding: while any note stands open it folds them all,
-   otherwise it opens them all. Its caption says which it will do. */
+/* One button for folding, and it keeps its word. It says Fold once every
+   note is open and Unfold once every note is folded; in between -- some
+   opened or closed by hand -- it keeps saying what it said, and does that
+   to all of them. So after Fold All, opening a few notes one by one leaves
+   it on Unfold (Unfold All) until the last one is open, and the other way
+   round after Unfold All. */
 function anyNoteUnfolded(){ return state.notes.some(n=>n.kind==='dot' && !n.folded); }
+var foldToggleWillFold=null; // null: nothing said yet (a project just opened). var: read by layoutAllNotes, which can run before this line
+function foldToggleMode(){
+  const dots=state.notes.filter(n=>n.kind==='dot');
+  if(!dots.length) return true;
+  if(dots.every(n=>!n.folded)) return true;   // all open: Fold
+  if(dots.every(n=>n.folded)) return false;   // all folded: Unfold
+  return foldToggleWillFold!=null ? foldToggleWillFold : anyNoteUnfolded();
+}
 const FOLD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h16M4 20.5h16"/><path d="M12 6.5v4.5M9.5 8.8L12 11.2l2.5-2.4"/><path d="M12 17.5V13M9.5 15.2L12 12.8l2.5 2.4"/></svg>';
 const UNFOLD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M12 9.5V3.5M9.5 6L12 3.5 14.5 6"/><path d="M12 14.5v6M9.5 18l2.5 2.5 2.5-2.5"/></svg>';
 /* fold=true: the button will fold (two lines, arrows closing in);
@@ -18631,19 +19154,21 @@ function setFoldToggleLook(fold){
   const cap=btn.querySelector('.tb-label'); if(cap) cap.textContent=fold ? 'Fold' : 'Unfold';
 }
 function refreshFoldToggle(){
-  setFoldToggleLook(anyNoteUnfolded() || !state.notes.some(n=>n.kind==='dot'));
+  if(state.notes.some(n=>n._foldBusy)) return; // mid-animation: judged when it settles
+  foldToggleWillFold=foldToggleMode();
+  setFoldToggleLook(foldToggleWillFold);
 }
 document.getElementById('btnFoldToggle').addEventListener('click', function(){
   // Batched (see setFoldedBatch): a per-note loop let each connector rebuild
   // wipe the previous note's fold animation.
-  const fold=anyNoteUnfolded();
+  const fold=foldToggleMode();
   const changes=[];
   state.notes.forEach(n=>{ if(n.kind==='dot' && !!n.folded!==fold) changes.push({id:n.id, folded:fold}); });
   setFoldedBatch(changes);
-  // The notes fold with an animation and only count as folded at its end,
-  // so the caption is set from what was just asked for, then re-read.
+  // It now says the opposite, straight away (the notes only count as
+  // folded once their animation ends).
+  foldToggleWillFold=!fold;
   setFoldToggleLook(!fold);
-  setTimeout(refreshFoldToggle, 700);
 });
 document.getElementById('btnFoldToggle').addEventListener('mouseenter', refreshFoldToggle);
 document.getElementById('btnHideAll').addEventListener('click', function(){ setHideAll(!allHidden); });
@@ -18718,7 +19243,7 @@ document.addEventListener('selectionchange', function(){
     updateSelectionCursorState();
     const b=getCurrentBlock(sel);
     // Moving the caret out of the line being completed leaves the suggested
-    // text in place -- clicking away accepts it, same as Final Draft. A
+    // text in place -- clicking away accepts it, same as the reference app. A
     // guessed next character is different: nothing was typed, so leaving
     // the line takes the guess away (see AUTO-GUESS NEXT CHARACTER).
     if(smartTypeState && (!b || b.dataset.id!==smartTypeState.blockId)){
@@ -18915,7 +19440,7 @@ function onFullscreenChange(){
 document.addEventListener('fullscreenchange', onFullscreenChange);
 document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 document.getElementById('btnFocusMode').addEventListener('click', toggleFocusMode);
-/* Final Draft puts all of this behind Production > Scene Numbers; the same
+/* The reference app puts all of this behind Production > Scene Numbers; the same
    choices, in a popover off the toolbar button. */
 function toggleSceneNumbersPopover(){
   const existing=document.getElementById('sceneNumbersPopover');
@@ -18954,7 +19479,7 @@ function toggleSceneNumbersPopover(){
     });
   },0);
 }
-/* Final Draft splits these between Format > Paragraph (per paragraph) and
+/* The reference app splits these between Format > Paragraph (per paragraph) and
    Document > Mores & Continueds (per document); one popover, two sections. */
 function toggleParagraphPopover(){
   const existing=document.getElementById('paragraphPopover');
@@ -19003,7 +19528,7 @@ document.getElementById('btnParagraph').addEventListener('mousedown', e=>e.preve
 document.getElementById('btnParagraph').addEventListener('click', toggleParagraphPopover);
 document.getElementById('btnSceneNumbers').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('btnSceneNumbers').addEventListener('click', toggleSceneNumbersPopover);
-/* Final Draft keeps all of this under Production > Revisions; same choices,
+/* The reference app keeps all of this under Production > Revisions; same choices,
    in a popover off the toolbar button. */
 function toggleRevisionsPopover(){
   const existing=document.getElementById('revisionsPopover');
@@ -19071,7 +19596,7 @@ function toggleRevisionsPopover(){
 }
 document.getElementById('btnRevisions').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('btnRevisions').addEventListener('click', toggleRevisionsPopover);
-/* Final Draft's Production > Lock Pages, with the same three commands. */
+/* The reference app's Production > Lock Pages, with the same three commands. */
 function togglePageLockPopover(){
   const existing=document.getElementById('pageLockPopover');
   if(existing){ existing.remove(); return; }
@@ -19116,7 +19641,7 @@ document.getElementById('btnPageLock').addEventListener('mousedown', e=>e.preven
 document.getElementById('btnPageLock').addEventListener('click', togglePageLockPopover);
 document.getElementById('btnReports').addEventListener('mousedown', e=>e.preventDefault());
 document.getElementById('btnReports').addEventListener('click', openReportsModal);
-/* Final Draft's Production > Tag Script, as a popover: what the caret is
+/* The reference app's Production > Tag Script, as a popover: what the caret is
    sitting in, the department list, and the way through to the breakdown. */
 function toggleTagPopover(){
   const existing=document.getElementById('tagPopover');
@@ -19299,7 +19824,7 @@ document.querySelectorAll('#ribbonTabs .ribbon-tab').forEach(t=>{
    - General   appearance, desk colour, spell check, auto-guess
    - Document  paper, font, margins, header and footer (this script)
    - Elements  indents, spacing, case, style, next element (this script)
-   - Keyboard  Full Keys, the Final Draft (Mac) layout, shortcut editor
+   - Keyboard  Full Keys, the Control-key layout, shortcut editor
    - Macros    this script's macros, and the macro editor
 
    The two editors that are whole applications of their own -- Keyboard
@@ -19331,7 +19856,7 @@ const PW_PANES=[
   {id:'general', label:'General', color:'#8E8E93', keys:'appearance light dark auto system desk gray grey beige colour color theme spell spelling check auto-guess guess character cue'},
   {id:'document', label:'Document', color:'#2B6CDE', keys:'document setup paper letter a4 page font courier margin margins top bottom header footer page number first page'},
   {id:'elements', label:'Elements', color:'#8B5CF6', keys:'elements setup indent indents spacing line spacing alignment align case caps capitals bold italic underline next element return tab'},
-  {id:'keyboard', label:'Keyboard', color:'#5B6170', keys:'keyboard shortcut shortcuts keys full keys fullscreen full screen final draft layout mac option control customize'},
+  {id:'keyboard', label:'Keyboard', color:'#5B6170', keys:'keyboard shortcut shortcuts keys full keys fullscreen full screen control key layout mac option control customize'},
   {id:'macros', label:'Macros', color:'#E8833A', keys:'macro macros alias int ext day night cut to text'}
 ];
 let _pw=null;
@@ -19480,7 +20005,7 @@ function pwDocument(body){
     pwCard('Footer', [
       '<div class="pw-row pw-row-block">'+slots('footer')+'</div>',
       pwRow('Distance from bottom', pwNum('pwFd', f.footerDist, 0.2, 2, 0.05, 'in', ro))
-    ], 'Use {page}, {title}, {date} or {revision} in a header or footer. Final Draft\u2019s default is the page number, top right: \u201c{page}.\u201d')+
+    ], 'Use {page}, {title}, {date} or {revision} in a header or footer. The default is the page number, top right: \u201c{page}.\u201d')+
     '<div class="pw-actions"><button type="button" class="pw-btn" id="pwDsDefaults"'+(ro?' disabled':'')+'>Restore Defaults</button></div>';
   const q=id=>body.querySelector('#'+id);
   const apply=()=>{
@@ -19513,7 +20038,7 @@ function pwElements(body){
   const typeOpts=withNone=>(withNone?[['none','None']]:[]).concat(TYPES.map(t=>[t, TYPE_LABELS[t]||t]));
   body.innerHTML=(ro?PW_RO_NOTE:'')+
     '<div class="pw-split"><div class="pw-list" role="listbox" aria-label="Elements">'+types.map(t=>
-      '<button type="button" role="option" class="pw-li'+(t===cur?' on':'')+'" data-t="'+t+'"><span>'+escapeHtml(TYPE_LABELS[t]||t)+'</span>'+(els[t]?'<span class="pw-dot" title="Changed from Final Draft\u2019s default"></span>':'')+'</button>').join('')+
+      '<button type="button" role="option" class="pw-li'+(t===cur?' on':'')+'" data-t="'+t+'"><span>'+escapeHtml(TYPE_LABELS[t]||t)+'</span>'+(els[t]?'<span class="pw-dot" title="Changed from the default"></span>':'')+'</button>').join('')+
     '</div><div class="pw-split-main">'+
       pwCard('Paragraph', [
         pwRow('Left indent', pwNum('pwElLeft', e.left, 0, 8, 0.05, 'in', ro), 'From the left edge of the paper. Default '+base.left+'\u2033.'),
@@ -19573,8 +20098,8 @@ function pwKeyboard(body){
         'Full screen, so the app\u2019s own shortcuts come first. Browsers keep '+escapeHtml(MOD_KEY)+'1\u20139 for switching tabs; in Full Keys (Chrome and Edge) they set elements instead.')
     ])+
     (IS_MAC ? pwCard('Element keys', [
-      pwRow('Final Draft (Mac) layout', pwToggle('pwMacFd', macFdKeys),
-        macFdKeys ? '\u23031\u20139 set elements and \u23251\u20139 run macros, as in Final Draft.' : '\u23251\u20139 set elements and \u2303\u23251\u20139 run macros. Turn on for Final Draft\u2019s Mac keys: \u23031\u20139 for elements, \u23251\u20139 for macros.')
+      pwRow('Control-key layout', pwToggle('pwMacFd', macFdKeys),
+        macFdKeys ? '\u23031\u20139 set elements and \u23251\u20139 run macros.' : '\u23251\u20139 set elements and \u2303\u23251\u20139 run macros. Turn on for \u23031\u20139 for elements, \u23251\u20139 for macros.')
     ]) : '')+
     pwCard('Shortcuts', [
       pwRow('Keyboard Shortcuts', '<button type="button" class="pw-btn" id="pwEditKeys">Customize\u2026</button>',
@@ -19683,7 +20208,7 @@ document.addEventListener('keydown', function(e){
   else if(mod && e.key.toLowerCase()==='s'){ e.preventDefault(); manualSave(); }
   // Ctrl/Cmd+P prints the script, not the editor around it.
   else if(mod && e.key.toLowerCase()==='p' && !e.shiftKey && state.projectId){ e.preventDefault(); openOutputDialog('print'); }
-  // File > Save as PDF (Cmd+Shift+P in Final Draft).
+  // File > Save as PDF (Cmd+Shift+P in the reference app).
   else if(mod && e.shiftKey && !e.altKey && e.code==='KeyP' && state.projectId){ e.preventDefault(); openOutputDialog('pdf'); }
   // Mark as Revised / Remove Revision Mark: Cmd+Option+] / [ (Ctrl+Alt+] / [).
   // Matched on the physical key, because Option+] types a quote mark on a Mac.
@@ -19862,24 +20387,23 @@ content.addEventListener('pointerup', function(){ cancelLongPress(); isPointerDo
 content.addEventListener('pointerleave', function(){ cancelLongPress(); isPointerDownInContent=false; updateSelectionCursorState(); });
 
 /* =========================================================
-   DOCUMENT FORMAT -- Final Draft's Format > Elements and Document >
+   DOCUMENT FORMAT -- the reference app's Format > Elements and Document >
    Document Setup (paper, margins, header and footer, font), stored with
    the script (state.format). Everything that lays the script out reads
    the result: the page on screen, pagination, Print, the PDF and the
    Word/RTF/web-page writers (through PDF_COLS / SPACE_BEFORE_LINES), and
    Return/Tab (ENTER_MAP / TAB_JUMP_MAP). Indents are measured from the left
-   edge of the paper, as Final Draft measures them.
+   edge of the paper, as the reference app measures them.
    ========================================================= */
 const PAPER_SIZES={letter:{w:8.5, h:11, label:'US Letter (8.5 \u00d7 11 in)'}, a4:{w:8.27, h:11.69, label:'A4 (210 \u00d7 297 mm)'}};
 const SCRIPT_FONTS=[
-  {id:'nd', label:'Courier Final Draft design (built in)', stack:"'ND Courier', 'Courier Final Draft', Courier, 'Courier New', monospace", pdf:'embedded'},
-  {id:'cfd', label:'Courier Final Draft (if installed)', stack:"'Courier Final Draft', 'ND Courier', Courier, monospace", pdf:'embedded'},
+  {id:'nd', label:'Courier (built in)', stack:"'ND Courier', Courier, 'Courier New', monospace", pdf:'embedded'},
   {id:'prime', label:'Courier Prime (if installed)', stack:"'Courier Prime', 'ND Courier', Courier, monospace", pdf:'embedded'},
   {id:'new', label:'Courier New', stack:"'Courier New', 'ND Courier', Courier, monospace", pdf:'core'},
   {id:'courier', label:'Courier', stack:"Courier, 'ND Courier', 'Courier New', monospace", pdf:'core'}
 ];
 const PDF_TEXT_ORIGIN_IN=1.5;   // PDF_COLS.left is measured from here (the classic left margin)
-/* Final Draft's defaults, taken from the tables as they stand at load. */
+/* The reference app's defaults, taken from the tables as they stand at load. */
 const FORMAT_BASE=(()=>{
   const out={};
   TYPES.forEach(t=>{
@@ -19986,7 +20510,7 @@ function applyDocFormat(repaginate){
 }
 /* Header and footer text: {page} {title} {date} {revision}. */
 function headerFooterText(tpl, label){
-  // The current revision set's name ("Blue Revision"), as Final Draft's
+  // The current revision set's name ("Blue Revision"), as the reference app's
   // Revision field prints it.
   const set=currentRevisionSet();
   const rev=set ? set.name : '';
@@ -20051,7 +20575,7 @@ function openElementsDialog(){
         '<div class="el-checks"><label><input type="checkbox" id="elBold"'+(e.bold?' checked':'')+'>Bold</label><label><input type="checkbox" id="elItalic"'+(e.italic?' checked':'')+'>Italic</label><label><input type="checkbox" id="elUnder"'+(e.underline?' checked':'')+'>Underline</label></div>'+
         '<div class="el-sec">Next element</div>'+
         '<div class="el-grid"><label>On Return<select id="elEnter">'+opts(e.enter,false)+'</select></label><label>On Tab<select id="elTab">'+opts(e.tab,true)+'</select></label></div>'+
-        '<div class="el-note">Indents are measured from the left edge of the paper. Final Draft\u2019s defaults for '+escapeHtml(TYPE_LABELS[cur]||cur)+': '+FORMAT_BASE[cur].left+'\u2033 to '+FORMAT_BASE[cur].right+'\u2033.</div>'+
+        '<div class="el-note">Indents are measured from the left edge of the paper. Defaults for '+escapeHtml(TYPE_LABELS[cur]||cur)+': '+FORMAT_BASE[cur].left+'\u2033 to '+FORMAT_BASE[cur].right+'\u2033.</div>'+
       '</div></div>'+
       '<div class="modal-actions"><button type="button" class="modal-btn" id="elReset"'+(work[cur]?'':' disabled')+'>Reset '+escapeHtml(TYPE_LABELS[cur]||cur)+'</button><button type="button" class="modal-btn" id="elResetAll">Reset All</button><span class="mc-spacer"></span>'+
       '<button type="button" class="modal-btn" id="elCancel">Cancel</button><button type="button" class="modal-btn primary" id="elOk">OK</button></div></div>';
@@ -20093,7 +20617,7 @@ function openDocumentSetup(){
       '<label class="el-inline"><input type="checkbox" id="dsFirst"'+(f.headerFirst?' checked':'')+'>Show on the first page</label></div>'+
     '<div class="el-sec">Footer</div><div class="ds-slots">'+slot('footer','left')+slot('footer','center')+slot('footer','right')+'</div>'+
     '<div class="el-grid"><label>Footer from bottom (in)<input type="number" id="dsFd" step="0.05" min="0.2" max="2" value="'+f.footerDist+'"></label></div>'+
-    '<div class="el-note">Insert {page}, {title}, {date} or {revision}. Final Draft\u2019s default is the page number, top right: \u201c{page}.\u201d. Left and right margins are each element\u2019s own indents (Elements).</div>'+
+    '<div class="el-note">Insert {page}, {title}, {date} or {revision}. The default is the page number, top right: \u201c{page}.\u201d. Left and right margins are each element\u2019s own indents (Elements).</div>'+
     '<div class="modal-actions"><button type="button" class="modal-btn" id="dsReset">Defaults</button><span class="mc-spacer"></span><button type="button" class="modal-btn" id="dsCancel">Cancel</button><button type="button" class="modal-btn primary" id="dsOk">OK</button></div></div>';
   modalRoot.classList.remove('hidden');
   const q=id=>document.getElementById(id);
@@ -20112,7 +20636,7 @@ function openDocumentSetup(){
 
 /* =========================================================
    KEYBOARD SHORTCUTS (Tools > Shortcuts) -- change any command's keys,
-   as Final Draft's Customize Keyboard does. An app preference: it is how
+   as the reference app's Customize Keyboard does. An app preference: it is how
    this person works, not part of a script. A changed command's new keys
    run it, and its old default keys stop doing it; everything else keeps
    its default.
@@ -20246,7 +20770,7 @@ function openShortcutsDialog(){
     const fixed=shortcutGroups().map(g=>({title:g.title, rows:g.rows.filter(r=>!COMMANDS.some(c=>c.label===r[0]))})).filter(g=>g.rows.length);
     const fixedHtml='<div class="sc-group sc-fixed-head">Built-in keys (can\u2019t be changed)</div>'+fixed.map(g=>
       '<div class="sc-group sc-sub">'+escapeHtml(g.title)+'</div>'+g.rows.map(r=>'<div class="sc-row sc-fixed"><span class="sc-name">'+escapeHtml(r[0])+'</span><span class="sc-keys sc-keys-fixed">'+escapeHtml(r[1])+'</span></div>').join('')).join('');
-    const fdHtml=IS_MAC ? '<label class="sc-layout"><input type="checkbox" id="scMacFd"'+(workFd?' checked':'')+'> Final Draft (Mac) layout: \u23031\u20139 set elements, \u23251\u20139 run macros</label>' : '';
+    const fdHtml=IS_MAC ? '<label class="sc-layout"><input type="checkbox" id="scMacFd"'+(workFd?' checked':'')+'> Control-key layout: \u23031\u20139 set elements, \u23251\u20139 run macros</label>' : '';
     modalRoot.innerHTML='<div class="modal-box nd-shortcuts"><div class="modal-title">Keyboard Shortcuts</div>'+fdHtml+'<div class="sc-list">'+rows+fixedHtml+'</div>'+
       '<div class="el-note">Click a shortcut, then press the new keys. Keys the browser keeps for itself (such as '+(IS_MAC?'\u2318T or \u2318W':'Ctrl+T or Ctrl+W')+') can\u2019t be used.</div>'+
       '<div class="modal-actions"><button type="button" class="modal-btn" id="scResetAll">Reset All</button><span class="mc-spacer"></span><button type="button" class="modal-btn" id="scCancel">Cancel</button><button type="button" class="modal-btn primary" id="scOk">OK</button></div></div>';
@@ -20280,7 +20804,7 @@ function openShortcutsDialog(){
       if(workFd!==macFdKeys){
         macFdKeys=workFd; applyKeyLayout();
         try{ Promise.resolve(dbStorage.set('novel-dots-mac-fd-keys', macFdKeys?'1':'0')).catch(()=>{}); }catch(err){}
-        showToast(macFdKeys ? 'Final Draft (Mac) layout: \u2303 sets elements, \u2325 runs macros' : 'Standard layout: \u2325 sets elements, \u2303\u2325 runs macros');
+        showToast(macFdKeys ? 'Control-key layout: \u2303 sets elements, \u2325 runs macros' : 'Standard layout: \u2325 sets elements, \u2303\u2325 runs macros');
       }
       closeModal();
     });
@@ -20288,7 +20812,7 @@ function openShortcutsDialog(){
   render();
 }
 /* =========================================================
-   VIEW AIDS -- Final Draft's Typewriter Mode, Character Highlighting,
+   VIEW AIDS -- the reference app's Typewriter Mode, Character Highlighting,
    Structure Lines, Split Screen with Index Cards, and the Navigator.
 
    What is drawn on the page (the typewriter line, character highlights,
@@ -20301,8 +20825,8 @@ function openShortcutsDialog(){
      Navigator's layout are app preferences (how this person works).
    - Character highlight colours, and the colour, card title and card
      summary of scenes, acts and sequences, belong to the script: project
-     data, undo, and FDX (SceneProperties Title/Summary in Final Draft's own
-     terms; NDColor and NDTools for what Final Draft doesn't publish).
+     data, undo, and FDX (SceneProperties Title/Summary in the reference app's own
+     terms; NDColor and NDTools for what the reference app doesn't publish).
    ========================================================= */
 const typewriterLayer=document.getElementById('typewriterLayer');
 const charHighlightLayer=document.getElementById('charHighlightLayer');
@@ -20767,7 +21291,7 @@ function scheduleCurrentSceneMark(){ if(_markRaf) return; _markRaf=requestAnimat
 /* =========================================================
    SPLIT SCREEN -- the script beside its Index Cards
    One card per scene: number, heading, page and length across the top,
-   then the card's own title and summary (Final Draft's scene Title and
+   then the card's own title and summary (the reference app's scene Title and
    Summary). A card with no summary shows the start of the scene in grey.
    Drag a card by its top row to move the scene.
    ========================================================= */
@@ -20992,7 +21516,7 @@ function wireSplitPane(){
 
 /* =========================================================
    NAVIGATOR
-   Final Draft's Navigator: the script as tables you can edit. Tabs can be
+   The reference app's Navigator: the script as tables you can edit. Tabs can be
    shown, hidden and dragged into a new order, and each tab's columns
    chosen, from the gear menu. Edits go straight into the script:
    - Scenes: heading, card title, summary, colour; drag a row to move the
@@ -21570,10 +22094,10 @@ async function loadViewAidPrefs(){
 
 
 /* =========================================================
-   SCENE VIEW -- the second face of the split pane (Final Draft's Scene
+   SCENE VIEW -- the second face of the split pane (the reference app's Scene
    View): every scene as a box holding its written text, collapsible,
    dragged by its top row to move the scene. "Fill" lays either view over
-   the script area, as Final Draft's full Index Cards and Scene View do;
+   the script area, as the reference app's full Index Cards and Scene View do;
    the script stays laid out underneath, so pagination never sees a hidden
    page.
    ========================================================= */
@@ -21678,7 +22202,7 @@ function placeSplitFull(){
   pane.classList.toggle('full', full);
   pane.classList.toggle('full-work', work);
   if(!full){ ['left','top','width','height'].forEach(k=>{ pane.style[k]=''; }); return; }
-  // The Beat Board takes the whole workspace, as Final Draft's does.
+  // The Beat Board takes the whole workspace, as the reference app's does.
   if(work){ pane.style.left='0px'; pane.style.top='0px'; pane.style.width='100%'; pane.style.height='100%'; return; }
   requestAnimationFrame(()=>{
     pane.style.left=viewport.offsetLeft+'px'; pane.style.top=viewport.offsetTop+'px';
@@ -21688,7 +22212,7 @@ function placeSplitFull(){
 
 /* =========================================================
    BEAT BOARD
-   Final Draft's Beat Board, on a grid: state.beatBoard.beats =
+   The reference app's Beat Board, on a grid: state.beatBoard.beats =
    [{id, col, row, w, h, text, color}], positions and sizes in whole cells.
    - Typing in an empty cell starts a beat there, BB_NEW_W x BB_NEW_H cells,
      with that character; double-click or F2 starts an empty one.
@@ -21734,7 +22258,7 @@ function bbBeatAt(col, row){
 function bbBody(){ return document.getElementById('beatsBody'); }
 function bbVisible(){ return !!(splitPrefs.on && splitPrefs.view==='beats' && state.projectId); }
 function bbCommitChange(){ scheduleSnapshot(); scheduleAutosave(); }
-/* The Beat Board button opens it full screen, the way Final Draft shows it;
+/* The Beat Board button opens it full screen, the way the reference app shows it;
    the pane's own button (or the Beats tab beside Cards) puts it beside the
    script instead. Pressed again, it closes. */
 function toggleBeatBoard(){
@@ -22080,7 +22604,7 @@ function bbShowZoom(z){
 })();
 
 /* =========================================================
-   SEND TO SCRIPT -- Final Draft's, as it works there
+   SEND TO SCRIPT -- the reference app's, as it works there
    - Outline Editor: the Send to Script button copies EVERY beat onto the
      script at the cursor. Outline 1-3 titles become Outline 1-3
      paragraphs, each beat's body becomes Outline Body paragraphs under its
@@ -22091,7 +22615,7 @@ function bbShowZoom(z){
      line as an Outline 1, the rest as Summary paragraphs.
    All of it is non-printing. It is a copy: the beats stay where they are,
    nothing links the paragraphs back to them, and sending again adds
-   another copy (as in Final Draft). A body line becomes a paragraph of
+   another copy (as in the reference app). A body line becomes a paragraph of
    its own.
    ========================================================= */
 /* Where "at the cursor" is: in front of the cursor's paragraph when the
@@ -22408,7 +22932,7 @@ function fmtWhen(t){
 
 /* =========================================================
    TRACK CHANGES
-   Final Draft's Track Changes, built on a baseline rather than on markup
+   The reference app's Track Changes, built on a baseline rather than on markup
    inside the text: turning it on keeps a copy of the script as it stands
    (every paragraph by its id). A change is any difference between that
    baseline and the script now -- a paragraph added, removed, moved, or
