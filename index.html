@@ -930,6 +930,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
    instead, which sits above the cards. Nothing else moves, and clicking
    away puts it back. */
 #connectorFrontLayer{position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; z-index:16;}
+.case-glyph{font-size:15px; line-height:18px; font-weight:500; letter-spacing:-.02em;}
 .connector-path{fill:none; stroke:var(--accent-dim); stroke-width:1.1; opacity:.55; transition:opacity .25s;}
 .connector-extra{stroke-dasharray:3 3; opacity:.45;}
 .line-block.connect-pending{outline:2px dashed var(--accent); outline-offset:2px; background:var(--accent-tint);}
@@ -2183,6 +2184,17 @@ body.theme-dark .ribbon-tab.active{background:#4A4A52; box-shadow:0 1px 2px rgba
 .icon-btn:disabled, .icon-btn:disabled:hover{opacity:.32; background:transparent;}
 .tb-captioned{min-width:50px; min-height:48px; padding:5px 7px; gap:4px; border-radius:var(--ui-radius);}
 .tb-label{font-size:10px; font-weight:500; letter-spacing:0; opacity:1; color:var(--text-chrome-dim); max-width:84px;}
+/* A caption's box is as tall as its letters. It used to be exactly 1em
+   (line-height 1) with overflow hidden (needed for the "…" of a long
+   name), but a font's letters reach beyond 1em -- San Francisco's g, p, y
+   by about a fifth of an em -- so the box cut the bottoms off. Safari
+   showed it most (it puts the baseline lower in a short line box than
+   Chrome does); a Korean or Japanese fallback font cut more. 1.35em holds
+   every one of them; the button is no taller (its 48px minimum has the
+   room). */
+#topbar .tb-label{line-height:1.35; padding:0 1px;}
+#topbar .tb-label.tb-label-2{line-height:1.25;}
+#topbar .tb-captioned:has(.tb-label-2){gap:1px;}
 .icon-btn.active .tb-label, .icon-btn[aria-pressed="true"] .tb-label{color:var(--accent);}
 .tb-bar .tb-captioned{min-height:32px; height:32px;}
 .fmt-btn{font-family:var(--sans) !important;}
@@ -2463,6 +2475,7 @@ body.theme-dark .split-seg button.on{background:#4A4A52;}
           <button class="icon-btn fmt-btn" id="btnItalic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button>
           <button class="icon-btn fmt-btn" id="btnUnderline" title="Underline (Ctrl/Cmd+U)"><u>U</u></button>
           <button class="icon-btn fmt-btn" id="btnStrike" title="Strikethrough"><s>S</s></button>
+          <button class="icon-btn fmt-btn" id="btnCase" title="Change Case"><span class="case-glyph">Aa</span></button>
           <button class="icon-btn" id="btnAlignLeft" title="Align Left (click again for the element's own alignment)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
           <button class="icon-btn" id="btnAlignCenter" title="Align Center (click again for the element's own alignment)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
           <button class="icon-btn" id="btnAlignRight" title="Align Right (click again for the element's own alignment)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
@@ -3223,6 +3236,7 @@ function createLineElement(l){
   div.dataset.label=TYPE_LABELS[l.type];
   if(l.align){ div.dataset.align=l.align; }
   if(l.forceBreakAfter){ div.dataset.forceBreak='1'; }
+  if(l.autoParen && l.type==='parenthetical'){ div.dataset.autoParen=l.autoParen; }
   if(l.titleRole){ div.dataset.titleRole=l.titleRole; }
   if(l.dual==='left' || l.dual==='right'){ div.dataset.dual=l.dual; }
   if(l.sceneNumber){ div.dataset.sceneNumber=String(l.sceneNumber); }
@@ -3245,7 +3259,7 @@ function createLineElement(l){
 }
 function initScreenplay(lines){
   content.innerHTML='';
-  upgradeLegacyTitlePage(lines).forEach(l=>content.appendChild(createLineElement(l)));
+  upgradeLegacyTitlePage(ensureTitlePage(lines)).forEach(l=>content.appendChild(createLineElement(l)));
   if(!content.children.length){ content.appendChild(createLineElement({type:'scene_heading', text:''})); }
   markTitlePageLines();
   _lastPaginationSig=null;
@@ -3487,6 +3501,7 @@ function serializeLines(){
     text:isUnacceptedGuess(el) ? '' : cleanBlockText(el), html:isUnacceptedGuess(el) ? '' : cleanBlockHTML(el), align:el.dataset.align||null,
     forceBreakAfter: el.dataset.forceBreak==='1' || undefined,
     titleRole: el.dataset.titleRole || undefined,
+    autoParen: el.dataset.autoParen || undefined, // a Parenthetical's own "(" / ")" (see PARENTHETICAL'S OWN PARENTHESES)
     // A hover preview only borrows data-dual; what is saved is the original.
     dual: el.dataset.dualPreviewOrig ? (el.dataset.dualPreviewOrig==='none' ? undefined : el.dataset.dualPreviewOrig) : (el.dataset.dual || undefined),
     sceneNumber: el.dataset.sceneNumber || undefined,
@@ -3717,6 +3732,8 @@ function selectionElementType(){
 const TYPE_DEFAULT_FLAGS={ new_act:{pageBreakBefore:true, keepWithNext:true}, cast_list:{keepWithNext:true}, sequence:{keepWithNext:true} };
 function setBlockType(block,type){
   if(isTitlePageLine(block)) return; // the title page has no elements (see TITLE PAGE)
+  const prevType=block.dataset.type;
+  if(prevType==='parenthetical' && type!=='parenthetical') removeAutoParens(block);
   block.dataset.type=type; block.dataset.label=TYPE_LABELS[type];
   block.className='line-block type-'+type;
   const flags=TYPE_DEFAULT_FLAGS[type];
@@ -3727,16 +3744,7 @@ function setBlockType(block,type){
   applySpellcheckToBlock(block); // scope follows the element type, so it has to move with it
   // Turning an empty line into a Character is arriving at a cue too.
   if(type==='character' && !block.textContent) requestAnimationFrame(()=>maybeAutoGuess(block));
-  if(type==='parenthetical'){
-    const t=block.textContent;
-    if(!(t.length>=2 && t.charAt(0)==='(' && t.charAt(t.length-1)===')')){
-      const sel=window.getSelection();
-      const hadFocusHere = sel && sel.rangeCount>0 && block.contains(sel.getRangeAt(0).startContainer);
-      const inner=t.replace(/^\(+/,'').replace(/\)+$/,'');
-      block.textContent='('+inner+')';
-      if(hadFocusHere) placeCaretAt(block, block.textContent.length-1);
-    }
-  }
+  if(type==='parenthetical') addAutoParens(block);
   // An all-caps element holds capitals, not just shows them. Passing
   // through one (Tab cycling, a wrong element key) must not cost the case
   // that was typed, so it is remembered until the text is edited, and put
@@ -3747,6 +3755,68 @@ function setBlockType(block,type){
     const m=block._typedCase;
     if(block.textContent===m.shown && getComputedStyle(block).textTransform!=='uppercase') restoreTypedCase(block, m.typed);
     if(getComputedStyle(block).textTransform!=='uppercase' || block.textContent!==m.shown) delete block._typedCase;
+  }
+}
+/* PARENTHETICAL'S OWN PARENTHESES.
+   Turning a paragraph into a Parenthetical puts in whichever of "(" and
+   ")" it lacks. Those are the element's, not the writer's: the paragraph
+   remembers which ones it was given (data-auto-paren: "o" for the opening
+   one, "c" for the closing one), and turning it into any other element
+   takes exactly those away again -- "beat" -> "(beat)" -> "beat". A
+   parenthesis the writer typed is never removed, and nothing is removed
+   once the text no longer reads as one parenthetical (it no longer starts
+   with "(" or ends with ")" where one was given, or a parenthesis has
+   been typed inside). Bold, italic and the rest of the formatting, and
+   the caret, are kept. */
+function addAutoParens(block){
+  const t=block.textContent;
+  const needOpen=t.charAt(0)!=='(', needClose=!(t.length>=(needOpen?1:2) && t.charAt(t.length-1)===')');
+  if(!needOpen && !needClose) return; // already in parentheses: the writer's (or given before)
+  const sel=window.getSelection();
+  const hadFocusHere = sel && sel.rangeCount>0 && block.contains(sel.getRangeAt(0).startContainer);
+  let caret = hadFocusHere ? flatOffsetInBlock(block, sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset) : null;
+  if(!t){
+    block.textContent='()';
+  } else {
+    // As plain text of their own, outside any bold/italic run.
+    if(needOpen) block.insertBefore(document.createTextNode('('), block.firstChild);
+    if(needClose){
+      let end=block.lastChild;
+      while(end && end.nodeName==='BR') end=end.previousSibling;
+      block.insertBefore(document.createTextNode(')'), end ? end.nextSibling : null);
+    }
+  }
+  const had=block.dataset.autoParen||'';
+  block.dataset.autoParen=((needOpen||had.includes('o'))?'o':'')+((needClose||had.includes('c'))?'c':'');
+  if(hadFocusHere){
+    // Inside the parentheses: at the end of the words (before ")"), or
+    // where it was, moved past the new "(".
+    const len=block.textContent.length;
+    placeCaretAt(block, !t ? 1 : Math.min(len-1, Math.max(1, (caret||0)+(needOpen?1:0))));
+  }
+}
+function removeAutoParens(block){
+  const flags=block.dataset.autoParen||'';
+  delete block.dataset.autoParen;
+  if(!flags) return;
+  const t=block.textContent;
+  const o=flags.includes('o'), c=flags.includes('c');
+  if(o && t.charAt(0)!=='(') return;
+  if(c && t.charAt(t.length-1)!==')') return;
+  let core=t;
+  if(core.charAt(0)==='(') core=core.slice(1);
+  if(core.charAt(core.length-1)===')') core=core.slice(0,-1);
+  if(/[()]/.test(core)) return; // more than one parenthetical now: leave it as written
+  const sel=window.getSelection();
+  const hadFocusHere = sel && sel.rangeCount>0 && block.contains(sel.getRangeAt(0).startContainer);
+  const caret = hadFocusHere ? flatOffsetInBlock(block, sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset) : null;
+  const w=document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  const nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+  if(o){ const f=nodes.find(n=>n.data.length); if(f) f.data=f.data.slice(1); }
+  if(c){ for(let i=nodes.length-1;i>=0;i--){ if(nodes[i].data.length){ nodes[i].data=nodes[i].data.slice(0,-1); break; } } }
+  if(hadFocusHere){
+    const len=block.textContent.length;
+    placeCaretAt(block, Math.max(0, Math.min(len, (caret||0)-(o?1:0))));
   }
 }
 /* Puts a remembered case back, letter for letter (same length), keeping
@@ -4022,6 +4092,28 @@ function markTitlePageLines(){
       if(b.innerHTML) b.innerHTML='';
     }
   });
+}
+/* THE TITLE PAGE ALWAYS EXISTS -- as the reference app keeps it: a page of
+   its own that every script has, printed only when something is written on
+   it. A script that comes without one (an import that had none, an old
+   project) is given the standard empty page when it opens. "Empty" means
+   no text other than the page's own "Written by". */
+function titleLinesHaveContent(lines){
+  return (lines||[]).some(l=>{
+    const t=(l.text||'').replace(/\u00a0/g,' ').trim();
+    if(!t) return false;
+    if(l.titleRole==='credit' && /^written by$/i.test(t)) return false;
+    return true;
+  });
+}
+function titlePageHasContentNow(){
+  return titleLinesHaveContent(titlePageBlocks().map(b=>({text:b.textContent, titleRole:b.dataset.titleRole})));
+}
+function ensureTitlePage(lines){
+  if(!Array.isArray(lines)) return lines;
+  if(lines.some(l=>l && l.forceBreakAfter)) return lines;
+  const grid=fdTitlePageGrid({}, TP_FEATURE_ROLES).map(g=>Object.assign({id:uid('ln')}, g));
+  return grid.concat(lines);
 }
 function titleFields(){ return titlePageBlocks().filter(b=>b.dataset.titleRole); }
 function firstBodyBlock(){
@@ -13818,7 +13910,7 @@ function setReadOnly(on){
   document.querySelectorAll('.note-shot-input, .note-day-input, .note-category-select').forEach(el=>{ el.disabled=on; });
   document.querySelectorAll('.note-close-btn').forEach(el=>{ el.style.display = on ? 'none' : ''; });
   document.querySelectorAll('.note-resize-handle').forEach(el=>{ el.style.display = on ? 'none' : ''; });
-  ['btnBold','btnItalic','btnUnderline','btnStrike','btnAlignLeft','btnAlignCenter','btnAlignRight'].forEach(id=>{
+  ['btnBold','btnItalic','btnUnderline','btnStrike','btnCase','btnAlignLeft','btnAlignCenter','btnAlignRight'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.disabled=on;
   });
   updateUndoButtons(); // undo() itself is gated too, but the buttons should visibly grey out either way
@@ -15093,7 +15185,7 @@ function exportScriptFDX(){
   // The whole title page, blank lines included: those blank lines ARE its
   // layout (they push the title down the page), and the reference app's own title
   // pages are built the same way.
-  const titlePrinted=titleLines.filter(l=>!isNonPrintingType(l.type));
+  const titlePrinted=titleLinesHaveContent(titleLines) ? titleLines.filter(l=>!isNonPrintingType(l.type)) : [];
   const titleXml=titlePrinted.length
     ? '<TitlePage><Content>\n    '+titlePrinted.map(fdxTitleParagraph).join('\n    ')+'\n  </Content></TitlePage>'
     : '';
@@ -15207,7 +15299,7 @@ async function exportScriptPDF(opts){
       layoutContd=new Set(lay.breaks.filter(b=>b.contd).map(b=>b.beforeEl.dataset.id));
     }
   }catch(err){ layoutBreaks=null; layoutSplits=null; layoutContd=null; }
-  const hasTitleContent=titleLines.some(l=>(l.text||'').trim().length);
+  const hasTitleContent=titleLinesHaveContent(titleLines);
 
   /* Coloured revision pages have to be painted UNDERNEATH the text, and
      jsPDF has no z-order -- a rectangle drawn once the page is known to be
@@ -15908,7 +16000,7 @@ function docxHeaderXml(withNumber){
 }
 function buildDocxParts(){
   const {titleLines, bodyLines}=splitTitleAndBody(exportLines());
-  const hasTitle=titleLines.some(l=>(l.text||'').trim());
+  const hasTitle=titleLinesHaveContent(titleLines);
   const body=[];
   if(hasTitle){
     titleLines.forEach((l, k)=>{
@@ -16051,7 +16143,7 @@ function rtfDualRow(group){
 }
 function buildRtf(){
   const {titleLines, bodyLines}=splitTitleAndBody(exportLines());
-  const hasTitle=titleLines.some(l=>(l.text||'').trim());
+  const hasTitle=titleLinesHaveContent(titleLines);
   const title=exportTitleText(titleLines), author=exportAuthorText(titleLines);
   const blankHeader=kind=>'{\\'+kind+'\\pard\\plain\\f0\\fs24\\par}';
   const numberHeader='{\\headerr\\pard\\plain\\f0\\fs24\\qr{\\field{\\*\\fldinst PAGE }{\\fldrslt 1}}.\\par}';
@@ -16144,7 +16236,7 @@ function htmlMarkTile(mark){
 }
 function buildScriptHtml(){
   const {titleLines, bodyLines}=splitTitleAndBody(exportLines());
-  const hasTitle=titleLines.some(l=>(l.text||'').trim());
+  const hasTitle=titleLinesHaveContent(titleLines);
   const title=exportTitleText(titleLines), author=exportAuthorText(titleLines);
   const mark=exportShowsMarks();
   const css=[
@@ -16237,6 +16329,7 @@ function fountainNeedsForcedAction(plain){
 }
 const FOUNTAIN_SPEECH_TYPES={parenthetical:1, dialogue:1, lyrics:1};
 function fountainTitlePageBlock(titleLines){
+  if(!titleLinesHaveContent(titleLines)) return '';
   const solid=titleLines.map(l=>({line:l, text:(l.text||'').replace(/\s+/g,' ').trim()})).filter(x=>x.text);
   if(!solid.length) return '';
   const fields={title:[], credit:[], author:[], source:[], contact:[]};
@@ -16516,15 +16609,19 @@ function buildPrintSheets(opts){
   if(state.revisions.showMarks) drawPrintRevisionMarks(sheets);
   /* Same rule as the PDF: every sheet is laid out, then the ones not asked
      for are removed, so a printed 12A is the 12A on screen. */
+  // An empty title page is never printed (see THE TITLE PAGE ALWAYS EXISTS).
+  const dropTitle=layout.hasTitlePage && !titlePageHasContentNow();
   if(opts){
     const revSets=pageRevisionSets(blocks, layout.breaks, layout.dialogueSplits);
     const pages=sheets.map((sh, i)=>({key:outputPageKey(layout.pageLabels[i], i, layout.hasTitlePage),
       isTitle:layout.hasTitlePage && i===0, revs:(revSets[i]||[]).map(String)}));
     const keep=selectOutputPages(pages, opts);
     if(keep.error){ root.innerHTML=''; return {error:keep.error}; }
+    if(dropTitle) keep.set.delete(0);
     sheets.forEach((sh, i)=>{ if(!keep.set.has(i)) sh.page.remove(); });
     return keep.set.size;
   }
+  if(dropTitle){ sheets[0].page.remove(); return sheets.length-1; }
   return sheets.length;
 }
 /* One mark per wrapped visual line, measured from the sheet's own layout
@@ -16667,15 +16764,45 @@ function detectIndentBaseline(items){
   for(const k of keys){ if(buckets[k]>=minCount) return k; }
   return keys[0];
 }
-function classifyByIndentDelta(deltaIn, text){
+/* The document's own character-cue column, learnt from the document: the
+   indent (to a tenth of an inch, at least half an inch in from the action
+   margin) where most lines are short ALL-CAPS names. Writers and word
+   processors set their columns differently -- dialogue at 1.5in from the
+   action margin is common in Word -- so a fixed set of zones alone read a
+   short line of such dialogue ("Yes.", "Fine.") as a character cue. With
+   the cue column known, a line is a cue only there; any other indented
+   line is dialogue. null when the document shows no clear cue column. */
+function learnCueColumn(items){ // items: [{delta (in), text}]
+  const buckets=new Map();
+  items.forEach(it=>{
+    if(it.delta < INDENT_ZONE_DIALOGUE || !it.text || RE_PARENTHETICAL.test(it.text)) return;
+    const k=Math.round(it.delta*10)/10;
+    const b=buckets.get(k)||{n:0, cues:0};
+    b.n++;
+    if(looksLikeCharacterCue(it.text) && isAllCapsLatin(it.text)) b.cues++;
+    buckets.set(k, b);
+  });
+  let best=null, bestCues=0;
+  buckets.forEach((b, k)=>{ if(b.cues>=2 && b.cues/b.n>=0.6 && b.cues>bestCues){ best=k; bestCues=b.cues; } });
+  return best;
+}
+function classifyByIndentDelta(deltaIn, text, cueCol){
   // deltaIn: this line's left position minus the document's own detected
   // action-margin baseline, in inches. Zone edges are the midpoints
   // between PDF_COLS' stops, so a change to those constants (export)
   // keeps import in sync automatically.
   const nameShaped=looksLikeCharacterCue(text);
   if(deltaIn < INDENT_ZONE_DIALOGUE) return (nameShaped && isAllCapsLatin(text)) ? 'character' : 'action';
+  if(cueCol!=null){
+    if(Math.abs(deltaIn-cueCol)<=0.15) return nameShaped ? 'character' : 'dialogue';
+    if(deltaIn < cueCol) return 'dialogue';
+    return (nameShaped && isAllCapsLatin(text)) ? 'character' : 'dialogue';
+  }
   if(deltaIn < INDENT_ZONE_PARENTHETICAL) return 'dialogue';
-  if(deltaIn < INDENT_ZONE_CHARACTER) return nameShaped ? 'character' : 'dialogue';
+  // Between the dialogue and the cue columns: a cue only when it is written
+  // as one (in capitals) -- a short line of dialogue set a little further in
+  // is still dialogue.
+  if(deltaIn < INDENT_ZONE_CHARACTER) return (nameShaped && isAllCapsLatin(text)) ? 'character' : 'dialogue';
   // Character cues are short by nature; a long run of text way out at the
   // character column is almost always a mis-measured line, not a name.
   return nameShaped ? 'character' : 'dialogue';
@@ -17388,7 +17515,44 @@ function wordRunsToHtml(runs){
     return t;
   }).join('');
 }
-function wordDocumentXmlToLines(xml){
+/* A paragraph's left indent often lives in its style, not on the paragraph
+   (Word's own screenplay templates, and most writers' house templates, set
+   "Dialogue" 1in in and "Character" 2in in through styles). Each style's
+   left indent, following basedOn, falling back to the document default. */
+function wordStyleIndents(stylesXml){
+  const out={byId:{}, dflt:0};
+  if(!stylesXml) return out;
+  let sdoc;
+  try{ sdoc=new DOMParser().parseFromString(stylesXml, 'application/xml'); }catch(e){ return out; }
+  if(!sdoc || sdoc.getElementsByTagName('parsererror').length) return out;
+  const leftOf=pPr=>{
+    const ind=pPr && pPr.getElementsByTagName('w:ind')[0];
+    if(!ind) return null;
+    const v=ind.getAttribute('w:left')!=null ? ind.getAttribute('w:left') : ind.getAttribute('w:start');
+    return v!=null ? (parseInt(v,10)||0) : null;
+  };
+  const dd=sdoc.getElementsByTagName('w:pPrDefault')[0];
+  const d=leftOf(dd && dd.getElementsByTagName('w:pPr')[0]);
+  if(d!=null) out.dflt=d;
+  const raw={};
+  Array.from(sdoc.getElementsByTagName('w:style')).forEach(s=>{
+    if(s.getAttribute('w:type') && s.getAttribute('w:type')!=='paragraph') return;
+    const id=s.getAttribute('w:styleId'); if(!id) return;
+    const pPr=Array.from(s.childNodes).find(n=>n.nodeType===1 && n.tagName==='w:pPr');
+    const based=Array.from(s.childNodes).find(n=>n.nodeType===1 && n.tagName==='w:basedOn');
+    raw[id]={left:leftOf(pPr), basedOn:based ? based.getAttribute('w:val') : null};
+  });
+  const resolve=(id, seen)=>{
+    const r=raw[id]; if(!r || seen.has(id)) return null;
+    seen.add(id);
+    if(r.left!=null) return r.left;
+    return r.basedOn ? resolve(r.basedOn, seen) : null;
+  };
+  Object.keys(raw).forEach(id=>{ const v=resolve(id, new Set()); out.byId[id] = v!=null ? v : out.dflt; });
+  return out;
+}
+function wordDocumentXmlToLines(xml, stylesXml){
+  const styleIndents=wordStyleIndents(stylesXml);
   let xdoc;
   try{ xdoc=new DOMParser().parseFromString(xml, 'application/xml'); }
   catch(e){ xdoc=null; }
@@ -17435,7 +17599,11 @@ function wordDocumentXmlToLines(xml){
   const allParas=paraEls.map(p=>{
     const pPr=Array.from(p.childNodes).find(n=>n.nodeType===1 && n.tagName==='w:pPr');
     const ind=pPr && pPr.getElementsByTagName('w:ind')[0];
-    const indentTwips=ind ? (parseInt(ind.getAttribute('w:left')||ind.getAttribute('w:start')||'0', 10)||0) : 0;
+    const pStyleEl=pPr && Array.from(pPr.childNodes).find(n=>n.nodeType===1 && n.tagName==='w:pStyle');
+    const own=ind ? (ind.getAttribute('w:left')!=null ? ind.getAttribute('w:left') : ind.getAttribute('w:start')) : null;
+    // The paragraph's own indent, else its style's, else the document's default.
+    const indentTwips = own!=null ? (parseInt(own,10)||0)
+      : (pStyleEl && styleIndents.byId[pStyleEl.getAttribute('w:val')]!=null ? styleIndents.byId[pStyleEl.getAttribute('w:val')] : styleIndents.dflt);
     const jc=pPr && pPr.getElementsByTagName('w:jc')[0];
     const jcVal=jc ? jc.getAttribute('w:val') : null;
     const runs=Array.from(p.getElementsByTagName('w:r')).map(runInfo).filter(r=>r.text);
@@ -17490,6 +17658,7 @@ function wordDocumentXmlToLines(xml){
   // paragraph break the author made) -- unlike PDF/plain-text, there's no
   // line-wrap ambiguity to resolve, so no merge pass is needed here.
   const baselineTwips=detectIndentBaseline(paras.map(p=>({x:p.indentTwips})));
+  const cueCol=learnCueColumn(paras.filter(p=>!p.dual && !p.styled).map(p=>({delta:(p.indentTwips-baselineTwips)/1440, text:p.text})));
   let lastDualSide=null;
   const lines=paras.map(p=>{
     const deltaIn=(p.indentTwips-baselineTwips)/1440;
@@ -17517,7 +17686,7 @@ function wordDocumentXmlToLines(xml){
     else if(RE_PARENTHETICAL.test(text)) type='parenthetical';
     else if(RE_TRANSITION.test(text)) type='transition';
     else if(jcCentered(p.jcVal) && text.length<40) type='centered';
-    else type=classifyByIndentDelta(deltaIn, text);
+    else type=classifyByIndentDelta(deltaIn, text, cueCol);
     lastDualSide=p.dual;
     const out={type, text};
     if(runs){
@@ -17528,6 +17697,15 @@ function wordDocumentXmlToLines(xml){
     if(p.dual) out.dual=p.dual;
     if(p.pageBreakBefore) out.pageBreakBefore=true;
     return out;
+  });
+  // A cue is always followed by its speech: a line read as a cue straight
+  // after another cue or after a parenthetical is that speech's dialogue
+  // (a speaker's name never follows a name or "(beat)" directly). Only for
+  // lines placed by position, not ones a style or a dual column settled.
+  lines.forEach((l, i)=>{
+    if(i===0 || l.type!=='character' || paras[i].styled || paras[i].dual) return;
+    const prev=lines[i-1];
+    if(!prev.dual && (prev.type==='character' || prev.type==='parenthetical')) l.type='dialogue';
   });
   return {lines:titleOut.concat(lines), warnings:[]};
 }
@@ -17573,7 +17751,9 @@ async function docxFileToLines(file){
   const entry=zip.file('word/document.xml');
   if(!entry) return {lines:[], warnings:['That file did not look like a Word document (no word/document.xml found inside it).']};
   const xml=await entry.async('text');
-  return wordDocumentXmlToLines(xml);
+  const stylesEntry=zip.file('word/styles.xml');
+  const stylesXml=stylesEntry ? await stylesEntry.async('text') : null;
+  return wordDocumentXmlToLines(xml, stylesXml);
 }
 
 /* =========================================================
@@ -17619,13 +17799,14 @@ function pdfRowsToLines(allRows){
   gaps.sort((a,b)=>a-b);
   const typicalGap=gaps.length ? gaps[Math.floor(gaps.length/2)] : 14;
 
+  const cueCol=learnCueColumn(allRows.map(r=>({delta:(r.minX-baselineX)/72, text:r.text})));
   const classified=allRows.map(r=>{
     const clean=r.text;
     let type;
     if(RE_SCENE_HEADING.test(clean)) type='scene_heading';
     else if(RE_PARENTHETICAL.test(clean)) type='parenthetical';
     else if(RE_TRANSITION.test(clean)) type='transition';
-    else type=classifyByIndentDelta((r.minX-baselineX)/72, clean);
+    else type=classifyByIndentDelta((r.minX-baselineX)/72, clean, cueCol);
     return {type, text:clean, y:r.y};
   });
   const mergeable={action:1,dialogue:1,parenthetical:1,lyrics:1,general:1};
@@ -18982,7 +19163,7 @@ function selectOutputPages(pages, opts){
 let _lastOutputOptions={range:'all', custom:'', includeTitle:true, includeNotes:true, revisionId:null};
 function outputOptionsModal(kind){
   return new Promise(resolve=>{
-    const hasTitle=!!content.querySelector('.line-block[data-force-break="1"]');
+    const hasTitle=titlePageHasContentNow(); // an empty title page has nothing to include
     const sets=state.revisions.sets.filter(s=>isMarkableRevision(s.id));
     const curKey=currentOutputPageKey();
     const o=Object.assign({}, _lastOutputOptions);
@@ -19337,8 +19518,119 @@ function applyAlign(value){
 }
 /* mousedown preventDefault keeps the button from stealing focus, so the live text selection
    in the script (or a note body) survives the click and execCommand has something to act on. */
-['btnBold','btnItalic','btnUnderline','btnStrike','btnAlignLeft','btnAlignCenter','btnAlignRight'].forEach(id=>{
+['btnBold','btnItalic','btnUnderline','btnStrike','btnCase','btnAlignLeft','btnAlignCenter','btnAlignRight'].forEach(id=>{
   document.getElementById(id).addEventListener('mousedown', e=>e.preventDefault());
+});
+/* =========================================================
+   CHANGE CASE -- Word's Format > Change Case, the same five choices:
+   Sentence case., lowercase, UPPERCASE, Capitalize each word, tOGGLE cASE.
+   - It changes the selected text; with nothing selected, the word at the
+     caret (as Word does).
+   - The letters themselves change (not just how they look), keeping each
+     paragraph's bold/italic/underline runs and the selection. A letter whose
+     other case is not one letter long (German ß -> SS) is left as it is.
+   - Sentence case starts a sentence at the start of a paragraph and after
+     . ! or ?, reading the text before the selection too.
+   - It is an edit like any other: undoable, revision-marked. An element
+     that always shows capitals (Scene Heading, Character, Transition,
+     Shot) keeps its capitals -- what such a line holds is what it shows.
+   - Works in the script and in a note's text.
+   ========================================================= */
+const CASE_CHOICES=[
+  {id:'sentence', label:'Sentence case.'},
+  {id:'lower', label:'lowercase'},
+  {id:'upper', label:'UPPERCASE'},
+  {id:'words', label:'Capitalize each word'},
+  {id:'toggle', label:'tOGGLE cASE'}
+];
+let _caseRange=null; // the selection when the menu opened (a click on the menu would lose it)
+function caseEditableRoot(node){
+  const el=node && (node.nodeType===1 ? node : node.parentElement);
+  if(!el) return null;
+  if(content.contains(el)) return content;
+  return el.closest ? el.closest('.note-body') : null;
+}
+/* The word around a collapsed caret, as a range (null when there is none). */
+function wordRangeAtCaret(r){
+  const n=r.startContainer;
+  if(n.nodeType!==3) return null;
+  const s=n.data, isW=ch=>/[\p{L}\p{N}'’]/u.test(ch);
+  let a=r.startOffset, z=r.startOffset;
+  while(a>0 && isW(s.charAt(a-1))) a--;
+  while(z<s.length && isW(s.charAt(z))) z++;
+  if(a===z) return null;
+  const w=document.createRange(); w.setStart(n,a); w.setEnd(n,z);
+  return w;
+}
+function caseOne(ch, mode, startsWord, startsSentence){
+  let out=ch;
+  if(mode==='upper') out=ch.toUpperCase();
+  else if(mode==='lower') out=ch.toLowerCase();
+  else if(mode==='toggle') out = ch===ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase();
+  else if(mode==='words') out = startsWord ? ch.toUpperCase() : ch.toLowerCase();
+  else if(mode==='sentence') out = startsSentence ? ch.toUpperCase() : ch.toLowerCase();
+  return out.length===1 ? out : ch;
+}
+function applyChangeCase(mode){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  let r=_caseRange || (sel && sel.rangeCount ? sel.getRangeAt(0) : null);
+  _caseRange=null;
+  if(!r) return;
+  const root=caseEditableRoot(r.commonAncestorContainer);
+  if(!root) return;
+  const keep=r.cloneRange();
+  if(r.collapsed){ const w=wordRangeAtCaret(r); if(!w) return; r=w; }
+  // Each text node the range touches, in order, with the part of it inside.
+  const walker=document.createTreeWalker(r.commonAncestorContainer.nodeType===3 ? r.commonAncestorContainer.parentNode : r.commonAncestorContainer, NodeFilter.SHOW_TEXT);
+  const parts=[];
+  while(walker.nextNode()){
+    const n=walker.currentNode;
+    if(!r.intersectsNode(n)) continue;
+    if(n.parentElement && n.parentElement.closest('.tp-locked, .page-spacer, .dlg-gap-spacer, [contenteditable="false"]')) continue;
+    const a = n===r.startContainer ? r.startOffset : 0;
+    const z = n===r.endContainer ? r.endOffset : n.data.length;
+    if(z>a) parts.push({n, a, z});
+  }
+  if(!parts.length) return;
+  const blocksTouched=new Set();
+  parts.forEach(({n, a, z})=>{
+    const block = root===content ? blockOfNode(n) : root;
+    if(!block) return;
+    // The text before this part in its own paragraph decides where words
+    // and sentences start.
+    const pre=document.createRange(); pre.selectNodeContents(block); pre.setEnd(n, a);
+    let before=pre.toString();
+    let s=n.data, out=s.slice(0,a);
+    for(let i=a;i<z;i++){
+      const ch=s.charAt(i);
+      const prev=before.slice(-1);
+      const startsWord = !/[\p{L}\p{N}'’]/u.test(prev);
+      const startsSentence = /^\s*$/.test(before) || /[.!?]["'”’)]*\s+$/.test(before);
+      out+=caseOne(ch, mode, startsWord, startsSentence);
+      before+=ch;
+    }
+    out+=s.slice(z);
+    if(out!==s){ n.data=out; blocksTouched.add(block); }
+  });
+  // Same lengths throughout, so the selection is put back exactly.
+  try{ sel.removeAllRanges(); sel.addRange(keep); }catch(err){}
+  if(!blocksTouched.size) return;
+  if(root===content){
+    const blocks=Array.from(blocksTouched);
+    blocks.forEach(b=>{ applyShownCase(b); if(b.dataset.titleRole==='title') syncProjectTitleFromTitlePage(); });
+    markBlocksRevised(blocks);
+    scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
+  } else {
+    root.dispatchEvent(new Event('input', {bubbles:true})); // the note saves its own text
+  }
+}
+document.getElementById('btnCase').addEventListener('click', function(e){
+  const sel=window.getSelection();
+  _caseRange = sel && sel.rangeCount && caseEditableRoot(sel.getRangeAt(0).commonAncestorContainer) ? sel.getRangeAt(0).cloneRange() : null;
+  if(!_caseRange){ showToast('Select some text, or place the cursor in a word'); return; }
+  const rc=e.currentTarget.getBoundingClientRect();
+  showContextMenu(rc.left, rc.bottom+4, CASE_CHOICES.map(c=>({label:c.label, onClick:()=>applyChangeCase(c.id)})));
 });
 document.getElementById('btnAlignLeft').addEventListener('click', ()=>applyAlign('left'));
 document.getElementById('btnAlignCenter').addEventListener('click', ()=>applyAlign('center'));
@@ -19371,7 +19663,7 @@ document.getElementById('btnStrike').addEventListener('click', ()=>applyInlineFo
 // search), N for New Dot Note (the browser's new window), and the brackets
 // for the sidebars and revision marks (the browser's back and forward).
 const FOCUS_MODE_LOCK_KEYS=['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9',
-  'KeyA','KeyN','BracketLeft','BracketRight'];
+  'KeyA','KeyN','BracketLeft','BracketRight','Tab']; // Tab: Control+Tab switches toolbar tabs
 function keyboardLockSupported(){
   return !!(navigator.keyboard && typeof navigator.keyboard.lock==='function');
 }
@@ -19750,7 +20042,7 @@ applyBreakdownState();
 const TOPBAR_LABELS={
   btnHome:'Projects', btnFileMenu:'File',
   elementTypeBtn:'Element',
-  btnBold:'Bold', btnItalic:'Italic', btnUnderline:'Underline', btnStrike:'Strike',
+  btnBold:'Bold', btnItalic:'Italic', btnUnderline:'Underline', btnStrike:'Strike', btnCase:'Case',
   btnAlignLeft:'Left', btnAlignCenter:'Center', btnAlignRight:'Right',
   btnDualDialogue:'Dual', btnSceneNumbers:'Scene #', btnRevisions:'Revisions',
   btnPageLock:'Lock Pages', btnReports:'Reports', btnTag:'Tag',
@@ -19802,6 +20094,29 @@ async function loadRibbonTabPref(){
   }catch(err){}
   applyRibbonTab();
 }
+/* Control+Tab / Control+Shift+Tab (view:nexttab / view:prevtab). Taken on
+   capture, before the script's own Tab (element cycling, title-page
+   fields) can see it. A browser keeps Control+Tab for its own tabs in an
+   ordinary window, so there it reaches the app only in Full Keys (Chrome,
+   Edge), a window of its own (an installed app, a Dock web app), or the
+   iPad/Mac app. A key reassigned in Keyboard Shortcuts is run by the
+   shortcut handler instead. */
+function cycleRibbonTab(dir){
+  const keys=Array.from(document.querySelectorAll('#ribbonTabs .ribbon-tab')).map(t=>t.dataset.tab);
+  if(!keys.length) return;
+  const i=Math.max(0, keys.indexOf(ribbonTab));
+  setRibbonTab(keys[(i+dir+keys.length)%keys.length]);
+}
+document.addEventListener('keydown', e=>{
+  if(!state.projectId || !modalRoot.classList.contains('hidden')) return;
+  const combo=comboFromEvent(e);
+  if(!combo || combo.indexOf('Tab')<0) return;
+  const dflt=id=>{ if(customShortcuts[id]) return []; const c=COMMANDS.find(x=>x.id===id); return c ? c.keys : []; };
+  const dir = dflt('view:nexttab').includes(combo) ? 1 : dflt('view:prevtab').includes(combo) ? -1 : 0;
+  if(!dir) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  cycleRibbonTab(dir);
+}, true);
 document.querySelectorAll('#ribbonTabs .ribbon-tab').forEach(t=>{
   t.addEventListener('mousedown', e=>e.preventDefault()); // never steal a live selection
   t.addEventListener('click', ()=>setRibbonTab(t.dataset.tab));
@@ -20647,7 +20962,7 @@ function comboFromEvent(e){
   if(/^Key[A-Z]$/.test(k)) key=k.slice(3);
   else if(/^Digit[0-9]$/.test(k)) key=k.slice(5);
   else if(/^F([1-9]|1[0-2])$/.test(k)) key=k;
-  else key={Period:'.', Comma:',', Slash:'/', Semicolon:';', Quote:"'", BracketLeft:'[', BracketRight:']', Minus:'-', Equal:'=', Backquote:'`', Backslash:'\\'}[k]||'';
+  else key={Period:'.', Comma:',', Slash:'/', Semicolon:';', Quote:"'", BracketLeft:'[', BracketRight:']', Minus:'-', Equal:'=', Backquote:'`', Backslash:'\\', Tab:'Tab'}[k]||'';
   if(!key) return '';
   // Mod is Cmd on a Mac and Ctrl elsewhere -- and Cmd/Meta wherever it is
   // pressed, as the app's own shortcuts accept either.
@@ -20719,6 +21034,10 @@ function addCommand(id, label, group, keys, run){ COMMANDS.push({id, label, grou
   addCommand('production:markrevised','Mark as Revised','Production',['Mod+Alt+]'],()=>markSelectionRevised(true));
   addCommand('production:unmarkrevised','Remove Revision Mark','Production',['Mod+Alt+['],()=>markSelectionRevised(false));
   addCommand('tools:stats','Goals and Statistics\u2026','Tools',[],()=>openStatsDialog());
+  // Writing -> Tools -> View and round again; with Shift, back. Control+Tab
+  // on every system (on a Mac that is the Control key, not Command).
+  addCommand('view:nexttab','Next Toolbar Tab','View',[IS_MAC ? 'Ctrl+Tab' : 'Mod+Tab'],()=>cycleRibbonTab(1));
+  addCommand('view:prevtab','Previous Toolbar Tab','View',[IS_MAC ? 'Ctrl+Shift+Tab' : 'Mod+Shift+Tab'],()=>cycleRibbonTab(-1));
   addCommand('tools:sprint','Sprint\u2026','Tools',[],()=>openSprintDialog());
   addCommand('production:track','Track Changes','Production',[],()=>setTrackChanges(!tcOn()));
   addCommand('view:typewriter','Typewriter Mode','View',[],()=>setTypewriter(!twPrefs.on));
