@@ -3601,6 +3601,7 @@ function placeCaretAtStart(el){
   if(el.firstChild) r.setStart(el.firstChild,0); else r.setStart(el,0);
   r.collapse(true);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  if(content.contains(el)) armCaretWatch();
 }
 function placeCaretAt(el, offset){
   if(!el || !document.contains(el)) return;
@@ -3610,6 +3611,7 @@ function placeCaretAt(el, offset){
   } else { r.setStart(el,0); }
   r.collapse(true);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  if(content.contains(el)) armCaretWatch();
 }
 function placeCaretAtEnd(el){
   if(!el || !document.contains(el)) return;
@@ -3617,6 +3619,7 @@ function placeCaretAtEnd(el){
   r.selectNodeContents(el);
   r.collapse(false);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  if(content.contains(el)) armCaretWatch();
 }
 /* =========================================================
    PARAGRAPH-LEVEL COMMANDS OVER A SELECTION
@@ -4506,6 +4509,22 @@ function openBlankLineElementMenu(block){
   document.addEventListener('selectionchange', onSel);
   document.addEventListener('wheel', onWheel, true);
 }
+/* The paragraph above / below, skipping what is not a paragraph: the
+   page-break spacer sits between the last line of one page and the first of
+   the next, and is no paragraph. Looking only at the direct neighbour made
+   Backspace on the first line of a page (and Delete at the end of the last
+   one) look like "nothing there", so the browser did the edit itself, took
+   the paragraph out from under the caret and left it between paragraphs. */
+function prevLineBlock(el){
+  let n=el && el.previousElementSibling;
+  while(n && !n.classList.contains('line-block')) n=n.previousElementSibling;
+  return n||null;
+}
+function nextLineBlock(el){
+  let n=el && el.nextElementSibling;
+  while(n && !n.classList.contains('line-block')) n=n.nextElementSibling;
+  return n||null;
+}
 function mergeBlocks(prev, block){
   if(prev.querySelector('.dlg-gap-spacer')) removeDialogueSplit(prev);
   if(block.querySelector('.dlg-gap-spacer')) removeDialogueSplit(block);
@@ -4523,17 +4542,18 @@ function mergeBlocks(prev, block){
    end of the previous line (like a normal merge); Delete lands it at the
    start of the next line. */
 function removeEmptyParenthetical(block, direction){
-  const prev=block.previousElementSibling, next=block.nextElementSibling;
-  const hasPrev = prev && prev.classList.contains('line-block');
-  const hasNext = next && next.classList.contains('line-block');
+  const prev=prevLineBlock(block), next=nextLineBlock(block);
+  const hasPrev = !!prev && !(inTitlePage(prev) && !inTitlePage(block));
+  const hasNext = !!next;
   let target=null, atEnd=true;
   if(direction==='backspace'){
     if(hasPrev){ target=prev; atEnd=true; } else if(hasNext){ target=next; atEnd=false; }
   } else {
     if(hasNext){ target=next; atEnd=false; } else if(hasPrev){ target=prev; atEnd=true; }
   }
+  if(!target){ placeCaretAt(block, 1); return; } // the only paragraph: keep it, and the caret in it
   block.remove();
-  if(target){ if(atEnd) placeCaretAtEnd(target); else placeCaretAt(target, 0); }
+  if(atEnd) placeCaretAtEnd(target); else placeCaretAtStart(target);
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
 }
 /* A Parenthetical's own "(...)" must never be split across two lines by a line-creating
@@ -4578,6 +4598,7 @@ function placeCaretAtFlatOffset(block, flatOffset){
   const r=document.createRange();
   r.setStart(pos.node, pos.offset); r.collapse(true);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  if(content.contains(block)) armCaretWatch();
 }
 function removeCharacterExtension(block, ext){
   const startPos=textOffsetToNodeOffset(block, ext.openIdx);
@@ -5556,8 +5577,21 @@ content.addEventListener('keydown', function(e){
     }
     const range=sel.getRangeAt(0);
     if(range.collapsed && isCaretAtStart(block,range)){
-      const prev=block.previousElementSibling;
-      if(prev && prev.classList.contains('line-block')){
+      const prev=prevLineBlock(block);
+      if(!prev || (inTitlePage(prev) && !inTitlePage(block))){
+        // The first paragraph of the script: nothing above it to join (the
+        // title page is its own thing). The browser must not try either.
+        e.preventDefault();
+        const nx=nextLineBlock(block);
+        if(prev && nx && isStrayBlank(block) && !faLineReferenced(block.dataset.id)){
+          block.remove();
+          placeCaretAtStart(nx);
+          scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
+        }
+        ensureCaretVisible();
+        return;
+      }
+      if(prev){
         e.preventDefault();
         // Under an empty paragraph, Backspace takes the empty paragraph away
         // and this line keeps its own element (a merge would have turned it
@@ -5598,8 +5632,9 @@ content.addEventListener('keydown', function(e){
     }
     const dr=sel.getRangeAt(0);
     if(dr.collapsed && isCaretAtEnd(block, dr)){
-      const next=block.nextElementSibling;
-      if(next && next.classList.contains('line-block')){
+      const next=nextLineBlock(block);
+      if(next && inTitlePage(block) !== inTitlePage(next)){ e.preventDefault(); return; } // title page and script never join
+      if(next){
         // Delete at the end of a paragraph pulls the next one up into it --
         // done here because the browser's own join copies the next
         // paragraph's typography in as an inline style.
@@ -8525,6 +8560,7 @@ function noteLayoutSettled(){ _laidOutHeight=content.offsetHeight; _laidOutCount
 function scheduleReflow(){
   scheduleReflowLater();
   if(!_prePaintRaf) _prePaintRaf=requestAnimationFrame(reflowBeforePaint);
+  armCaretWatch(); // after the pre-paint pass in the queue: it checks what that pass left behind
 }
 function reflowBeforePaint(){
   _prePaintRaf=0;
@@ -8557,6 +8593,104 @@ const scheduleReflowLater=debounce(function(){
   ensureCaretVisible(); // pagination can shift a page break in after the fact (debounced), moving the caret's screen position independent of the keystroke that triggered it
   scheduleRulers();
 }, 260);
+
+/* =========================================================
+   THE CARET NEVER GOES MISSING
+   ---------------------------------------------------------
+   Standing rule: the script's insertion point may disappear only when the
+   writer deliberately leaves the script (clicks empty space, edits a note,
+   opens a dialog). Anything else the app does -- the Return that makes a
+   new line, a layout pass, the page rebuild, an undo -- must leave the
+   caret where it put it.
+
+   Every edit books layout work (scheduleReflow), and every programmatic
+   caret placement lands in a script paragraph. Both therefore arm a short
+   watch (about a second, covering the same-frame pass and the debounced
+   one): the paragraph (by id) and the text offset where the caret is. While
+   the watch is on, if the caret is no longer live -- no selection, a
+   selection outside the script or in a node that was taken out of it, or
+   the script no longer holding focus -- it is put back, in the same
+   paragraph at the same place, and the script gets its focus back.
+
+   It never acts against the writer: a pointer press or touch anywhere, or
+   focus moving to any field outside the script (a note, Find, a dialog),
+   ends the watch at once, and it does nothing while an input method is
+   composing, in Read-Only, or while the window itself has no focus.
+   ========================================================= */
+var _caretMemo=null;       // {id, flat, t}: the last caret seen inside the script
+var _caretWatch=null;      // {id, flat, until}
+var _caretWatchRaf=0, _caretWatchTimer=0;
+function caretSnapshotNow(){
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return null;
+  const r=sel.getRangeAt(0);
+  if(!r.startContainer.isConnected || !content.contains(r.startContainer)) return null;
+  const b=blockOfNode(r.startContainer);
+  if(!b || !b.dataset.id) return null;
+  let flat=0;
+  try{ flat=flatOffsetInBlock(b, r.startContainer, r.startOffset); }catch(err){}
+  return {id:b.dataset.id, flat, t:performance.now()};
+}
+function caretIsLive(){
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return false;
+  const r=sel.getRangeAt(0);
+  if(!r.startContainer.isConnected || !content.contains(r.startContainer)) return false;
+  if(!blockOfNode(r.startContainer)) return false; // between paragraphs, in no paragraph at all, is not a caret
+  const ae=document.activeElement;
+  return ae===content || !!(ae && content.contains(ae));
+}
+function armCaretWatch(){
+  try{
+    if(readOnlyMode || !state.projectId) return;
+    let s=caretSnapshotNow();
+    if(s) _caretMemo=s;
+    else if(_caretMemo && performance.now()-_caretMemo.t<1200) s=_caretMemo; // the edit itself lost it: use where it was a moment ago
+    if(!s) return;
+    _caretWatch={id:s.id, flat:s.flat, until:performance.now()+1000};
+    if(!_caretWatchRaf) _caretWatchRaf=requestAnimationFrame(checkCaretWatch);
+  }catch(err){} // a guard must never be the thing that breaks an edit
+}
+function endCaretWatch(){
+  _caretWatch=null; _caretMemo=null;
+  if(_caretWatchRaf){ cancelAnimationFrame(_caretWatchRaf); _caretWatchRaf=0; }
+  clearTimeout(_caretWatchTimer); _caretWatchTimer=0;
+}
+function checkCaretWatch(){
+  try{ checkCaretWatchNow(); }catch(err){ _caretWatch=null; }
+}
+function checkCaretWatchNow(){
+  _caretWatchRaf=0; clearTimeout(_caretWatchTimer); _caretWatchTimer=0;
+  const w=_caretWatch;
+  if(!w) return;
+  if(performance.now()>w.until || readOnlyMode || !document.hasFocus()){ _caretWatch=null; return; }
+  const ae=document.activeElement;
+  const elsewhere=ae && ae!==document.body && ae!==document.documentElement && ae!==content && !content.contains(ae);
+  if(elsewhere){ _caretWatch=null; return; }       // the writer is in a note, a field or a dialog
+  if(!_scriptComposing && !caretIsLive()) restoreWatchedCaret(w);
+  if(_caretWatch) _caretWatchTimer=setTimeout(checkCaretWatch, 100);
+}
+function restoreWatchedCaret(w){
+  let b=null;
+  try{ b=content.querySelector('.line-block[data-id="'+String(w.id).replace(/["\\]/g,'')+'"]'); }catch(err){}
+  if(!b || b.classList.contains('tp-locked')){ _caretWatch=null; return; } // never guess a different place
+  if(document.activeElement!==content){ try{ content.focus({preventScroll:true}); }catch(err){} }
+  const pos=textOffsetToNodeOffset(b, w.flat);
+  const r=document.createRange();
+  r.setStart(pos.node, pos.offset); r.collapse(true);
+  const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  ensureCaretVisible();
+}
+/* The writer leaving, or choosing a new place: the watch ends. */
+['pointerdown','mousedown','touchstart'].forEach(ev=>document.addEventListener(ev, endCaretWatch, true));
+document.addEventListener('focusin', function(e){
+  const t=e.target;
+  if(t && t!==document.body && t!==content && !content.contains(t)) endCaretWatch();
+}, true);
+document.addEventListener('selectionchange', function(){
+  const s=caretSnapshotNow();
+  if(s) _caretMemo=s;
+});
 
 /* =========================================================
    COORDINATES / CAMERA
