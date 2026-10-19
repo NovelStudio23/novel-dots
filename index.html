@@ -1902,7 +1902,12 @@ body.read-only-mode .st-seg{cursor:pointer;}
 .bb-beat.moving{opacity:.85; box-shadow:0 6px 18px rgba(0,0,0,.2); z-index:4;}
 .bb-text{position:absolute; inset:0; padding:4px 7px; font:12.5px/1.4 var(--sans); white-space:pre-wrap; word-break:break-word; overflow:hidden;}
 .bb-edit{position:absolute; inset:0; width:100%; height:100%; box-sizing:border-box; border:none; outline:none; resize:none; margin:0;
-  padding:4px 7px; font:12.5px/1.4 var(--sans); background:var(--paper); color:var(--ink); user-select:text; -webkit-user-select:text;}
+  padding:4px 7px; font:12.5px/1.4 var(--sans); background:var(--paper); color:var(--ink); user-select:text; -webkit-user-select:text;
+  white-space:pre-wrap; word-break:break-word; overflow:auto; cursor:text;}
+/* The shape being drawn by dragging across empty cells: it becomes the beat. */
+.bb-rubber{position:absolute; box-sizing:border-box; border:2px dashed var(--accent); border-radius:6px; pointer-events:none; z-index:5;
+  background:color-mix(in srgb, var(--accent) 14%, transparent);}
+.bb-rubber::after{content:attr(data-size); position:absolute; right:5px; bottom:3px; font:600 11px/1 var(--sans); color:var(--accent);}
 .bb-rz{position:absolute; right:0; bottom:0; width:9px; height:9px; background:var(--accent); border:1.5px solid var(--paper);
   cursor:nwse-resize; z-index:3; display:none; box-sizing:border-box; touch-action:none;}
 .bb-beat.sel .bb-rz, .bb-beat:hover .bb-rz{display:block;}
@@ -2332,6 +2337,10 @@ body.theme-dark .modal-overlay{background:rgba(0,0,0,.5);}
 .modal-btn:disabled{opacity:.45;}
 .modal-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.12);}
 .modal-btn.primary:hover{background:var(--accent-bright); border-color:var(--accent-bright);}
+/* A confirmation whose action destroys something: the button is red, and says so. */
+.modal-btn.danger{background:var(--danger); border-color:var(--danger); color:#fff; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.12);}
+.modal-btn.danger:hover{filter:brightness(.92);}
+body.theme-dark .modal-btn.danger{color:#2A1111;}
 .modal-box input[type=text], .modal-box input[type=number], .modal-box input[type=search], .modal-box input[type=date], .modal-box input[type=time], .modal-box select, .modal-box textarea,
 .fr-row input[type=text], #ndNavigator input[type=text], #ndNavigator select{
   font-family:var(--sans); font-size:13px; color:var(--text-chrome); background:var(--chrome-bg);
@@ -3226,8 +3235,49 @@ function writeOutline(el, obj){
 /* =========================================================
    SCREENPLAY EDITOR
    ========================================================= */
+/* A project file, a backup or an old save is data from outside: its line HTML
+   is read in an inert holder (nothing in it runs or loads while it is read),
+   then scripts, embedded content, event handlers (onerror=, onclick=, ...) and
+   script/data URLs are taken out. Ordinary formatting (bold, italic, underline,
+   strike, spans, line breaks, the app's own marks) is untouched. */
+const UNSAFE_LINE_TAGS=new Set(['script','style','iframe','frame','frameset','object','embed','applet','link','meta','base',
+  'noscript','svg','math','img','picture','video','audio','source','track']);
+function scrubUnsafeNodes(root){
+  Array.from(root.querySelectorAll('*')).forEach(el=>{
+    if(!root.contains(el)) return; // went with a parent already removed
+    if(UNSAFE_LINE_TAGS.has(el.localName)){ el.remove(); return; }
+    Array.from(el.attributes).forEach(a=>{
+      const n=a.name.toLowerCase(), v=a.value||'';
+      const flat=v.replace(/[\u0000-\u0020\u007f-\u009f]/g,'').toLowerCase();
+      if(n.startsWith('on') || n==='srcdoc' || n==='formaction' || n==='action'
+         || ((n==='href' || n==='src' || n==='xlink:href' || n==='data' || n==='poster' || n==='background') && /^(javascript|vbscript|data):/.test(flat))
+         || (n==='style' && /expression|javascript:|url\s*\(|@import|behavior|-moz-binding/i.test(v))){
+        el.removeAttribute(a.name);
+      }
+    });
+  });
+}
+function sanitizeLineFragment(html){
+  const t=document.createElement('template');
+  t.innerHTML=String(html==null ? '' : html);
+  scrubUnsafeNodes(t.content);
+  return t.content;
+}
+/* Fills a line element from saved HTML. Text with no '<' cannot make an element,
+   so it goes in directly; anything with markup is made safe first. */
+function setLineHtml(el, html){
+  const h=String(html==null ? '' : html);
+  if(h.indexOf('<')<0){ el.innerHTML=h; return; }
+  el.textContent='';
+  el.appendChild(sanitizeLineFragment(h));
+}
+const SAFE_ID_RE=/^[A-Za-z0-9_.:\-]{1,80}$/;
 function createLineElement(l){
   const div=document.createElement('div');
+  // A file can carry any value here: an unknown type becomes Action, an id with
+  // characters that could break out of an attribute or a selector gets a fresh one.
+  if(!TYPES.includes(l.type)) l=Object.assign({}, l, {type:'action'});
+  if(l.id!=null && !SAFE_ID_RE.test(String(l.id))) l=Object.assign({}, l, {id:uid('ln')});
   div.className='line-block type-'+l.type;
   div.dataset.id=l.id||uid('ln');
   div.dataset.type=l.type;
@@ -3252,7 +3302,7 @@ function createLineElement(l){
   // l.html (when present) preserves character-level Bold/Italic/Underline/Strikethrough.
   // Lines that only ever had plain text (fresh lines, .txt/.docx/.pdf import) fall back to
   // escaped plain text — never raw, since we're now assigning through innerHTML.
-  div.innerHTML = (l.html!==undefined && l.html!==null) ? l.html : escapeHtml(l.text||'');
+  setLineHtml(div, (l.html!==undefined && l.html!==null) ? l.html : escapeHtml(l.text||''));
   return div;
 }
 function initScreenplay(lines){
@@ -4185,6 +4235,129 @@ function caretOffsetsIn(block, sel){
   const post=document.createRange(); post.selectNodeContents(block); post.setStart(r.endContainer, r.endOffset);
   return {before:pre.toString().length, after:post.toString().length};
 }
+/* =========================================================
+   THE TITLE PAGE AND THE SCRIPT: NO KEYBOARD PATH BETWEEN THEM
+   ---------------------------------------------------------
+   The two are separate documents. Only the mouse (a click, a touch) puts the
+   caret from one into the other; no key moves it across, edits across, or
+   joins them:
+   - Return, Tab and the arrow keys stop at the last title field;
+   - Backspace / Left / Up at the very start of the script stay in the script;
+   - Shift+arrows, Home/End, Page keys, Cmd/Ctrl+Up/Down/Home/End cannot carry
+     the caret or a selection over (selectionchange guard below);
+   - Select All inside the script selects the script only;
+   - a caret that sits BETWEEN paragraphs (a click on the page's margin, the
+     gap at a page break) is first moved into a paragraph, so the browser
+     never edits there on its own (it used to join, retype or delete lines
+     around the page break, which is how the title page got damaged).
+   ========================================================= */
+function lastBodyBlock(){
+  const all=allLineEls();
+  for(let i=all.length-1;i>=0;i--) if(!isTitlePageLine(all[i])) return all[i];
+  return null;
+}
+/* Where a caret that is between paragraphs belongs, or null when the caret is
+   already inside one. The paragraph below it, except at the very end. */
+function looseCaretTarget(sel){
+  if(!sel || !sel.rangeCount || !sel.isCollapsed) return null;
+  const n=sel.anchorNode;
+  if(!n || n===document || !content.contains(n) || blockOfNode(n)) return null;
+  let idx;
+  if(n===content) idx=sel.anchorOffset;
+  else {
+    let c=n; while(c && c.parentNode!==content) c=c.parentNode;
+    if(!c) return null;
+    idx=Array.prototype.indexOf.call(content.children, c);
+  }
+  const kids=content.children;
+  let next=null, prev=null;
+  for(let i=Math.max(0,idx);i<kids.length;i++){ if(kids[i].classList && kids[i].classList.contains('line-block')){ next=kids[i]; break; } }
+  for(let i=Math.min(idx,kids.length)-1;i>=0;i--){ if(kids[i].classList && kids[i].classList.contains('line-block')){ prev=kids[i]; break; } }
+  if(next) return {block:next, atEnd:false};
+  if(prev) return {block:prev, atEnd:true};
+  return null;
+}
+function normalizeLooseCaret(){
+  const sel=window.getSelection();
+  const t=looseCaretTarget(sel);
+  if(!t) return null;
+  let b=t.block;
+  if(isTitlePageLine(b) && !isTitleField(b)){ const f=nearestTitleField(b); if(f) b=f; }
+  if(t.atEnd) placeCaretAtEnd(b); else placeCaretAtStart(b);
+  return b;
+}
+function zoneOfNode(n){ const b=blockOfNode(n); return b ? (isTitlePageLine(b) ? 'title' : 'script') : null; }
+let _kbZone=null, _kbRange=null, _kbAt=0, _ptrDown=false;
+const KB_NAV_KEYS=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End','PageUp','PageDown'];
+document.addEventListener('pointerdown', function(){ _ptrDown=true; _kbAt=0; }, true);
+document.addEventListener('pointerup', function(){ _ptrDown=false; }, true);
+document.addEventListener('pointercancel', function(){ _ptrDown=false; }, true);
+content.addEventListener('keydown', function(e){
+  if(['Shift','Control','Alt','Meta','CapsLock'].includes(e.key)) return;
+  _ptrDown=false; // a key press means no mouse press is still going on
+  if(!readOnlyMode) normalizeLooseCaret();
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return;
+  const mod=e.metaKey || e.ctrlKey;
+  // Select All in the script selects the script (the title page is not part of it).
+  if(mod && !e.altKey && !e.shiftKey && (e.key==='a' || e.key==='A')){
+    const a=blockOfNode(sel.anchorNode), first=firstBodyBlock(), last=lastBodyBlock();
+    if(a && !isTitlePageLine(a) && first && last){
+      e.preventDefault(); e.stopImmediatePropagation();
+      const r=document.createRange();
+      r.setStart(first, 0); r.setEnd(last, last.childNodes.length);
+      sel.removeAllRanges(); sel.addRange(r);
+    }
+    return;
+  }
+  if(KB_NAV_KEYS.includes(e.key)){
+    const b=blockOfNode(sel.anchorNode);
+    if(b){
+      _kbZone=isTitlePageLine(b) ? 'title' : 'script';
+      _kbRange=sel.getRangeAt(0).cloneRange();
+      _kbAt=performance.now();
+      // The plain cases are stopped here, before the browser moves anything.
+      if(!e.shiftKey && !mod && sel.isCollapsed){
+        const r=sel.getRangeAt(0);
+        if(_kbZone==='script' && b===firstBodyBlock() && e.key==='ArrowLeft' && isCaretAtStart(b, r)){
+          e.preventDefault(); e.stopImmediatePropagation(); return;
+        }
+        if(_kbZone==='title' && b===titleFields().slice(-1)[0] && e.key==='ArrowRight' && isCaretAtEnd(b, r)){
+          e.preventDefault(); e.stopImmediatePropagation(); return;
+        }
+      }
+    }
+  }
+}, true);
+/* A key that carried the caret, or one end of a selection, into the other
+   side: put it back where it was before the key. */
+document.addEventListener('selectionchange', function(){
+  if(_ptrDown || !_kbRange || performance.now()-_kbAt>500) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !sel.anchorNode || !content.contains(sel.anchorNode)) return;
+  const za=zoneOfNode(sel.anchorNode), zf=zoneOfNode(sel.focusNode);
+  if((za && za!==_kbZone) || (zf && zf!==_kbZone)){
+    try{
+      const r=_kbRange;
+      if(r.startContainer.isConnected && r.endContainer.isConnected){ sel.removeAllRanges(); sel.addRange(r.cloneRange()); }
+    }catch(err){}
+  }
+});
+/* Input that does not come from a key (phone and tablet keyboards, dictation,
+   autocorrect): the same two rules. */
+content.addEventListener('beforeinput', function(e){
+  if(readOnlyMode) return;
+  normalizeLooseCaret();
+  const t=e.inputType||'';
+  if(/Backward$/.test(t)){
+    const sel=window.getSelection();
+    if(sel && sel.rangeCount && sel.isCollapsed){
+      const b=blockOfNode(sel.anchorNode);
+      if(b && b===firstBodyBlock() && isCaretAtStart(b, sel.getRangeAt(0))){ e.preventDefault(); e.stopImmediatePropagation(); }
+    }
+  }
+}, true);
+content.addEventListener('compositionstart', function(){ if(!readOnlyMode) normalizeLooseCaret(); }, true);
 content.addEventListener('keydown', function(e){
   if(readOnlyMode) return;
   const sel=window.getSelection();
@@ -4226,15 +4399,14 @@ content.addEventListener('keydown', function(e){
     stop();
     if(e.isComposing) return;
     const next=fields[i+1];
-    if(next) focusTitleField(next);
-    else if(e.key==='Tab'){ const b=firstBodyBlock(); if(b) placeCaretAtStart(b); }
+    if(next) focusTitleField(next); // the last field has nowhere further to go: the script is only reached with the mouse
     return;
   }
   if(e.key==='Tab' && e.shiftKey){ stop(); if(fields[i-1]) focusTitleField(fields[i-1]); return; }
   if(e.key==='ArrowDown' && !e.shiftKey && !mod){
     stop();
     const next=fields[i+1];
-    if(next) focusTitleField(next); else { const b=firstBodyBlock(); if(b){ placeCaretAtStart(b); ensureCaretVisible(); } }
+    if(next) focusTitleField(next);
     return;
   }
   if(e.key==='ArrowUp' && !e.shiftKey && !mod){ stop(); if(fields[i-1]) focusTitleField(fields[i-1]); return; }
@@ -4719,11 +4891,7 @@ function pasteLines(block, sel, rawLines){
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
 }
 function htmlToFragment(html){
-  const tmp=document.createElement('div');
-  tmp.innerHTML=html||'';
-  const frag=document.createDocumentFragment();
-  while(tmp.firstChild) frag.appendChild(tmp.firstChild);
-  return frag;
+  return sanitizeLineFragment(html||'');
 }
 /* Rich, same-app paste: richLines is [{type, html, align}, ...] as built by
    the 'copy'/'cut' handlers below, one entry per line the copied selection
@@ -6388,7 +6556,7 @@ function altsTargetBlock(){
   return (b && content.contains(b) && b.dataset.type==='dialogue') ? b : null;
 }
 function altPreview(html){
-  const d=document.createElement('div'); d.innerHTML=html||'';
+  const d=document.createElement('div'); d.appendChild(sanitizeLineFragment(html||''));
   const t=(d.textContent||'').replace(/\s+/g,' ').trim();
   return t ? (t.length>48 ? t.slice(0,47)+'\u2026' : t) : '(empty)';
 }
@@ -9269,6 +9437,7 @@ function zoomAt(sx, sy, newZoom){
   pan.x=sx-wx*zoom; pan.y=sy-wy*zoom;
   applyTransform();
   showZoomIndicator();
+  scheduleZoomSave();
 }
 let zoomIndicatorTimer=null;
 function positionZoomIndicator(){
@@ -9310,16 +9479,35 @@ function showZoomIndicator(){
   clearTimeout(zoomIndicatorTimer);
   zoomIndicatorTimer=setTimeout(()=>{ el.classList.remove('show'); }, NOTICE_MS);
 }
-/* A project opens on its first TWO sheets, whole, one above the other in the
-   stack: the title page and script page 1 (or pages 1 and 2 when there is
-   no title page; a one-sheet script shows its one sheet). Needs the page
-   count, so it runs after recomputePagination(). */
+/* A project opens at 100% the first time. After that it opens at the zoom the
+   writer last left it at (a wheel / pinch zoom is saved with the project,
+   under its own settings, never shared with another project). The page is
+   centred across the window and shown from its top. */
+let _savedZoom=null, _zoomSaveTimer=null;
+async function loadZoomPref(){
+  _savedZoom=null;
+  try{
+    const r=await dbStorage.get('novel-dots-zoom');
+    const z=(r && r.value!=null) ? parseFloat(r.value) : NaN;
+    if(isFinite(z) && z>=0.15 && z<=2.5) _savedZoom=z;
+  }catch(err){}
+}
+/* Called after the writer zooms by hand (not by the app's own fitting). Written
+   straight under this project's key: the shared copy every other setting also
+   keeps would hand the zoom to a project that has never been zoomed. */
+function scheduleZoomSave(){
+  if(!state.projectId || (typeof _compareActive!=='undefined' && _compareActive)) return;
+  const pid=state.projectId;
+  _savedZoom=zoom;
+  clearTimeout(_zoomSaveTimer);
+  _zoomSaveTimer=setTimeout(()=>{
+    try{ _dbSetAny.call(dbStorage, projectPrefKey(pid, 'novel-dots-zoom'), String(_savedZoom)); }catch(err){}
+  }, 400);
+}
 function fitInitialView(){
   resetViewportEdge(); // a fresh view: nothing to hold still
   const r=viewport.getBoundingClientRect();
-  const sheets=Math.min(2, Math.max(1, totalPageCount||1));
-  const stackH=sheets*PAGE_H+(sheets-1)*GAP;
-  zoom=clamp(Math.min((r.height-96)/stackH, (r.width-48)/PAGE_W), 0.2, 0.92);
+  zoom=clamp(_savedZoom!=null ? _savedZoom : 1, 0.15, 2.5);
   pan.x=(r.width-PAGE_W*zoom)/2;
   pan.y=48;
   applyTransform();
@@ -9726,6 +9914,35 @@ function defaultCardOffsetX(side, dotX){
   const beside = side==='left' ? (CARD_DOT_GAP-dotX) : (dotX+CARD_DOT_GAP-PAGE_W);
   return clamp(Math.max(CARD_DOT_GAP, beside), CARD_DOT_GAP, 1400);
 }
+/* A note that has just been made takes the keyboard: the caret is in its text
+   area, so the writer can right-click, choose the note, and type -- no click in
+   between. One focus() call after a fixed delay was not enough: the menu is
+   still closing, the card is still opening, and some browsers put no caret in
+   an editable that was only focused. So the text area is focused AND given a
+   collapsed selection, checked again over the next moments, and given back if
+   something took it. A press anywhere else means the writer chose elsewhere. */
+function focusNewNoteBody(noteId){
+  endCaretWatch(); // the script's own caret watch must not pull focus back to the page
+  let cancelled=false;
+  const timers=[];
+  const stop=()=>{ cancelled=true; timers.forEach(clearTimeout); document.removeEventListener('pointerdown', stop, true); };
+  document.addEventListener('pointerdown', stop, true);
+  const attempt=()=>{
+    if(cancelled) return;
+    const els=noteEls[noteId], b=els && els.body;
+    if(!b || !b.isConnected || readOnlyMode){ stop(); return; }
+    hideContextMenu();
+    const sel=window.getSelection();
+    const inBody=()=>document.activeElement===b && sel.rangeCount && b.contains(sel.getRangeAt(0).startContainer);
+    if(inBody()) return;
+    try{ b.focus({preventScroll:true}); }catch(err){ b.focus(); }
+    const r=document.createRange(); r.selectNodeContents(b); r.collapse(false);
+    sel.removeAllRanges(); sel.addRange(r);
+  };
+  requestAnimationFrame(attempt);
+  [80,200,380,560,800].forEach(ms=>timers.push(setTimeout(attempt, ms)));
+  timers.push(setTimeout(stop, 1000));
+}
 function createNote(kind, worldX, worldY, explicitLineId, extraLineIds){
   if(readOnlyMode) return null; // creating a note is a project mutation -- locked in Read-Only Mode
   if(kind==='sticky'){
@@ -9741,7 +9958,7 @@ function createNote(kind, worldX, worldY, explicitLineId, extraLineIds){
     createNoteDOM(note);
     layoutNote(note);
     panIntoViewIfNearEdge(note.stickyX, note.stickyY, 200);
-    setTimeout(()=>{ const b=noteEls[note.id] && noteEls[note.id].body; if(b) b.focus(); },560);
+    focusNewNoteBody(note.id);
     scheduleSnapshot(); scheduleAutosave(); refreshFilterOptions();
     return note;
   }
@@ -9779,7 +9996,7 @@ function createNote(kind, worldX, worldY, explicitLineId, extraLineIds){
       showShotPicker(r.left, r.bottom+4, shot=>applyShotToNote(note.id, shot), earliest.id);
     }
   }
-  if(!note.folded) setTimeout(()=>{ hideContextMenu(); const b=noteEls[note.id] && noteEls[note.id].body; if(b) b.focus(); },560);
+  if(!note.folded) focusNewNoteBody(note.id);
   scheduleSnapshot(); scheduleAutosave(); refreshFilterOptions();
   return note;
 }
@@ -9880,6 +10097,7 @@ function createNoteDOM(note){
 
   const body=document.createElement('div'); body.className='note-body'; body.contentEditable='true';
   body.spellcheck=spellcheckOn; // note text is prose, so it follows the same setting
+  body.textContent=note.text||''; // what was written comes back with the note (reopened project, imported file, undo)
   body.dataset.placeholder= note.kind==='sticky' ? 'Write a persistent note…' : 'Write a note…';
 
   const foot=document.createElement('div'); foot.className='note-foot';
@@ -10514,7 +10732,7 @@ function createAdditionalNote(parentNote){
   createNoteDOM(note);
   refreshShotInputValue(note.id);
   layoutNote(note); updateConnectors();
-  if(!note.folded) setTimeout(()=>{ const b=noteEls[note.id] && noteEls[note.id].body; if(b) b.focus(); },560);
+  if(!note.folded) focusNewNoteBody(note.id);
   scheduleSnapshot(); scheduleAutosave(); refreshFilterOptions();
 }
 /* World-space {left, top, width, height} of a note's rendered card — used to
@@ -14216,9 +14434,11 @@ viewport.addEventListener('pointerdown', function(e){
    agrees -- a press right on a line's letters -- it is left alone, so
    double- and triple-click and drag-selecting work as they always have.
    A drag that starts off the text extends the selection the same way;
-   Shift+click extends it. The grey desk around the pages is not paper:
-   a click there still leaves the script, on purpose. Touch is left to its
-   own gestures (a finger on the page pans).
+   Shift+click extends it. The grey desk around the pages is not paper, but
+   a click on the bare desk leaves the script's caret where it was and the
+   script keeps the keyboard (only a note, a field or another control takes
+   it); a drag on the desk still pans. Touch is left to its own gestures
+   (a finger on the page pans).
    ========================================================= */
 let _lastPointerType='mouse';
 viewport.addEventListener('pointerdown', e=>{ _lastPointerType=e.pointerType||'mouse'; }, true);
@@ -14315,6 +14535,15 @@ function pagePressTarget(e){
   return !!pointOnPaper(e.clientX, e.clientY);
 }
 let _pageDrag=null;
+/* The bare desk (not a page, a note, a marker or any control): pressing it
+   must not take the focus away from the script, or the caret stays drawn
+   but typing goes nowhere. */
+viewport.addEventListener('mousedown', function(e){
+  if(e.button!==0 || readOnlyMode || !state.projectId || currentTool!=='none') return;
+  if(e.target!==viewport && e.target!==world) return;
+  if(document.activeElement!==content) return;
+  e.preventDefault();
+}, true);
 viewport.addEventListener('mousedown', function(e){
   if(e.button!==0 || readOnlyMode || !state.projectId || currentTool!=='none') return;
   if(_lastPointerType==='touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
@@ -14370,6 +14599,7 @@ viewport.addEventListener('pointermove', function(e){
     zoom=newZoom;
     applyTransform();
     showZoomIndicator();
+    scheduleZoomSave();
     return;
   }
   if(currentTool==='pen'){
@@ -14598,13 +14828,13 @@ function promptShotNumberModal(title){
     input.focus();
   });
 }
-function confirmModal(title, msg, confirmLabel){
+function confirmModal(title, msg, confirmLabel, danger){
   return new Promise(resolve=>{
     modalRoot.innerHTML=
       '<div class="modal-box">'+
         '<div class="modal-title">'+escapeHtml(title)+'</div>'+
         '<p class="modal-p">'+escapeHtml(msg)+'</p>'+
-        '<div class="modal-actions"><button class="modal-btn" id="mCancel">Cancel</button><button class="modal-btn primary" id="mOk">'+escapeHtml(confirmLabel||'Continue')+'</button></div>'+
+        '<div class="modal-actions"><button class="modal-btn" id="mCancel">Cancel</button><button class="modal-btn'+(danger?' danger':' primary')+'" id="mOk">'+escapeHtml(confirmLabel||'Continue')+'</button></div>'+
       '</div>';
     modalRoot.classList.remove('hidden');
     document.getElementById('mOk').addEventListener('click', ()=>{ closeModal(); resolve(true); });
@@ -14630,8 +14860,35 @@ function showToast(msg){
 /* =========================================================
    UNDO / REDO
    ========================================================= */
-function snapshotState(){
-  return JSON.stringify({
+/* The project-level settings an import can replace and an ordinary edit never
+   does. They are part of a snapshot only for the two history steps around an
+   import (so Undo / Redo across an import brings them back too); every other
+   snapshot leaves the settings alone, so Undo of typing never changes them. */
+function projectExtras(){
+  const d=projectData();
+  return {projectTitle:d.projectTitle, sceneNumbers:d.sceneNumbers, pageOptions:d.pageOptions, revisions:d.revisions,
+    pageLock:d.pageLock, breakdown:d.breakdown, macros:d.macros, smartTypeNames:d.smartTypeNames, speech:d.speech,
+    format:d.format, charHighlight:d.charHighlight};
+}
+function applyProjectExtras(x){
+  if(!x || typeof x!=='object') return;
+  state.macros=normalizeMacros(x.macros);
+  state.smartTypeNames=Array.isArray(x.smartTypeNames) ? x.smartTypeNames.map(n=>String(n).toUpperCase()).filter(Boolean) : [];
+  state.speech=normalizeSpeech(x.speech);
+  state.format=normalizeDocFormat(x.format);
+  state.charHighlight=normalizeCharHighlight(x.charHighlight);
+  state.sceneNumbers=normalizeSceneNumberSettings(x.sceneNumbers);
+  state.pageOptions=normalizePageOptions(x.pageOptions);
+  state.revisions=normalizeRevisions(x.revisions);
+  state.pageLock=normalizePageLock(x.pageLock);
+  state.breakdown=normalizeBreakdown(x.breakdown);
+  if(x.projectTitle){ state.projectTitle=x.projectTitle; document.getElementById('projectTitle').textContent=state.projectTitle; }
+  try{ applyViewAidButtons(); }catch(err){}
+  applyDocFormat(false); // before anything is laid out
+  _forcePaginationRebuild=true;
+}
+function snapshotState(withExtras){
+  const base=JSON.stringify({
     lines:serializeLines(),
     notes:state.notes.map(n=>{ const o={...n}; Object.keys(o).forEach(k=>{ if(k[0]==='_') delete o[k]; }); return o; }),
     shots:state.shots.map(s=>({...s})),
@@ -14641,10 +14898,36 @@ function snapshotState(){
     beatBoard:{beats:state.beatBoard.beats.map(b=>({...b}))},
     tc:tcSnapshotRef()
   });
+  if(!withExtras) return base;
+  return base.slice(0,-1)+',"extras":'+JSON.stringify(projectExtras())+'}'; // always last, so the part before it can be compared
+}
+/* Same state? A snapshot with the settings block is the same as one without it
+   when everything before the block is equal. */
+function sameSnapshot(top, snap){
+  return top===snap || (top.length>snap.length && top.startsWith(snap.slice(0,-1)+',"extras":'));
+}
+/* An import as ONE step in the history: the state before it (with the settings
+   it will replace) and the state after it, so Undo goes back to exactly what was
+   there and Redo returns to exactly what was imported. If applying it fails
+   half-way, what was there is put back and the error is passed on. */
+function applyImportTransaction(applyFn){
+  const lite=snapshotState(false);
+  const pre=snapshotState(true);
+  try{ applyFn(); }
+  catch(err){
+    try{ restoreSnapshot(pre); }catch(err2){ console.error('import rollback', err2); }
+    throw err;
+  }
+  if(undoStack.length && sameSnapshot(undoStack[undoStack.length-1], lite)) undoStack[undoStack.length-1]=pre;
+  else undoStack.push(pre);
+  undoStack.push(snapshotState(true));
+  while(undoStack.length>80) undoStack.shift();
+  redoStack.length=0;
+  updateUndoButtons();
 }
 const scheduleSnapshot=debounce(function(){
   const snap=snapshotState();
-  if(undoStack.length && undoStack[undoStack.length-1]===snap) return;
+  if(undoStack.length && sameSnapshot(undoStack[undoStack.length-1], snap)) return;
   undoStack.push(snap);
   if(undoStack.length>80) undoStack.shift();
   redoStack.length=0;
@@ -14652,6 +14935,7 @@ const scheduleSnapshot=debounce(function(){
 }, 500);
 function restoreSnapshot(snapStr){
   const data=JSON.parse(snapStr);
+  if(data.extras) applyProjectExtras(data.extras); // an import's step in the history: its settings go with it
   initScreenplay(data.lines);
   syncProjectTitleFromTitlePage(); // the project's name follows the title it undid back to
   notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
@@ -14664,6 +14948,7 @@ function restoreSnapshot(snapStr){
   recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderImagesLayer();
   renderSidebar('left'); renderSidebar('right'); renderTimeline();
   try{ applyViewAidButtons(); }catch(err){}
+  if(data.extras){ try{ applySceneNumberMode(); applyRevisionState(); applyPageLockState(); applyBreakdownState(); }catch(err){} }
   try{ renderBeatBoard(true); }catch(err){}
 }
 function undo(){
@@ -15077,6 +15362,112 @@ async function exportProjectJSON(){
   const ok=downloadBlob('novel-dots-project.json', text, 'application/json');
   showExportModal('Export Project (.json)'+(ok?'':' — download blocked'), text);
 }
+/* =========================================================
+   FULL BACKUP -- one file with everything a project is
+   ---------------------------------------------------------
+   The project file (.json) carries the script and its tools; a backup also
+   carries what Novel Dots keeps beside the project:
+   - every milestone, the automatic ones too, each whole;
+   - the project's own settings (appearance, theme, panels, minimap, ...);
+   - the writer's goals and statistics.
+   The Beat Board, the Outline, notes, shots, drawings, images, revisions and
+   the rest are in the project part, exactly as in the project file.
+
+   Opening a backup (File > Import, or dropping it on My Projects) never
+   replaces anything: it makes a NEW project, with all of the above put back
+   under the new project, so the one it came from is left as it is.
+
+   The file is a plain .json with a wrapper of its own (kind:
+   'novel-dots-backup'), because the project part already uses the word
+   "format" for the page settings.
+   ========================================================= */
+const BACKUP_KIND='novel-dots-backup';
+function isBackupData(d){
+  return !!(d && typeof d==='object' && d.kind===BACKUP_KIND && d.project && typeof d.project==='object' && Array.isArray(d.project.lines));
+}
+async function buildBackup(pid){
+  if(!pid) return null;
+  const live=(pid===state.projectId);
+  let project=live ? projectData() : await loadProjectData(pid);
+  if(!project) return null;
+  if(live) project.projectTitle=state.projectTitle;
+  const milestones=[];
+  for(const v of (await loadMilestoneIndex(pid))){
+    const data=await loadMilestoneData(pid, v.id);
+    if(!data) continue;
+    delete data.milestones;
+    milestones.push({id:v.id, time:v.time, kind:v.kind, name:v.name||'', hidden:!!v.hidden, hash:v.hash||'', pages:v.pages==null?null:v.pages,
+      words:v.words==null?null:v.words, title:v.title||'', project:data});
+  }
+  const settings={};
+  for(const key of PROJECT_PREF_KEYS){
+    try{ const r=await _dbGetAny.call(dbStorage, projectPrefKey(pid, key)); if(r && r.value!=null) settings[key]=r.value; }catch(err){}
+  }
+  let stats=null;
+  try{ const r=await dbStorage.get('novel-dots-stats-'+pid); if(r && r.value) stats=r.value; }catch(err){}
+  const entry=(projectsIndexCache||[]).find(x=>x.id===pid) || {};
+  return {app:'Novel Dots', kind:BACKUP_KIND, backupVersion:1, exportedAt:new Date().toISOString(),
+    meta:{title:project.projectTitle||entry.title||'', folder:entry.folder||'', created:entry.created||null},
+    project, milestones, settings, stats};
+}
+function backupFileName(title){
+  const safe=String(title||'Untitled Screenplay').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim() || 'Untitled Screenplay';
+  const d=new Date(), pad=n=>String(n).padStart(2,'0');
+  return safe+' - Novel Dots backup '+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.json';
+}
+async function exportFullBackup(pid){
+  pid=(typeof pid==='string' && pid) ? pid : state.projectId;
+  const b=await buildBackup(pid);
+  if(!b){ showToast('Could not read that project to back it up'); return; }
+  const text=JSON.stringify(b);
+  const ok=downloadBlob(backupFileName(b.project.projectTitle), text, 'application/json');
+  if(!ok){ showExportModal('Full backup (.json) \u2014 download blocked', text); return; }
+  const kb=Math.max(1, Math.round(text.length/1024));
+  showToast('Backup saved \u2014 '+(kb>=1024 ? (kb/1024).toFixed(1)+' MB' : kb+' KB')+(b.milestones.length ? ', '+b.milestones.length+' milestone'+(b.milestones.length===1?'':'s') : ''));
+}
+/* A backup becomes a new project: its settings, statistics and milestones are
+   written under the new project's id first, so it opens with all of them. */
+async function restoreBackup(b){
+  const pid=newProjectId();
+  const project=b.project;
+  const title=String(project.projectTitle || (b.meta && b.meta.title) || DEFAULT_PROJECT_TITLE);
+  project.projectTitle=title;
+  let wrote=false;
+  if(b.settings && typeof b.settings==='object'){
+    for(const key of PROJECT_PREF_KEYS){
+      if(b.settings[key]===undefined) continue;
+      try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, key), b.settings[key]); wrote=true; }catch(err){}
+    }
+    if(wrote){ try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, '__init'), '1'); }catch(err){} }
+  }
+  if(typeof b.stats==='string' && b.stats){ try{ await dbStorage.set('novel-dots-stats-'+pid, b.stats); }catch(err){} }
+  const idx=[];
+  for(const m of (Array.isArray(b.milestones) ? b.milestones : [])){
+    if(!m || !m.project || typeof m.project!=='object') continue;
+    const time=Number(m.time)||Date.now();
+    const id='v'+time.toString(36)+Math.random().toString(36).slice(2, 6);
+    const json=JSON.stringify(m.project);
+    try{ await dbStorage.set(msDataKey(pid, id), json); }catch(err){ continue; }
+    const v={id, time, kind:m.kind==='named'?'named':'auto', name:String(m.name||''), hash:fnvHash(json),
+      pages:m.pages==null?null:m.pages, words:m.words==null?null:m.words, title:String(m.title||title), from:'backup:'+(m.id||'')+':'+time};
+    if(m.hidden) v.hidden=true;
+    idx.push(v);
+  }
+  if(idx.length){ idx.sort((a,c)=>(c.time||0)-(a.time||0)); await saveMilestoneIndex(pid, idx); }
+  let folder='';
+  try{ folder=landingFolderForNew()||''; }catch(err){}
+  touchProjectIndexSync(pid, title, folder);
+  await saveProjectData(pid, project);
+  await enterEditor(pid, project);
+  showToast('Backup restored as a new project'+(idx.length ? ' \u2014 '+idx.length+' milestone'+(idx.length===1?'':'s') : ''));
+  return pid;
+}
+/* A .json that might be a backup: read once, and handed back so a project file
+   that is not one is not read twice. */
+async function peekBackup(file){
+  if(scriptFileKind(file.name).kind!=='project') return null;
+  try{ const data=JSON.parse(await file.text()); return isBackupData(data) ? data : null; }catch(err){ return null; }
+}
 function exportScriptTXT(){
   const text=scriptToText();
   const ok=downloadBlob('screenplay.txt', text, 'text/plain');
@@ -15112,7 +15503,7 @@ function fdxEscape(s){
    Word, RTF and HTML writers carry strike natively. */
 function htmlToStyledRuns(html){
   const holder=document.createElement('div');
-  holder.innerHTML=html||'';
+  holder.appendChild(sanitizeLineFragment(html||''));
   const runs=[];
   let tagSpans=0;
   // `tag` is the breakdown span a run sits inside ({category, name, span}),
@@ -15445,6 +15836,10 @@ async function exportScriptPDF(opts){
   const doc=new jsPDFCtor({unit:'in', format:[PDF_IN.pageW, PDF_IN.pageH]});
   const PDF_FACE=scriptFontDef().pdf==='core' ? 'courier' : registerPdfScriptFont(doc); // the screen's own face, embedded
   doc.setFont(PDF_FACE,'normal'); doc.setFontSize(12);
+  // The library's default line width is 0.2 units -- with inches that is a 0.2 in
+  // (14 pt) band. Underlines and strike-throughs are lines, so set a hairline
+  // (0.5 pt) before anything is drawn; the note-margin code restores to this.
+  doc.setLineWidth(0.007); doc.setDrawColor(0, 0, 0);
   const pageRevisions=[];
   const REV_MARK_X=PDF_IN.pageW-0.4; // outside the scene-number column, which prints at pageW-mRight+0.1
   function revOfLine(line){
@@ -17869,7 +18264,10 @@ function loadScript(url){
   if(loadedScripts[url]) return loadedScripts[url];
   loadedScripts[url]=new Promise((resolve,reject)=>{
     const s=document.createElement('script');
-    s.src=url; s.onload=()=>resolve(true); s.onerror=()=>reject(new Error('Failed to load '+url));
+    s.src=url; s.onload=()=>resolve(true);
+    // A download that failed is forgotten, so the next import / export tries again
+    // instead of being handed the same failure until the page is reloaded.
+    s.onerror=()=>{ delete loadedScripts[url]; try{ s.remove(); }catch(err){} reject(new Error('Failed to load '+url)); };
     document.head.appendChild(s);
   });
   return loadedScripts[url];
@@ -18109,35 +18507,71 @@ function scriptFileKind(name){
   const ext=Object.keys(SCRIPT_FILE_READERS).find(e=>lower.endsWith(e));
   return ext ? {kind:'script', reader:SCRIPT_FILE_READERS[ext]} : {kind:'text', reader:PLAIN_TEXT_READER};
 }
+/* A project .json is read into a finished, safe set of parts first. Anything that
+   is not a project is refused here, while nothing has been touched. */
+function prepareProjectImport(data){
+  if(!data || typeof data!=='object' || Array.isArray(data) || !Array.isArray(data.lines)){
+    const e=new Error('not a project'); e.userMessage='That file is not a Novel Dots project (it has no script lines)'; throw e;
+  }
+  const objs=a=>Array.isArray(a) ? a.filter(x=>x && typeof x==='object') : [];
+  const lines=data.lines.filter(l=>l && typeof l==='object').map(l=>{
+    const o=Object.assign({}, l);
+    if(typeof o.text!=='string') o.text=(o.text==null || typeof o.text==='object') ? '' : String(o.text);
+    if(o.html!=null && typeof o.html!=='string') delete o.html;
+    return o;
+  });
+  return {
+    lines,
+    notes:migrateNotes(objs(data.notes)),
+    shots:objs(data.shots),
+    drawings:migrateDrawings(objs(data.drawings)),
+    images:objs(data.images),
+    sceneNumbers:normalizeSceneNumberSettings(data.sceneNumbers),
+    pageOptions:normalizePageOptions(data.pageOptions),
+    revisions:normalizeRevisions(data.revisions),
+    pageLock:normalizePageLock(data.pageLock),
+    breakdown:normalizeBreakdown(data.breakdown),
+    outline:normalizeOutlinePlan(data.outline),
+    beatBoard:normalizeBeatBoard(data.beatBoard),
+    title:(typeof data.projectTitle==='string' && data.projectTitle) ? data.projectTitle : ''
+  };
+}
 async function importFile(file){
+  // A full backup never replaces anything: it opens as a new project.
+  { const bk=await peekBackup(file); if(bk){ await restoreBackup(bk); return; } }
   // Import replaces the script: what was there is kept as a milestone.
   try{ if(state.projectId && serializeLines().some(l=>String(l.text||'').trim())) await createMilestone({kind:'auto', name:'Before import', force:true}); }catch(err){}
   const fileKind=scriptFileKind(file.name);
   if(fileKind.kind==='project'){
+    let data, parts;
     try{
-      const text=await file.text();
-      const data=JSON.parse(text);
-      undoStack.push(snapshotState());
-      initScreenplay(data.lines||[]);
-      notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
-      legacyMilestones=legacyMilestones.concat(await adoptProjectMilestones(state.projectId, data));
-      state.notes=migrateNotes(data.notes); state.shots=data.shots||[]; state.drawings=migrateDrawings(data.drawings||[]); state.images=data.images||[];
-      state.sceneNumbers=normalizeSceneNumberSettings(data.sceneNumbers);
-      state.pageOptions=normalizePageOptions(data.pageOptions);
-      state.revisions=normalizeRevisions(data.revisions);
-      state.pageLock=normalizePageLock(data.pageLock);
-      state.breakdown=normalizeBreakdown(data.breakdown);
-      state.outline=normalizeOutlinePlan(data.outline);
-      state.beatBoard=normalizeBeatBoard(data.beatBoard);
-      loadToolData(data);
-      applyRevisionState(); applyPageLockState(); applyBreakdownState();
-      if(data.projectTitle){ state.projectTitle=data.projectTitle; document.getElementById('projectTitle').textContent=state.projectTitle; }
-      state.notes.forEach(n=>createNoteDOM(n));
-      refreshAllShotOptions();
-      recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderImagesLayer();
-      renderSidebar('left'); renderSidebar('right'); renderTimeline();
-      scheduleAutosave(); showToast('Project imported');
-    }catch(err){ showToast('Could not read that project file'); }
+      data=JSON.parse(await file.text());
+      parts=prepareProjectImport(data);
+    }catch(err){ showToast((err && err.userMessage) || 'Could not read that project file'); return; }
+    try{
+      applyImportTransaction(()=>{
+        initScreenplay(parts.lines);
+        notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
+        state.notes=parts.notes; state.shots=parts.shots; state.drawings=parts.drawings; state.images=parts.images;
+        state.sceneNumbers=parts.sceneNumbers;
+        state.pageOptions=parts.pageOptions;
+        state.revisions=parts.revisions;
+        state.pageLock=parts.pageLock;
+        state.breakdown=parts.breakdown;
+        state.outline=parts.outline;
+        state.beatBoard=parts.beatBoard;
+        loadToolData(data);
+        applyRevisionState(); applyPageLockState(); applyBreakdownState();
+        if(parts.title){ state.projectTitle=parts.title; document.getElementById('projectTitle').textContent=state.projectTitle; }
+        state.notes.forEach(n=>createNoteDOM(n));
+        refreshAllShotOptions();
+        recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderImagesLayer();
+        renderSidebar('left'); renderSidebar('right'); renderTimeline();
+      });
+    }catch(err){ showToast('Could not import that project \u2014 nothing was changed'); return; }
+    // The file's own milestones are brought in once the project itself is in.
+    try{ legacyMilestones=legacyMilestones.concat(await adoptProjectMilestones(state.projectId, data)); }catch(err){}
+    scheduleAutosave(); showToast('Project imported');
     return;
   }
   // Formats with no realistic in-browser, single-file-friendly reader
@@ -18156,7 +18590,7 @@ async function importFile(file){
       const rawLines=parsed.lines, warnings=parsed.warnings;
       if(!rawLines.length){ showToast((warnings && warnings[0]) || 'No readable text found in that file'); return; }
       const {lines, counts}=finalizeImportedLines(rawLines);
-      undoStack.push(snapshotState());
+      applyImportTransaction(()=>{
       initScreenplay(lines);
       // §12: scene numbers already in the file are the shooting script's
       // identifiers. This was defined but never called, so imported numbers
@@ -18188,17 +18622,21 @@ async function importFile(file){
       recomputePagination(); layoutAllNotes();
       migrateLineOutlineToPlan();
       refreshOutlineViews();
+      });
       scheduleAutosave(); showToast(importSummaryToast(counts, warnings));
-    }catch(err){ showToast('Could not import that file — '+(err.message||'unknown error')); }
+    }catch(err){ showToast('Could not import that file — '+(err.message||'unknown error')+' (nothing was changed)'); }
     return;
   }
   // Fallback: plain text (.txt, or anything else readable as text).
-  const {lines:rawLines}=await fileKind.reader.fn(file);
-  const {lines, counts}=finalizeImportedLines(rawLines);
-  undoStack.push(snapshotState());
-  initScreenplay(lines);
-  recomputePagination(); layoutAllNotes();
-  scheduleAutosave(); showToast(importSummaryToast(counts, []));
+  try{
+    const {lines:rawLines}=await fileKind.reader.fn(file);
+    const {lines, counts}=finalizeImportedLines(rawLines);
+    applyImportTransaction(()=>{
+      initScreenplay(lines);
+      recomputePagination(); layoutAllNotes();
+    });
+    scheduleAutosave(); showToast(importSummaryToast(counts, []));
+  }catch(err){ showToast('Could not import that file \u2014 nothing was changed'); }
 }
 
 /* =========================================================
@@ -18354,7 +18792,7 @@ const dbStorage={
    ========================================================= */
 const PROJECT_PREF_KEYS=['novel-dots-appearance','novel-dots-theme','novel-dots-autoguess','novel-dots-fixcenter','novel-dots-minimap','novel-dots-minimap-geom',
   'novel-dots-navigator','novel-dots-ribbon-tab','novel-dots-show-alts','novel-dots-sidebar','novel-dots-spellcheck',
-  'novel-dots-split','novel-dots-structure','novel-dots-typewriter','novel-dots-view'];
+  'novel-dots-split','novel-dots-structure','novel-dots-typewriter','novel-dots-view','novel-dots-zoom'];
 function projectPrefKey(pid, key){ return 'novel-dots-pp-'+pid+'|'+key; }
 const _dbGetAny=dbStorage.get, _dbSetAny=dbStorage.set;
 dbStorage.get=async function(key){
@@ -18429,18 +18867,74 @@ function newProjectId(){ return 'proj_'+Date.now()+'_'+Math.random().toString(36
 
 let projectsIndexCache; // undefined = not yet loaded this session (distinct from [] = loaded and empty)
 function persistProjectsIndex(){
-  if(!projectsIndexCache) return;
+  if(!projectsIndexCache || _projectsIndexUnsafe) return;
   // Fire-and-forget: the in-memory cache is already the source of truth for
   // rendering, so nothing needs to wait on this write actually completing.
   dbStorage.set('novel-dots-projects-index', JSON.stringify(projectsIndexCache)).catch(()=>{});
 }
-async function ensureProjectsIndexLoaded(){
-  if(projectsIndexCache!==undefined) return projectsIndexCache;
-  let idx=null;
+/* The project list is one stored value. Reading it has three different
+   outcomes, and only one of them means "first visit":
+     absent  -- the key has never existed
+     ok      -- a list was read
+     corrupt / error -- there may well be projects; never write over them.
+   A list that is missing or damaged is rebuilt from the projects actually
+   stored (each under its own key), so no project drops out of My Projects. */
+let _projectsIndexUnsafe=false; // true: the stored list could not be read this session -- leave it alone
+async function readProjectsIndexRaw(){
   try{
     const r=await dbStorage.get('novel-dots-projects-index');
-    idx=(r && r.value) ? JSON.parse(r.value) : null;
-  }catch(err){ idx=null; }
+    if(!r || r.value==null || r.value==='') return {status:'absent'};
+    let idx;
+    try{ idx=JSON.parse(r.value); }catch(err){ return {status:'corrupt', raw:r.value}; }
+    if(!Array.isArray(idx)) return {status:'corrupt', raw:r.value};
+    return {status:'ok', idx};
+  }catch(err){ return {status:'error'}; }
+}
+async function rebuildProjectsIndexFromStorage(skipIds){
+  const out=[];
+  const l=await dbStorage.list('novel-dots-project-');
+  const keys=(l && l.keys) ? l.keys : [];
+  for(const k of keys){
+    const id=String(k).slice('novel-dots-project-'.length);
+    if(!id || (skipIds && skipIds.has(id))) continue;
+    let title='Untitled', t=Date.now();
+    try{
+      const r=await dbStorage.get(k);
+      const d=(r && r.value) ? JSON.parse(r.value) : null;
+      if(d && d.projectTitle) title=String(d.projectTitle);
+    }catch(err){}
+    out.push({id, title, folder:'', createdAt:t, updatedAt:t});
+  }
+  return out;
+}
+async function ensureProjectsIndexLoaded(){
+  if(projectsIndexCache!==undefined) return projectsIndexCache;
+  let res=await readProjectsIndexRaw();
+  if(res.status==='error'){ await new Promise(r=>setTimeout(r, 300)); res=await readProjectsIndexRaw(); } // one retry
+  let idx=null, rebuilt=false;
+  if(res.status==='ok'){
+    // Entries that are not projects (no id) are dropped; the rest are kept as they are.
+    idx=res.idx.filter(p=>p && typeof p==='object' && typeof p.id==='string' && p.id);
+    // A project stored but missing from the list (the list was not saved in a session
+    // that could not read it, or the app closed first) is added back, never left unreachable.
+    try{
+      const extra=await rebuildProjectsIndexFromStorage(new Set(idx.map(p=>p.id)));
+      if(extra.length){ idx=idx.concat(extra); rebuilt=true; }
+    }catch(err){}
+  } else if(res.status==='absent'){
+    // Only a first visit if no project is stored either; otherwise the list was lost, not never made.
+    let found=[];
+    try{ found=await rebuildProjectsIndexFromStorage(); }catch(err){ found=[]; }
+    if(found.length){ idx=found; rebuilt=true; try{ showToast('The project list was missing and was rebuilt from your saved projects'); }catch(err){} }
+  } else {
+    // corrupt or unreadable: keep what was there, rebuild around it, and never seed.
+    if(res.status==='corrupt'){ try{ await dbStorage.set('novel-dots-projects-index-damaged-'+Date.now(), res.raw); }catch(err){} }
+    let found=[];
+    try{ found=await rebuildProjectsIndexFromStorage(); }catch(err){ found=[]; }
+    idx=found; rebuilt=true;
+    if(res.status==='error') _projectsIndexUnsafe=true; // the stored list may be fine; do not overwrite it from here
+    try{ showToast(res.status==='corrupt' ? 'The project list was damaged and was rebuilt from your saved projects' : 'Could not read the project list \u2014 showing the projects found. Reload to try again.'); }catch(err){}
+  }
   if(idx===null){
     // Genuinely first-ever visit (the index key itself has never existed) —
     // seed one example project so the app isn't empty. Only ever happens once:
@@ -18463,7 +18957,7 @@ async function ensureProjectsIndexLoaded(){
   let backfilled=false;
   idx.forEach(p=>{ if(!p.createdAt){ p.createdAt=p.updatedAt||Date.now(); backfilled=true; } });
   projectsIndexCache=idx;
-  if(backfilled) persistProjectsIndex();
+  if(backfilled || rebuilt) persistProjectsIndex();
   return projectsIndexCache;
 }
 async function loadProjectData(id){
@@ -18473,8 +18967,21 @@ async function loadProjectData(id){
   }catch(err){}
   return null;
 }
+/* Resolves true when the project was really written, false when it was not
+   (storage full, blocked or unavailable). Callers that report a save to the
+   writer must look at it. */
 async function saveProjectData(id, data){
-  try{ await dbStorage.set('novel-dots-project-'+id, JSON.stringify(data)); }catch(err){}
+  try{ await dbStorage.set('novel-dots-project-'+id, JSON.stringify(data)); return true; }
+  catch(err){ return false; }
+}
+/* An autosave that fails is said once, then again no sooner than 30 s later, so
+   the writer knows their work is only in memory without a toast per keystroke. */
+let _saveFailToastAt=0;
+function reportSaveFailure(){
+  const now=Date.now();
+  if(now-_saveFailToastAt<30000) return;
+  _saveFailToastAt=now;
+  showToast('Could not save \u2014 storage is full or unavailable. Your work is only in this window; export a backup.');
 }
 async function deleteProjectData(id){
   try{ await dbStorage.delete('novel-dots-project-'+id); }catch(err){}
@@ -18492,14 +18999,29 @@ function touchProjectIndexSync(id, title, folder){
   persistProjectsIndex();
 }
 
-const scheduleAutosave=debounce(async function(){
+/* The save waits 900 ms after the last edit, so that typing is one save and not
+   one per key. If the window is hidden or closed inside that wait, the wait is
+   cut short and the save runs at once (see flushAutosave, below). */
+let _autosaveTimer=null, _autosavePending=false;
+async function runAutosave(){
+  _autosavePending=false;
   if(!state.projectId) return;
   touchProjectIndexSync(state.projectId, state.projectTitle);
-  try{
-    await saveProjectData(state.projectId, projectData());
-  }catch(err){ /* storage unavailable — work continues in-memory only */ }
+  let saved=false;
+  try{ saved=await saveProjectData(state.projectId, projectData()); }catch(err){ saved=false; }
+  if(!saved) reportSaveFailure();
   maybeAutoMilestone().catch(()=>{});
-}, 900);
+}
+function scheduleAutosave(){
+  _autosavePending=true;
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer=setTimeout(runAutosave, 900);
+}
+function flushAutosave(){
+  if(!_autosavePending) return;
+  clearTimeout(_autosaveTimer);
+  runAutosave();
+}
 
 async function enterEditor(id, data){
   state.projectId=id;
@@ -18542,6 +19064,7 @@ async function enterEditor(id, data){
   applyBreakdownState();
   reconcileTitleOnOpen();
   const viewState=await applyProjectPrefs(id); // this project's own settings
+  await loadZoomPref(); // 100% until the writer zooms; then the zoom they left
   // A project always opens on the Writing tab, whatever tab it was
   // left on: the ribbon tab is no longer restored per project.
   ribbonTab='write'; applyRibbonTab();
@@ -18600,6 +19123,7 @@ async function createProjectFromFile(file){
     showToast(importRejectionReason(file.name));
     return;
   }
+  { const bk=await peekBackup(file); if(bk){ await restoreBackup(bk); return; } } // a backup is its own project: no blank one is made first
   const base=file.name.replace(/\.[^.]+$/,'').trim();
   const id=await createProjectFromTemplate('blank', {skipPrompt:true, title:base||DEFAULT_PROJECT_TITLE, folder:landingFolderForNew()});
   if(!id) return;
@@ -18623,12 +19147,9 @@ async function openProject(id){
 async function manualSave(){
   if(!state.projectId) return;
   touchProjectIndexSync(state.projectId, state.projectTitle);
-  try{
-    await saveProjectData(state.projectId, projectData());
-    showToast('Saved');
-  }catch(err){
-    showToast('Save failed — working copy only');
-  }
+  let saved=false;
+  try{ saved=await saveProjectData(state.projectId, projectData()); }catch(err){ saved=false; }
+  showToast(saved ? 'Saved' : 'Save failed \u2014 working copy only');
 }
 /* File > Save As -- asks for the copy's name and folder in the same dialog
    a new project uses (prefilled with "<title> Copy" and the original's
@@ -18845,11 +19366,13 @@ function renderLandingCenter(){
     '<div class="preview-meta">Created '+created+' &middot; Edited '+edited+'</div>'+
     '<div class="preview-actions">'+
       '<button class="modal-btn primary" id="btnPreviewOpen">Open</button>'+
+      '<button class="modal-btn" id="btnPreviewBackup" title="Save a backup file with everything in this project">Backup</button>'+
       '<button class="modal-btn danger-outline" id="btnPreviewDelete">Delete</button>'+
     '</div>';
   document.getElementById('btnPreviewOpen').addEventListener('click', ()=>openProject(entry.id));
+  document.getElementById('btnPreviewBackup').addEventListener('click', ()=>exportFullBackup(entry.id));
   document.getElementById('btnPreviewDelete').addEventListener('click', async ()=>{
-    const ok=await confirmModal('Delete project', 'Delete "'+title+'"? This cannot be undone.');
+    const ok=await confirmModal('Delete project', 'Delete "'+title+'"? This cannot be undone.', 'Delete', true);
     if(!ok) return;
     // Update the visible list and in-memory index immediately; the actual
     // storage delete/persist happens in the background.
@@ -19409,6 +19932,7 @@ function showFileMenu(anchorEl){
       {label:'Web page (.html)', onClick:exportScriptHTML},
       {label:'Plain text (.txt)', onClick:exportScriptTXT},
       {sep:true},
+      {label:'Full backup \u2014 everything (.json)', onClick:()=>exportFullBackup()},
       {label:'Novel Dots project (.json)', onClick:exportProjectJSON}
     ]}
   ]);
@@ -22142,7 +22666,7 @@ function navScenesTable(body){
   const cols=navPrefs.cols.scenes, drag=!readOnlyMode;
   const table=document.createElement('table');
   table.className='nav-table';
-  table.innerHTML=navHeadRow('scenes', drag)+'<tbody>'+rows.map(r=>'<tr data-scene-id="'+r.id+'">'+(drag?'<td class="nav-grip" draggable="true" title="Drag to move the scene">\u22EE\u22EE</td>':'')+cols.map(k=>{
+  table.innerHTML=navHeadRow('scenes', drag)+'<tbody>'+rows.map(r=>'<tr data-scene-id="'+escapeHtml(String(r.id))+'">'+(drag?'<td class="nav-grip" draggable="true" title="Drag to move the scene">\u22EE\u22EE</td>':'')+cols.map(k=>{
     if(k==='color') return navCell('scenes', k, navSwatch(r.color, r.color ? vaColorName(r.color) : 'Scene color'));
     if(k==='number') return navCell('scenes', k, escapeHtml(String(r.number)), 'num');
     if(k==='heading') return navCell('scenes', k, navInput('heading', r.heading, {mono:true}));
@@ -22692,8 +23216,12 @@ function bbSyncCellSize(){ const z=bbZoomBy[bbZoomKey()]||1; BB_CW=BB_CW0*z; BB_
 function normalizeBeatBoard(raw){
   const beats=(raw && Array.isArray(raw.beats) ? raw.beats : []).map(b=>{
     const n=(v, d, lo)=>Math.max(lo, Math.round(Number(v))||d);
-    return {id:(b && b.id) || uid('bb'), col:Math.max(0, Math.round(Number(b.col))||0), row:Math.max(0, Math.round(Number(b.row))||0),
-      w:n(b.w, BB_NEW_W, 1), h:n(b.h, BB_NEW_H, 1), text:String((b && b.text)||''), color:(b && b.color) || null};
+    const text=String((b && b.text)||'');
+    const out={id:(b && b.id) || uid('bb'), col:Math.max(0, Math.round(Number(b.col))||0), row:Math.max(0, Math.round(Number(b.row))||0),
+      w:n(b.w, BB_NEW_W, 1), h:n(b.h, BB_NEW_H, 1), text, color:(b && b.color) || null};
+    const html=bbCleanHtml(b && b.html, text); // bold / underline / strikethrough, only when the text still matches
+    if(html) out.html=html;
+    return out;
   }); // an empty beat is kept: a beat goes only when it is deleted
   return {beats};
 }
@@ -22719,11 +23247,103 @@ function toggleBeatBoard(){
   else { splitPrefs.view='beats'; setSplit(true); }
   requestAnimationFrame(()=>{ const b=bbBody(); if(b && bbVisible()) try{ b.focus({preventScroll:true}); }catch(err){} });
 }
+/* A redraw (a colour, a size, a drag) takes an open text box away with the rest
+   of the board. Chrome sends the box a blur as it goes, which saved the text;
+   Safari does not, so a beat that was being typed into came back empty.
+   Whatever is in the box is therefore written to its beat first. */
+/* =========================================================
+   BEAT TEXT: bold, underline, strikethrough
+   ---------------------------------------------------------
+   A beat's `text` stays plain text (with its line breaks) and is what
+   everything else reads -- Send to Script, Outline, FDX. Beside it, a beat
+   that has any bold, underline or strikethrough also carries `html`: the same
+   text as <b>, <u>, <s> and <br> and nothing else. The editor is a
+   contenteditable box; whatever the browser puts in it (<b>, <strong>,
+   <strike>, <div> per line, styled <span>s) is read back into runs and
+   written out in this one form, so the stored markup is always ours.
+   `html` is kept only while it still spells exactly `text`.
+   ========================================================= */
+function bbEscape(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* The runs of text under `root`: [{t, b, u, s}], where t may hold \n. */
+function bbRunsFromNode(root){
+  const runs=[];
+  const push=(t, f)=>{
+    if(!t) return;
+    const last=runs[runs.length-1];
+    if(last && last.b===f.b && last.u===f.u && last.s===f.s) last.t+=t; else runs.push({t, b:f.b, u:f.u, s:f.s});
+  };
+  const endsWithBreak=()=>{ const last=runs[runs.length-1]; return !last || last.t.slice(-1)==='\n'; };
+  (function walk(node, f){
+    node.childNodes.forEach(ch=>{
+      if(ch.nodeType===3){ push(ch.nodeValue.replace(/\u00a0/g,' ').replace(/\r\n?/g,'\n'), f); return; }
+      if(ch.nodeType!==1) return;
+      const tag=ch.tagName.toLowerCase();
+      if(tag==='br'){ push('\n', f); return; }
+      let g={b:f.b, u:f.u, s:f.s};
+      if(tag==='b' || tag==='strong') g.b=true;
+      if(tag==='u') g.u=true;
+      if(tag==='s' || tag==='strike' || tag==='del') g.s=true;
+      const st=ch.style;
+      if(st){
+        const fw=String(st.fontWeight||''); if(fw==='bold' || fw==='bolder' || (+fw>=600)) g.b=true;
+        const td=String(st.textDecorationLine||st.textDecoration||''); if(/underline/.test(td)) g.u=true; if(/line-through/.test(td)) g.s=true;
+      }
+      const block=(tag==='div' || tag==='p');
+      if(block && !endsWithBreak()) push('\n', f);
+      walk(ch, g);
+    });
+  })(root, {b:false, u:false, s:false});
+  return runs;
+}
+function bbTrimRuns(runs){
+  while(runs.length){
+    const last=runs[runs.length-1];
+    last.t=last.t.replace(/\s+$/, '');
+    if(last.t) break;
+    runs.pop();
+  }
+  return runs;
+}
+function bbRunsToHtml(runs){
+  if(!runs.some(r=>r.b || r.u || r.s)) return '';
+  return runs.map(r=>{
+    let h=bbEscape(r.t).replace(/\n/g, '<br>');
+    if(r.s) h='<s>'+h+'</s>'; if(r.u) h='<u>'+h+'</u>'; if(r.b) h='<b>'+h+'</b>';
+    return h;
+  }).join('');
+}
+/* What is in an open editor, as a beat keeps it. */
+function bbReadEditor(ed){
+  const runs=bbTrimRuns(bbRunsFromNode(ed));
+  return {text:runs.map(r=>r.t).join(''), html:bbRunsToHtml(runs)};
+}
+/* Stored markup that is not ours, or that no longer matches the text, is dropped. */
+function bbCleanHtml(html, text){
+  if(!html || typeof html!=='string') return '';
+  let doc=null;
+  try{ doc=new DOMParser().parseFromString('<body>'+html+'</body>', 'text/html'); }catch(err){ return ''; }
+  const runs=bbRunsFromNode(doc.body);
+  if(runs.map(r=>r.t).join('')!==String(text||'')) return '';
+  return bbRunsToHtml(runs);
+}
+/* Shows a beat's text in a box: formatted when it carries markup. */
+function bbFillText(el, b){
+  const html=bbCleanHtml(b.html, b.text);
+  if(html) el.innerHTML=html; else el.textContent=b.text||'';
+}
+function bbFlushEdit(){
+  if(!bbEditId) return;
+  const body=bbBody(), ed=body && body.querySelector('.bb-edit'), cur=bbFind(bbEditId);
+  if(!ed || !cur) return;
+  const r=bbReadEditor(ed);
+  if(r.text!==cur.text || r.html!==(cur.html||'')){ cur.text=r.text; if(r.html) cur.html=r.html; else delete cur.html; bbCommitChange(); }
+}
 function renderBeatBoard(force){
   const body=bbBody();
   if(!body || !bbVisible()) return;
   if(bbEditId && !force){ _bbPending=true; return; }
   _bbPending=false;
+  bbFlushEdit(); // what is typed in an open text box is kept before the box goes
   bbEditId=null; // a forced redraw (undo, a file) ends any edit in progress
   const bbZ=bbSyncCellSize();
   const beats=state.beatBoard.beats;
@@ -22743,7 +23363,7 @@ function renderBeatBoard(force){
   body.appendChild(grid);
   if(!beats.length){
     const h=document.createElement('div'); h.className='bb-hint';
-    h.textContent=readOnlyMode ? 'No beats yet.' : 'Click a cell and type to add a beat. Drag a beat to move it; drag its corner to resize it.';
+    h.textContent=readOnlyMode ? 'No beats yet.' : 'Click a cell and type to add a beat, or drag across empty cells to draw one at the size you want. Drag a beat to move it; drag its corner to resize it.';
     body.appendChild(h); // centred in the visible board, clear of the cell cursor
   }
   beats.forEach(b=>grid.appendChild(bbBeatEl(b)));
@@ -22762,7 +23382,7 @@ function bbBeatEl(b){
   // A colour fills the whole beat (not a stripe down its side).
   if(b.color){ el.style.setProperty('--bb-color', b.color); el.classList.add('colored'); }
   bbPlace(el, b);
-  const t=document.createElement('div'); t.className='bb-text'; t.textContent=b.text;
+  const t=document.createElement('div'); t.className='bb-text'; bbFillText(t, b);
   el.appendChild(t);
   if(!readOnlyMode){ const rz=document.createElement('div'); rz.className='bb-rz'; rz.title='Drag to resize'; el.appendChild(rz); }
   return el;
@@ -22810,22 +23430,23 @@ function bbStartEdit(b, typed){
 }
 function bbOpenEditor(el, b, typed){
   if(!b || el.querySelector('.bb-edit')) return;
-  const ta=document.createElement('textarea');
-  ta.className='bb-edit'; ta.spellcheck=true;
-  ta.value=b.text+(typed||'');
+  const ta=document.createElement('div');
+  ta.className='bb-edit'; ta.contentEditable='true'; ta.spellcheck=true; ta.setAttribute('role','textbox'); ta.setAttribute('aria-multiline','true');
+  bbFillText(ta, b);
+  if(typed) ta.appendChild(document.createTextNode(typed));
   el.querySelector('.bb-text').style.visibility='hidden';
   el.appendChild(ta);
   bbScrollIntoView(b);
   ta.focus({preventScroll:true});
-  ta.setSelectionRange(ta.value.length, ta.value.length);
+  { const r=document.createRange(); r.selectNodeContents(ta); r.collapse(false); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }
   let done=false;
   const finish=(move)=>{
     if(done) return; done=true;
-    const text=ta.value.replace(/\s+$/, '');
+    const r=bbReadEditor(ta);
     const cur=bbFind(b.id);
     bbEditId=null;
     // Emptying a beat leaves an empty beat; only Delete Beat removes one.
-    if(cur && text!==cur.text){ cur.text=text; bbCommitChange(); }
+    if(cur && (r.text!==cur.text || r.html!==(cur.html||''))){ cur.text=r.text; if(r.html) cur.html=r.html; else delete cur.html; bbCommitChange(); }
     if(move==='down' && cur){ bbCursor={col:cur.col, row:cur.row+cur.h}; bbSelId=null; }
     else if(move==='right' && cur){ bbCursor={col:cur.col+cur.w, row:cur.row}; bbSelId=null; }
     if(move){ const nb=bbBeatAt(bbCursor.col, bbCursor.row); if(nb) bbSelId=nb.id; }
@@ -22838,12 +23459,30 @@ function bbOpenEditor(el, b, typed){
     // commands (save, print...) that aren't text editing.
     if(!mod || /^[zyacvxbiu]$/i.test(e.key)) e.stopPropagation();
     if(e.isComposing) return;
+    // Bold and underline are the browser's own; strikethrough has no key of
+    // its own anywhere, so it is Ctrl/Cmd+Shift+X (as in Word for Mac and Docs).
+    // A beat has no italic, so that key does nothing rather than mark text the
+    // beat would not keep.
+    if(mod && !e.altKey && e.key.toLowerCase()==='x' && e.shiftKey){ e.preventDefault(); document.execCommand('strikeThrough', false, null); refreshFormatButtonStates(); return; }
+    if(mod && !e.altKey && e.key.toLowerCase()==='i'){ e.preventDefault(); return; }
     // Enter finishes the beat and moves to the cell below it; Shift+Enter
     // (or Alt+Enter) is a new line inside the beat.
     if(e.key==='Enter' && !e.shiftKey && !e.altKey && !mod){ e.preventDefault(); finish('down'); }
-    else if(e.key==='Enter' && e.altKey){ e.preventDefault(); ta.setRangeText('\n', ta.selectionStart, ta.selectionEnd, 'end'); }
+    else if(e.key==='Enter'){ e.preventDefault(); document.execCommand('insertLineBreak', false, null); }
     else if(e.key==='Tab'){ e.preventDefault(); finish('right'); }
     else if(e.key==='Escape'){ e.preventDefault(); finish(''); }
+  });
+  // Only plain text comes in, from the keyboard, a paste or a drop; the
+  // formatting is the beat's own (bold, underline, strikethrough).
+  ta.addEventListener('paste', e=>{
+    e.preventDefault();
+    const txt=(e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+    if(txt) document.execCommand('insertText', false, txt.replace(/\r\n?/g, '\n'));
+  });
+  ta.addEventListener('drop', e=>e.preventDefault());
+  ta.addEventListener('beforeinput', e=>{
+    const k=e.inputType||'';
+    if(/^format/.test(k) && k!=='formatBold' && k!=='formatUnderline' && k!=='formatStrikeThrough') e.preventDefault();
   });
   ta.addEventListener('blur', ()=>finish(null));
   ta.addEventListener('pointerdown', e=>e.stopPropagation());
@@ -22864,6 +23503,52 @@ function bbResizeInPlace(el, b, e){
     const ta=el.querySelector('.bb-edit'); if(ta) try{ ta.focus({preventScroll:true}); }catch(err){}
   };
   h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+}
+/* Dragging across empty cells draws a beat: the rectangle swept from the cell
+   pressed to the cell under the pointer (both included) is the new beat's
+   position and size, and its text box opens at once. A drag that stays inside
+   one cell is only a click. Esc cancels; touch keeps scrolling the board. */
+function bbDragToCreate(body, e, c0){
+  const sx=e.clientX, sy=e.clientY, pid=e.pointerId;
+  let rub=null, rect=null, active=false;
+  try{ body.setPointerCapture(pid); }catch(err){}
+  const rectFor=ev=>{
+    const grid=body.querySelector('.bb-grid'); if(!grid) return null;
+    const c1=bbCellFromEvent(grid, ev);
+    return {col:Math.min(c0.col, c1.col), row:Math.min(c0.row, c1.row), w:Math.abs(c1.col-c0.col)+1, h:Math.abs(c1.row-c0.row)+1, grid};
+  };
+  const mv=ev=>{
+    if(ev.pointerId!==pid) return;
+    if(!active && Math.hypot(ev.clientX-sx, ev.clientY-sy)<5) return;
+    active=true;
+    // Near an edge the board follows the pointer.
+    const br=body.getBoundingClientRect(), pad=28, step=14;
+    if(ev.clientX>br.right-pad) body.scrollLeft+=step; else if(ev.clientX<br.left+pad) body.scrollLeft-=step;
+    if(ev.clientY>br.bottom-pad) body.scrollTop+=step; else if(ev.clientY<br.top+pad) body.scrollTop-=step;
+    rect=rectFor(ev); if(!rect) return;
+    if(!rub || !rub.isConnected){ rub=document.createElement('div'); rub.className='bb-rubber'; rect.grid.appendChild(rub); }
+    bbPlace(rub, rect);
+    rub.dataset.size=rect.w+' \u00D7 '+rect.h;
+    rect.grid.style.width=Math.max(rect.grid.offsetWidth, (rect.col+rect.w+4)*BB_CW)+'px';
+    rect.grid.style.height=Math.max(rect.grid.offsetHeight, (rect.row+rect.h+4)*BB_CH)+'px';
+  };
+  const end=(cancel)=>{
+    body.removeEventListener('pointermove', mv); body.removeEventListener('pointerup', up); body.removeEventListener('pointercancel', cx);
+    document.removeEventListener('keydown', esc, true);
+    try{ body.releasePointerCapture(pid); }catch(err){}
+    if(rub) rub.remove();
+    if(!cancel && active && rect && (rect.w>1 || rect.h>1)){
+      const b=bbNewBeat(rect.col, rect.row, '');
+      b.w=rect.w; b.h=rect.h;
+      bbCommitChange();
+      bbStartEdit(b, null);
+    }
+  };
+  const up=ev=>{ if(ev.pointerId===pid) end(false); };
+  const cx=ev=>{ if(ev.pointerId===pid) end(true); };
+  const esc=ev=>{ if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); end(true); } };
+  body.addEventListener('pointermove', mv); body.addEventListener('pointerup', up); body.addEventListener('pointercancel', cx);
+  document.addEventListener('keydown', esc, true);
 }
 function bbRemove(id){
   state.beatBoard.beats=state.beatBoard.beats.filter(b=>b.id!==id);
@@ -22957,6 +23642,7 @@ function bbShowZoom(z){
       if(!onGrid) return; // the scrollbars
       e.preventDefault(); body.focus({preventScroll:true});
       bbSelectCell(cell.col, cell.row, false);
+      if(!readOnlyMode && e.pointerType!=='touch') bbDragToCreate(body, e, cell);
       return;
     }
     const b=bbFind(beatEl.dataset.id); if(!b) return;
@@ -24119,16 +24805,68 @@ const msIndexKey=pid=>'novel-dots-versions-'+pid;
 const msDataKey=(pid, vid)=>'novel-dots-version-'+pid+'-'+vid;
 let backupPrefs={interval:10};
 let _msIndexCache=new Map();
+/* A project whose milestone list could not be READ this session. Nothing may
+   write that list then: it would replace the real one with a near-empty one. */
+const _msIndexUnsafe=new Set();
+/* The list is rebuilt from the milestones actually stored, when it is missing or
+   damaged. What the list knew and the data does not (name, kind) is lost, so a
+   rebuilt entry is marked Named: it is never pruned as an old automatic one. */
+async function rebuildMilestoneIndex(pid, skipIds){
+  const prefix='novel-dots-version-'+pid+'-';
+  const out=[];
+  const l=await dbStorage.list(prefix);
+  for(const k of ((l && l.keys) ? l.keys : [])){
+    const vid=String(k).slice(prefix.length);
+    if(!vid || (skipIds && skipIds.has(vid))) continue;
+    let d=null; try{ const r=await dbStorage.get(k); d=(r && r.value) ? JSON.parse(r.value) : null; }catch(err){}
+    if(!d || typeof d!=='object') continue;
+    let t=parseInt(vid.slice(1, -4), 36); if(!isFinite(t) || t<=0) t=Date.now();
+    out.push({id:vid, time:t, kind:'named', name:'Recovered milestone', hash:'', pages:0,
+      words:Array.isArray(d.lines) ? wordCountOfLines(d.lines) : 0, title:d.projectTitle||'Untitled'});
+  }
+  return out.sort((a,b)=>b.time-a.time);
+}
 async function loadMilestoneIndex(pid){
   if(!pid) return [];
   if(_msIndexCache.has(pid)) return _msIndexCache.get(pid);
-  let idx=[];
-  try{ const r=await dbStorage.get(msIndexKey(pid)); idx=r && r.value ? JSON.parse(r.value) : []; }catch(err){ idx=[]; }
-  if(!Array.isArray(idx)) idx=[];
+  let status='error', idx=[], raw=null;
+  for(let attempt=0; attempt<2 && status==='error'; attempt++){
+    if(attempt) await new Promise(r=>setTimeout(r, 300));
+    try{
+      const r=await dbStorage.get(msIndexKey(pid));
+      if(!r || r.value==null || r.value===''){ status='absent'; }
+      else {
+        raw=r.value; status='ok';
+        try{ idx=JSON.parse(raw); }catch(err){ status='corrupt'; }
+        if(status==='ok' && !Array.isArray(idx)) status='corrupt';
+      }
+    }catch(err){ status='error'; }
+  }
+  if(status==='error'){ _msIndexUnsafe.add(pid); return []; } // unreadable: not cached, and nothing may overwrite it
+  if(status==='corrupt'){ try{ await dbStorage.set(msIndexKey(pid)+'-damaged-'+Date.now(), raw); }catch(err){} }
+  if(status==='absent' || status==='corrupt'){
+    let found=[]; try{ found=await rebuildMilestoneIndex(pid); }catch(err){ found=[]; }
+    idx=found;
+    if(found.length){ try{ await dbStorage.set(msIndexKey(pid), JSON.stringify(found)); }catch(err){} }
+  }
+  idx=idx.filter(v=>v && typeof v==='object' && typeof v.id==='string' && v.id);
+  if(status==='ok'){
+    // A milestone saved while the list could not be read has its data but no entry:
+    // it is added back so it is never unreachable.
+    try{
+      const extra=await rebuildMilestoneIndex(pid, new Set(idx.map(v=>v.id)));
+      if(extra.length){
+        idx=idx.concat(extra).sort((a,b)=>b.time-a.time);
+        try{ await dbStorage.set(msIndexKey(pid), JSON.stringify(idx)); }catch(err){}
+      }
+    }catch(err){}
+  }
+  _msIndexUnsafe.delete(pid);
   _msIndexCache.set(pid, idx);
   return idx;
 }
 async function saveMilestoneIndex(pid, idx){
+  if(_msIndexUnsafe.has(pid)) return false;
   _msIndexCache.set(pid, idx);
   if(pid===state.projectId){ try{ renderTimeline(); }catch(err){} }
   try{ await dbStorage.set(msIndexKey(pid), JSON.stringify(idx)); return true; }catch(err){ return false; }
@@ -24157,15 +24895,23 @@ async function createMilestoneNow(opts){
     pages:totalPageCount, words:wordCountOfLines(data.lines), title:state.projectTitle||'Untitled'};
   try{ await dbStorage.set(msDataKey(pid, v.id), json); }catch(err){ showToast('Could not save a milestone \u2014 storage is full or unavailable'); return null; }
   idx.unshift(v);
-  // Prune the oldest automatic milestones; named ones stay.
+  // The oldest automatic milestones are dropped from the list (named ones stay),
+  // but their data is deleted only AFTER the list that no longer names them is
+  // saved -- the other order can leave the list pointing at data that is gone.
   let autos=0;
-  const keep=[];
+  const keep=[], drop=[];
   for(const x of idx){
-    if(x.kind==='auto' && ++autos>MILESTONE_KEEP_AUTO){ try{ await dbStorage.delete(msDataKey(pid, x.id)); }catch(err){} continue; }
+    if(x.kind==='auto' && ++autos>MILESTONE_KEEP_AUTO){ drop.push(x); continue; }
     keep.push(x);
   }
   if(await writeBackupFile(v, json)) v.file=true;
-  await saveMilestoneIndex(pid, keep);
+  if(_msIndexUnsafe.has(pid)){
+    showToast('Milestone saved, but the milestone list could not be read, so it shows after a reload');
+    return v;
+  }
+  const listed=await saveMilestoneIndex(pid, keep);
+  if(!listed){ showToast('Milestone saved, but the milestone list could not be updated'); return v; }
+  for(const x of drop){ try{ await dbStorage.delete(msDataKey(pid, x.id)); }catch(err){} }
   return v;
 }
 let _lastBackupCheck=0;
@@ -24184,7 +24930,10 @@ async function restoreMilestone(vid){
   const data=await loadMilestoneData(pid, vid);
   if(!data){ showToast('That milestone could not be read'); return; }
   const meta=(await loadMilestoneIndex(pid)).find(x=>x.id===vid);
-  await createMilestone({kind:'auto', name:'Before restore', force:true});
+  // The script as it is now is kept first. If that could not be saved, nothing
+  // is replaced: the restore would throw away work that exists nowhere else.
+  const kept=await createMilestone({kind:'auto', name:'Before restore', force:true});
+  if(!kept){ showToast('Restore cancelled \u2014 the current script could not be saved first, so it was left as it is'); return; }
   // A milestone saved before milestones had their own store can still hold
   // the old in-file list; those were adopted when the project was opened,
   // so they are not brought back a second time here.
@@ -24197,9 +24946,16 @@ async function restoreMilestone(vid){
 }
 async function deleteMilestone(vid){
   const pid=state.projectId;
-  const idx=(await loadMilestoneIndex(pid)).filter(v=>v.id!==vid);
+  const old=await loadMilestoneIndex(pid);
+  if(_msIndexUnsafe.has(pid)){ showToast('Could not delete \u2014 the milestone list cannot be read right now'); return; }
+  // The list first: if it cannot be saved nothing is deleted, so list and data keep agreeing.
+  const ok=await saveMilestoneIndex(pid, old.filter(v=>v.id!==vid));
+  if(!ok){
+    _msIndexCache.set(pid, old); try{ renderTimeline(); }catch(err){}
+    showToast('Could not delete the milestone \u2014 storage is unavailable');
+    return;
+  }
   try{ await dbStorage.delete(msDataKey(pid, vid)); }catch(err){}
-  await saveMilestoneIndex(pid, idx);
 }
 async function saveMilestonePrompt(){
   if(!state.projectId) return;
@@ -24812,7 +25568,7 @@ function restoreOmittedScene(head){
   try{ kept=JSON.parse(head.dataset.omitted); }catch(err){}
   delete head.dataset.omitted;
   if(!kept){ omitAfterChange(); return false; }
-  if(kept.heading){ if(kept.heading.html) head.innerHTML=kept.heading.html; else head.textContent=kept.heading.text||''; }
+  if(kept.heading){ if(kept.heading.html) setLineHtml(head, kept.heading.html); else head.textContent=kept.heading.text||''; }
   const nodes=(kept.lines||[]).map(l=>createLineElement(l));
   const frag=document.createDocumentFragment(); nodes.forEach(n=>frag.appendChild(n));
   head.after(frag);
@@ -24915,7 +25671,8 @@ function printWatermarkEl(wm){
   on('btnSprint', ()=>openSprintDialog());
   on('btnOmit', ()=>toggleOmitCurrentScene());
   content.addEventListener('input', ()=>wsActivity());
-  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) wsTick(); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ wsTick(); flushAutosave(); } });
+  window.addEventListener('pagehide', ()=>{ flushAutosave(); });
 })();
 
 async function init(){
