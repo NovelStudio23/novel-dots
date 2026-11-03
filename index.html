@@ -56,6 +56,22 @@
   --mono: 'ND Courier', Courier, 'Courier New', monospace;
 }
 body.theme-beige{ --canvas:var(--canvas-beige); }
+/* The desk the pages sit on, apart from --canvas: --canvas is also the fill of
+   the form fields in the dialogs, so a dark desk must not change it. */
+body{ --desk:var(--canvas); }
+/* ---------- EYE COMFORT ----------
+   A dark-grey pinboard (Premiere Pro's panel grey) around soft grey pages with
+   the ink unchanged. The pages are two steps greyer than the Gray look's, and
+   everything that sits ON a page -- the secondary text, the empty title-page
+   lines, the page edges -- is darkened to keep its contrast on the grey. The
+   toolbars and dialogs stay as they are in Light. */
+body.theme-eye{
+  --desk:#232323;
+  --paper:#D1D1D1; --paper-edge:#B4B4B4;
+  --ink-soft:#4A4A4A; --drawingbg:#D6D6D3;
+}
+body.theme-eye .line-block[data-title-role].ph-empty::before{ color:#737373; }
+body.theme-eye .page-sheet{ box-shadow:0 14px 34px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.2), inset 0 0 0 1px var(--paper-edge); }
 /* ---------- DARK APPEARANCE ----------
    Everything that reads a palette variable follows these values. The page
    itself goes dark too (--paper / --ink): a dark workspace around a white
@@ -94,6 +110,7 @@ body.theme-dark .note-close-btn:hover{ background:rgba(255,255,255,.09); }
 body.theme-dark .note-category-select{ background:rgba(255,255,255,.08); }
 body.theme-dark .theme-swatch.gray{ background:#141416; }
 body.theme-dark .theme-swatch.beige{ background:#1B1915; }
+body.theme-dark .theme-swatch.eye{ background:linear-gradient(135deg,#232323 50%,#D1D1D1 50%); }
 /* The near-black pen would vanish on a dark page. Only what is displayed
    changes: the stroke keeps its stored colour, so it still prints dark. */
 body.theme-dark #drawLayer path[stroke="#242424"]{ stroke:#E2E2E5; }
@@ -320,7 +337,7 @@ body.theme-dark .pw-seg button.on{background:color-mix(in srgb, var(--text-chrom
 /* The minimap: the whole script and everything around it, with the part
    on screen outlined. Click or drag in it to move there. */
 .minimap{position:fixed; z-index:232; width:176px; height:232px; border-radius:12px; overflow:hidden;
-  background:var(--canvas); /* the desk the script sits on (grey, beige, dark), so the map reads as the same place */ box-shadow:0 10px 26px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); cursor:pointer; touch-action:none;}
+  background:var(--desk); /* the desk the script sits on (grey, beige, eye comfort, dark), so the map reads as the same place */ box-shadow:0 10px 26px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); cursor:pointer; touch-action:none;}
 .minimap.hidden{display:none;}
 /* Resize handles shared by floating panels (the minimap, the Compare panel):
    the left, right and bottom edges and the bottom-right corner. The edges are
@@ -387,6 +404,7 @@ body.read-only-mode .drawing-hit{cursor:default;}
 .theme-swatch{width:18px; height:18px; border-radius:5px; border:1px solid var(--chrome-line-strong); flex:none;}
 .theme-swatch.gray{background:#E8E8E8;}
 .theme-swatch.beige{background:#EDE6D6;}
+.theme-swatch.eye{background:linear-gradient(135deg,#232323 50%,#D1D1D1 50%);}
 .theme-option input{accent-color:var(--accent);}
 
 /* ---------- LANDING PAGE ---------- */
@@ -902,7 +920,7 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
 .sticky-row .sr-text.empty{color:var(--text-chrome-dim); font-style:italic;}
 
 /* ---------- CANVAS ---------- */
-#canvasViewport{flex:1; position:relative; overflow:hidden; background:var(--canvas); cursor:default; touch-action:none; -webkit-tap-highlight-color:transparent;}
+#canvasViewport{flex:1; position:relative; overflow:hidden; background:var(--desk); cursor:default; touch-action:none; -webkit-tap-highlight-color:transparent;}
 /* iPadOS pops its own copy/look-up callout on a long press; ours is the one
    that offers the note, so the native one is suppressed on the page. Caret
    placement and typing are untouched. */
@@ -1120,8 +1138,8 @@ body.scene-numbers-on .line-block.type-scene_heading[data-scene-number]::after{l
   font:inherit; color:inherit; pointer-events:none; user-select:none; -webkit-user-select:none;
 }
 /* ---------- Alternate dialogue ---------- */
-body.show-alts .line-block.type-dialogue[data-alts]{position:relative;}
-body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
+body.show-alts .line-block.type-dialogue[data-alts], body.show-alts .line-block.tp-line[data-alts]{position:relative;}
+body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after, body.show-alts .line-block.tp-line[data-alts]:not(.alts-current)::after{
   content:attr(data-alt-label); position:absolute; left:100%; top:0; margin-left:14px;
   font-family:var(--sans); font-size:9px; color:var(--accent-dim); border:1px solid var(--paper-edge);
   border-radius:8px; padding:0 5px; line-height:14px; pointer-events:none; user-select:none; -webkit-user-select:none;
@@ -1251,6 +1269,11 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
 .fa-pg{display:inline-block; min-width:38px; color:var(--text-chrome-dim); font-variant-numeric:tabular-nums;}
 @keyframes faFlash{0%{background:rgba(43,108,222,.22);}100%{background:transparent;}}
 .line-block.fa-flash{animation:faFlash 1.4s ease-out;}
+/* A scene heading reached by double-clicking its row in the Outline's Scene
+   Headings lane: a highlighter band over the heading's own line (the blank
+   space above it is left out), held while the page slides in, then faded. */
+@keyframes shFlash{0%,55%{background-color:rgba(255,200,0,.6);} 100%{background-color:rgba(255,200,0,0);}}
+.line-block.sh-flash{background-clip:content-box; animation:shFlash 2.4s ease-out;}
 /* Hovering the Dual Dialogue button previews the result in faint text. */
 .line-block.dual-preview{opacity:.4;}
 .type-dialogue{margin-left:96px; width:336px; padding-top:0;}
@@ -1478,6 +1501,10 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after{
 .note-resize-br{right:0; cursor:se-resize; background:linear-gradient(315deg, transparent 50%, var(--ink-soft) 50%); border-bottom-right-radius:5px;}
 .note-wrap[data-side="left"] .note-card{transform-origin:100% 50%;}
 .note-wrap.is-open .note-card{transform:scale(1) rotate(0deg); opacity:1; pointer-events:auto;}
+/* Notes put back by Undo, Redo, opening or importing a project are simply
+   there: no fade, no slide, no fold or unfold. Animation belongs to the
+   writer's own edits of a note (a click on its dot, Fold All ...). */
+#notesLayer.note-instant, #notesLayer.note-instant *{transition:none !important; animation:none !important;}
 .note-wrap[data-kind="sticky"] .note-card{
   border-radius:1px; width:190px; min-height:190px;
   transform:scale(1) rotate(0deg) !important; opacity:1 !important; pointer-events:auto !important;
@@ -1555,7 +1582,12 @@ body.note-dragging, body.note-dragging *{cursor:grabbing !important;}
 .cm-item.disabled{opacity:.45; cursor:default;}
 .cm-item.disabled:hover{background:none; color:var(--text-chrome);}
 
-.modal-overlay{position:fixed; inset:0; z-index:300; background:rgba(10,9,7,.6); display:flex; align-items:center; justify-content:center;}
+.modal-overlay{position:fixed; inset:0; z-index:300; background:rgba(10,9,7,.6); display:flex; align-items:flex-start; justify-content:center;
+  /* A pop-up hangs from a fixed top (--modal-top, set when it opens so it sits where a centred one would at
+     its fullest): when its content changes -- a Reports tab, an option that shows more -- only its bottom
+     edge moves; its title and tab buttons stay exactly where they were. */
+  box-sizing:border-box; padding:var(--modal-top, 10vh) 0 16px; overflow-y:auto;}
+.modal-overlay .modal-box{flex:none; margin:0;}
 .modal-overlay.hidden{display:none;}
 .modal-box{
   width:min(440px,92vw); background:var(--chrome-bg); border:1px solid var(--chrome-line-strong); border-radius:10px;
@@ -2358,6 +2390,9 @@ body.theme-dark .modal-btn.danger{color:#2A1111;}
 .report-tab:hover{background:var(--ui-hover);}
 .report-tab.active{background:var(--chrome-bg); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.05);}
 body.theme-dark .report-tab.active{background:#4A4A52;}
+/* Each tab keeps the width of its bold self, so the buttons never shift sideways when another one becomes active. */
+.report-tab{display:inline-flex; flex-direction:column; align-items:center; justify-content:center;}
+.report-tab::after{content:attr(data-label); font-weight:600; height:0; visibility:hidden; overflow:hidden; pointer-events:none; user-select:none; -webkit-user-select:none;}
 .nav-tab.active, .nav-tab.on{background:var(--ui-press); color:var(--text-chrome); font-weight:600;}
 
 /* ---------- split pane: Cards, Scenes, Beat Board, Compare ---------- */
@@ -3918,6 +3953,17 @@ function pruneEmptyInline(block){
   while(w.nextNode()) if(!w.currentNode.data.length) empty.push(w.currentNode);
   empty.forEach(n=>n.remove());
 }
+/* Does a line split off `block` stay in its dual column? Yes while it
+   continues the speech (Dialogue, Parenthetical) and anywhere in the left
+   column. No when `block` is the last paragraph of the RIGHT column and the
+   new line is any other element: that line follows the pair. */
+function newLineStaysInDualColumn(block, newType){
+  if(newType==='dialogue' || newType==='parenthetical') return true;
+  if(block.dataset.dual!=='right') return true;
+  let n=block.nextElementSibling;
+  while(n && !(n.classList && n.classList.contains('line-block'))) n=n.nextElementSibling;
+  return !!(n && n.dataset.dual==='right'); // more of the right column follows: still inside it
+}
 function splitToNewLine(block, sel, newType){
   // A speech split across a page carries a non-editable spacer inside its
   // text; splitting or joining around it leaves the browser a caret it can
@@ -3939,8 +3985,11 @@ function splitToNewLine(block, sel, newType){
   newBlock.innerHTML='';
   newBlock.appendChild(afterFrag);
   // Stay in the same column when splitting a line inside a dual pair --
-  // The reference app lets you keep editing a dualed speech in place.
-  if(block.dataset.dual) newBlock.dataset.dual=block.dataset.dual;
+  // the reference app lets you keep editing a dualed speech in place. But
+  // Return at the END of the pair's last speech starts the next element
+  // (an Action line by default) AFTER the pair, at full width, as in the
+  // reference app: a column only ever holds its own speech.
+  if(block.dataset.dual && newLineStaysInDualColumn(block, newType)) newBlock.dataset.dual=block.dataset.dual;
   block.after(newBlock);
   pruneEmptyInline(block); pruneEmptyInline(newBlock);
   placeCaretAtStart(newBlock);
@@ -5455,6 +5504,30 @@ async function setAutoGuess(on){
 }
 /* The category every new note starts with (Settings > General > Notes).
    An app preference: how this person works, not part of any script. */
+/* The writer's name (Settings > General > Writer). An app preference. A script's
+   title page gets it once, the first time the script is opened after the name is
+   registered, if the author line is empty (fillAuthorOnOpen). */
+let writerName='';
+async function loadWriterNamePref(){
+  try{ const r=await dbStorage.get('novel-dots-writer-name'); if(r && typeof r.value==='string') writerName=r.value.trim().slice(0,120); }catch(err){}
+}
+async function setWriterName(v){
+  writerName=String(v==null ? '' : v).replace(/[\r\n]+/g,' ').trim().slice(0,120);
+  try{ await dbStorage.set('novel-dots-writer-name', writerName); }catch(err){}
+}
+async function fillAuthorOnOpen(pid){
+  if(!writerName) return;
+  try{ const m=await dbStorage.get('novel-dots-author-filled'); if(m && m.value) return; }catch(err){}
+  const f=titleFields().find(b=>b.dataset.titleRole==='author');
+  if(!f) return; // a title page from an import that has its own layout: left as it is
+  if(f.textContent.trim()===''){
+    f.textContent=writerName;
+    updateTitlePagePlaceholders();
+    scheduleAutosave();
+  }
+  // Once per script, whether or not it was empty: a name the writer deletes later stays deleted.
+  try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, 'novel-dots-author-filled'), '1'); }catch(err){}
+}
 let defaultNoteCategory=null;
 async function loadDefaultNoteCategoryPref(){
   try{
@@ -5619,9 +5692,9 @@ content.addEventListener('keydown', function(e){
   if((mod && e.shiftKey && !e.altKey && (e.code==='Period' || e.code==='Comma')) || (e.ctrlKey && e.altKey && e.code==='KeyL')){
     e.preventDefault();
     const remove = e.code==='Comma' || (e.code==='KeyL' && e.shiftKey);
-    if(block.dataset.type!=='dialogue'){ showToast('Alternates are for Dialogue paragraphs'); return; }
+    if(!altsAllowed(block)){ showToast('Alternates are for Dialogue paragraphs and the Title'); return; }
     if(!showAltsOn) setShowAlts(true);
-    if(remove){ if(readAlts(block)) removeAlternate(block); else showToast('This speech has no alternates'); }
+    if(remove){ if(readAlts(block)) removeAlternate(block); else showToast(block.dataset.type==='dialogue' ? 'This speech has no alternates' : 'This title has no alternates'); }
     else addAlternate(block);
     return;
   }
@@ -6515,18 +6588,24 @@ function currentAlts(el){
   a.list[a.index]=cleanBlockHTML(el);
   return a;
 }
-function altsChanged(){
+function altsChanged(block){
+  // The project's name follows the title showing on the title page.
+  if(block && block.dataset.titleRole==='title'){ updateTitlePagePlaceholders(); syncProjectTitleFromTitlePage(); }
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
   updateAltsWidget();
 }
+/* Alts belong to a Dialogue paragraph and to the Title on the title page. */
+function altsAllowed(block){
+  return !!block && (block.dataset.type==='dialogue' || (isTitleField(block) && block.dataset.titleRole==='title'));
+}
 function addAlternate(block){
-  if(readOnlyMode || !block || block.dataset.type!=='dialogue') return;
+  if(readOnlyMode || !altsAllowed(block)) return;
   const a=currentAlts(block) || {list:[cleanBlockHTML(block)], index:0};
   a.list.push(''); a.index=a.list.length-1;
   writeAlts(block, a);
   block.innerHTML='';
   placeCaretAtStart(block);
-  altsChanged();
+  altsChanged(block);
 }
 function showAlternate(block, i){
   if(readOnlyMode || !block) return;
@@ -6538,7 +6617,7 @@ function showAlternate(block, i){
   writeAlts(block, a);
   block.innerHTML=a.list[i];
   placeCaretAtEnd(block);
-  altsChanged();
+  altsChanged(block);
 }
 function removeAlternate(block){
   if(readOnlyMode || !block) return;
@@ -6549,11 +6628,11 @@ function removeAlternate(block){
   block.innerHTML=a.list[a.index];
   writeAlts(block, a.list.length>1 ? a : null);
   placeCaretAtEnd(block);
-  altsChanged();
+  altsChanged(block);
 }
 function altsTargetBlock(){
   const b=dualCaretBlock();
-  return (b && content.contains(b) && b.dataset.type==='dialogue') ? b : null;
+  return (b && content.contains(b) && altsAllowed(b)) ? b : null;
 }
 function altPreview(html){
   const d=document.createElement('div'); d.appendChild(sanitizeLineFragment(html||''));
@@ -8315,10 +8394,27 @@ function prevPrintingIndex(blocks, idx, floor){
   while(k>floor && isNonPrintingType(blocks[k].dataset.type)) k--;
   return k;
 }
+/* The first paragraph of the dual pair that paragraph `b` belongs to (`b`
+   itself when it is in no pair). A pair is its left column followed by its
+   right column; two pairs back to back are told apart by that order. */
+function dualPairStartIndex(blocks, b){
+  const side=blocks[b] && blocks[b].dataset.dual;
+  if(!side) return b;
+  let k=b;
+  if(side==='right') while(k>0 && blocks[k-1].dataset.dual==='right') k--;
+  while(k>0 && blocks[k-1].dataset.dual==='left') k--;
+  return k;
+}
 function resolvePageBreak(blocks, heights, i, pageStart, used){
   const usedBefore=b=>{ let u=used; for(let k=b;k<=i;k++) u-=heights[k]; return u; };
   let b=i;
   for(let guard=0; guard<blocks.length; guard++){
+    // Side-by-side dialogue is never split: a break may not fall between
+    // the two columns (the right speech would otherwise be taken for a
+    // speech of its own and carried to the next page alone). The pair moves
+    // as one, from its left column.
+    const pairStart=dualPairStartIndex(blocks, b);
+    if(pairStart<b && pairStart>pageStart){ b=pairStart; continue; }
     const k=prevPrintingIndex(blocks, b-1, pageStart);
     if(k>pageStart){
       const t=blocks[k].dataset.type;
@@ -8461,7 +8557,17 @@ function recomputePaginationCore(){
   const {breaks, dialogueSplits, sig, hasTitlePage, pageStarts, pageLabels}=layout;
   // The paragraph that opens a page loses its blank lines above.
   const tops=new Set(breaks.map(b=>b.beforeEl));
-  blocks.forEach(b=>{ const want=tops.has(b); if(b.classList.contains('page-top')!==want) b.classList.toggle('page-top', want); });
+  // A dual pair that opens a page opens it in BOTH columns: the right
+  // column's first paragraph loses its blank line above too, or its text
+  // would sit one line lower than the left column's.
+  const dualAtTop=dualGroupsInDom().filter(g=>tops.has(g.left[0]));
+  dualAtTop.forEach(g=>tops.add(g.right[0]));
+  let pageTopMoved=false;
+  blocks.forEach(b=>{ const want=tops.has(b); if(b.classList.contains('page-top')!==want){ b.classList.toggle('page-top', want); pageTopMoved=true; } });
+  // The right column was lifted by the left column's height measured above;
+  // a paragraph gaining or losing its page-top spacing changes that height,
+  // so measure again in the same frame (before paint) -- never a moment later.
+  if(pageTopMoved && content.querySelector('.line-block[data-dual]')) applyDualDialogueLayout();
   totalPageCount=layout.pageCount;
   publishPageLayout(pageStarts, pageLabels);
   if(sig===_lastPaginationSig && !_forcePaginationRebuild){
@@ -8525,7 +8631,11 @@ function renderPageDecor(pageCount, skipPages, labels){
    renderPageDecorContinuous); the actual DOM layout is left to flow
    completely naturally. */
 function recomputePaginationContinuous(blocks){
-  blocks.forEach(b=>b.classList.remove('page-top')); // one continuous sheet: every paragraph keeps its spacing
+  // One continuous sheet: every paragraph keeps its spacing. A dual pair
+  // that had been lifted beside a page-top paragraph is measured again.
+  let pageTopGone=false;
+  blocks.forEach(b=>{ if(b.classList.contains('page-top')){ b.classList.remove('page-top'); pageTopGone=true; } });
+  if(pageTopGone && content.querySelector('.line-block[data-dual]')) applyDualDialogueLayout();
   if(!blocks.length){
     content.querySelectorAll('.page-spacer').forEach(n=>n.remove());
     content.querySelectorAll('.dlg-gap-spacer').forEach(n=>n.remove());
@@ -10057,6 +10167,40 @@ function migrateNote(note){
   return note;
 }
 function migrateNotes(list){ return (list||[]).map(migrateNote); }
+/* While notes are put back as they were (Undo, Redo, opening or importing a
+   project), the notes layer switches every transition and animation off, and
+   keeps them off until the layout has settled. */
+let _noteInstantTimer=0;
+function noteInstantFor(ms){
+  notesLayer.classList.add('note-instant');
+  clearTimeout(_noteInstantTimer);
+  _noteInstantTimer=setTimeout(()=>{ notesLayer.classList.remove('note-instant'); }, ms||400);
+}
+/* Undo / Redo: a note that the step did not touch is left exactly as it is --
+   the same object and the same page element, so it does not blink, move or
+   re-draw. Only a note the step changed or removed loses its element, and one
+   it brings back gets a new one (made by the caller, once the shots are in
+   place). The stacking order is not an undo step, so a note that stays keeps
+   the place it has in the stack. Returns the notes that need an element. */
+function reconcileNotesForRestore(rawNotes){
+  const incoming=migrateNotes(rawNotes);
+  const live=new Map(state.notes.map(n=>[n.id, n]));
+  const body=n=>{ const c={}; Object.keys(n).sort().forEach(k=>{ if(k[0]!=='_' && k!=='z' && n[k]!=null) c[k]=n[k]; }); return JSON.stringify(c); }; // a missing value and null are the same
+  const next=[], build=[];
+  incoming.forEach(n=>{
+    const o=live.get(n.id);
+    if(o){
+      live.delete(n.id);
+      if(noteEls[n.id] && body(o)===body(n)){ next.push(o); return; }
+      if(o.z>0) n.z=o.z;
+      if(noteEls[n.id]){ noteEls[n.id].wrap.remove(); delete noteEls[n.id]; }
+    }
+    next.push(n); build.push(n);
+  });
+  live.forEach((o, id)=>{ if(noteEls[id]){ noteEls[id].wrap.remove(); delete noteEls[id]; } }); // notes this step took away
+  state.notes=next;
+  return build;
+}
 function applyCategoryColor(note){
   const els=noteEls[note.id]; if(!els) return;
   const cat=note.category ? CATEGORY_MAP[note.category] : null;
@@ -10164,7 +10308,7 @@ function createNoteDOM(note){
     showShotPicker(r.left, r.bottom+4, shot=>applyShotToNote(note.id, shot));
   });
   dayInput.addEventListener('change', function(){ updateNote(note.id,{shootDay:dayInput.value.trim()}); refreshFilterOptions(); });
-  body.addEventListener('input', function(){ updateNote(note.id,{text:body.textContent}); updateChipLabel(note); });
+  body.addEventListener('input', function(){ updateNote(note.id,{text:body.textContent}); updateChipLabel(note); keepNoteInSightSideways(note.id); });
   body.addEventListener('contextmenu', function(e){ e.stopPropagation(); });
 
   wrap.addEventListener('contextmenu', function(e){
@@ -10204,6 +10348,29 @@ function createNoteDOM(note){
   applyCategoryColor(note);
   refreshShotInputValue(note.id);
   updateChipLabel(note);
+}
+/* Typing in a note: if its card is cut off by the edge of the canvas (it sits
+   under a sidebar), the canvas slides sideways until the whole card shows.
+   Only sideways: the height of the view is never touched. A card wider than
+   the view is moved so the caret's column is in sight. */
+function keepNoteInSightSideways(noteId){
+  const els=noteEls[noteId]; if(!els || !els.card || fixCenterOn) return; // Fix Center never moves the page sideways
+  const vr=viewport.getBoundingClientRect();
+  const cr=els.card.getBoundingClientRect();
+  if(!cr.width || !vr.width) return;
+  const m=Math.min(24, vr.width/10);
+  const lo=vr.left+m, hi=vr.right-m;
+  let dx=0;
+  if(cr.width<=hi-lo){
+    if(cr.left<lo) dx=lo-cr.left; else if(cr.right>hi) dx=hi-cr.right;
+  } else {
+    const sel=window.getSelection();
+    let x=null;
+    if(sel && sel.rangeCount){ const r=sel.getRangeAt(0).getBoundingClientRect(); if(r && (r.width || r.height)) x=r.left; }
+    if(x===null) x=cr.left;
+    if(x<lo) dx=lo-x; else if(x>hi) dx=hi-x;
+  }
+  if(dx){ pan.x+=dx; applyTransform(); }
 }
 function updateChipLabel(note){
   const els=noteEls[note.id]; if(!els) return;
@@ -11681,12 +11848,12 @@ function startConnectFromParagraph(lineIds){
   endConnectMode();
   connectPending={type:'paragraph', lineIds:lineIds.slice()};
   lineIds.forEach(id=>{ const el=content.querySelector('[data-id="'+id+'"]'); if(el) el.classList.add('connect-pending'); });
-  showToast('Click a note or its dot to connect '+(lineIds.length>1?'these paragraphs':'this paragraph')+'.');
+  showToast('Click a note or its dot to connect '+(lineIds.length>1?'these paragraphs':'this paragraph')+'. (Esc to cancel)', {sticky:true});
 }
 function startConnectFromNote(noteId){
   endConnectMode();
   connectPending={type:'note', noteId:noteId};
-  showToast('Select one or more paragraphs, then click Connect.');
+  showToast('Select one or more paragraphs, then click Connect. (Esc to cancel)', {sticky:true});
 }
 function endConnectMode(){
   if(connectPending && connectPending.type==='paragraph'){
@@ -11694,7 +11861,9 @@ function endConnectMode(){
   }
   connectPending=null;
   const btn=document.getElementById('connectFloatBtn'); if(btn) btn.remove();
+  hideStickyToast(); // the instruction goes when the connecting is done or cancelled
 }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && connectPending){ endConnectMode(); } }, true);
 function updateConnectButtonVisibility(){
   const existing=document.getElementById('connectFloatBtn');
   if(!connectPending || connectPending.type!=='note'){ if(existing) existing.remove(); return; }
@@ -12968,9 +13137,9 @@ function openReportsModal(){
     '<div class="modal-box report">'+
       '<div class="modal-title">Reports — '+escapeHtml(state.projectTitle)+'</div>'+
       '<div class="report-tabs" id="reportTabs">'+
-        REPORTS.map(r=>'<button type="button" class="report-tab" data-key="'+r.key+'">'+escapeHtml(r.name)+'</button>').join('')+
+        REPORTS.map(r=>'<button type="button" class="report-tab" data-key="'+r.key+'" data-label="'+escapeHtml(r.name)+'">'+escapeHtml(r.name)+'</button>').join('')+
       '</div>'+
-      '<div class="report-scroll" id="reportScroll"></div>'+
+      '<div class="report-scroll" id="reportScroll" data-vary></div>'+
       '<p class="report-note" id="reportNote"></p>'+
       '<div class="modal-actions">'+
         '<button class="modal-btn" id="reportCSV">Download CSV</button>'+
@@ -13466,6 +13635,20 @@ function hexToRgba(hex, a){
 }
 function goToSceneEl(el){
   if(el) panToWorldPointFraction(PAGE_W/2, lineWorldTop(el), NAV_TOP_FRACTION);
+}
+/* Lights a scene heading for a moment so the eye finds it at once after a
+   jump. Only a class on the block (never saved, never an undo step); one
+   heading at a time, and a second jump moves the light. */
+const SH_FLASH_MS=2400;
+let _shFlashEl=null, _shFlashTimer=0;
+function flashSceneHeading(el){
+  if(el && !content.contains(el)){ const id=el.dataset && el.dataset.id; el=id ? lineBlockById(id) : null; }
+  if(!el) return;
+  if(_shFlashEl) _shFlashEl.classList.remove('sh-flash');
+  clearTimeout(_shFlashTimer);
+  el.classList.remove('sh-flash'); void el.offsetWidth; el.classList.add('sh-flash');
+  _shFlashEl=el;
+  _shFlashTimer=setTimeout(()=>{ el.classList.remove('sh-flash'); if(_shFlashEl===el) _shFlashEl=null; }, SH_FLASH_MS);
 }
 // "Show": the script scrolls to whatever is written at that page position.
 function goToScriptPos(p){
@@ -13983,7 +14166,7 @@ function outlineBodyNode(el, horiz){
     cell.querySelector('.oe-scene-title').textContent=r.heading;
     cell.title=r.number+' '+r.heading;
     cell.addEventListener('click', ()=>showScenePopover(r, cell));
-    cell.addEventListener('dblclick', ()=>{ closeOutlinePopover(); goToSceneEl(r.el); });
+    cell.addEventListener('dblclick', ()=>{ closeOutlinePopover(); goToSceneEl(r.el); flashSceneHeading(r.el); });
     const menu=(x, y)=>{
       const items=[{label:'Show', onClick:()=>goToSceneEl(r.el)}];
       if(!readOnlyMode){
@@ -14569,9 +14752,11 @@ viewport.addEventListener('mousedown', function(e){
 document.addEventListener('mousemove', function(e){
   if(!_pageDrag) return;
   if(!(e.buttons & 1)){ _pageDrag=null; return; }
-  const hit=nearestTextLine(e.clientX, e.clientY, pointOnPaper(e.clientX, e.clientY));
+  const vr=viewport.getBoundingClientRect();
+  const px=clamp(e.clientX, vr.left+4, vr.right-4), py=clamp(e.clientY, vr.top+4, vr.bottom-4); // never a line the writer cannot see
+  const hit=nearestTextLine(px, py, pointOnPaper(px, py));
   if(!hit) return;
-  const pos=caretPosOnLine(hit, e.clientX);
+  const pos=caretPosOnLine(hit, px);
   try{ window.getSelection().setBaseAndExtent(_pageDrag.anchor.node, _pageDrag.anchor.offset, pos.node, pos.offset); }catch(err){}
 });
 document.addEventListener('mouseup', function(){
@@ -14579,6 +14764,102 @@ document.addEventListener('mouseup', function(){
   _pageDrag=null;
   updateSelectionCursorState();
 });
+/* =========================================================
+   DRAG-SELECT AUTO-SCROLL
+   ---------------------------------------------------------
+   The script is a free canvas, not a scrolling page, so the browser's own
+   "scroll while selecting" never happens. While the left button is held after
+   a press on the script, the pointer near the top or bottom edge of the work
+   area -- or beyond it, over the toolbar or the window's edge -- scrolls the
+   page that way, faster the further the pointer is, and the selection is
+   carried on to the line under the edge, so the writer can select as far as
+   they like in one drag. It stops at the first and last sheet, and when the
+   button is let go. A press inside text that is already selected (which can
+   start dragging the text itself) is left alone.
+   ========================================================= */
+let _selScroll=null;
+const SEL_EDGE=48; // px inside the work area where the scroll starts
+function selScrollSpeed(over, edge){ // px per ms; over = how far past the edge zone's outer line (can be negative)
+  if(over<=0) return 0.05+0.30*clamp(1+over/edge, 0, 1);
+  return 0.35+1.25*clamp(over/150, 0, 1);
+}
+function sheetBounds(){
+  const sheets=pageDecor.querySelectorAll('.page-sheet');
+  if(!sheets.length) return null;
+  let l=Infinity, t=Infinity, r=-Infinity, b=-Infinity;
+  sheets.forEach(sh=>{ const q=sh.getBoundingClientRect(); l=Math.min(l,q.left); t=Math.min(t,q.top); r=Math.max(r,q.right); b=Math.max(b,q.bottom); });
+  return {l, t, r, b};
+}
+function stopSelScroll(){
+  if(_selScroll && _selScroll.raf) cancelAnimationFrame(_selScroll.raf);
+  _selScroll=null;
+}
+viewport.addEventListener('mousedown', function(e){
+  stopSelScroll();
+  if(e.button!==0 || !state.projectId || currentTool!=='none') return;
+  if(_lastPointerType==='touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
+  if(!pagePressTarget(e)) return;
+  // A press inside text that is already selected may start dragging that text.
+  const sel=window.getSelection();
+  if(sel && sel.rangeCount && !sel.isCollapsed){
+    const hitSel=Array.from(sel.getRangeAt(0).getClientRects()).some(q=>e.clientX>=q.left && e.clientX<=q.right && e.clientY>=q.top && e.clientY<=q.bottom);
+    if(hitSel) return;
+  }
+  _selScroll={x:e.clientX, y:e.clientY, raf:0, last:0};
+}, true);
+function selScrollTick(now){
+  const st=_selScroll; if(!st) return;
+  st.raf=requestAnimationFrame(selScrollTick);
+  const dt=st.last ? Math.min(50, now-st.last) : 16;
+  st.last=now;
+  const r=viewport.getBoundingClientRect();
+  let dy=0, dx=0;
+  if(st.y<r.top+SEL_EDGE) dy=+selScrollSpeed((r.top+SEL_EDGE-st.y)-SEL_EDGE, SEL_EDGE);        // pointer high: the page moves down
+  else if(st.y>r.bottom-SEL_EDGE) dy=-selScrollSpeed((st.y-(r.bottom-SEL_EDGE))-SEL_EDGE, SEL_EDGE);
+  if(st.x<r.left+SEL_EDGE) dx=+selScrollSpeed((r.left+SEL_EDGE-st.x)-SEL_EDGE, SEL_EDGE);
+  else if(st.x>r.right-SEL_EDGE) dx=-selScrollSpeed((st.x-(r.right-SEL_EDGE))-SEL_EDGE, SEL_EDGE);
+  if(!dy && !dx) return;
+  const sb=sheetBounds();
+  if(sb){ // stop at the first and the last sheet
+    if(dy>0 && sb.t>=r.top+40) dy=0;
+    if(dy<0 && sb.b<=r.bottom-40) dy=0;
+    if(dx>0 && sb.l>=r.left+40) dx=0;
+    if(dx<0 && sb.r<=r.right-40) dx=0;
+  }
+  if(!dy && !dx) return;
+  pan.y+=dy*dt; if(!fixCenterOn) pan.x+=dx*dt;
+  applyTransform();
+  // The selection goes on to the line now under the pointer (kept inside the visible area).
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !content.contains(sel.anchorNode)) return;
+  const px=clamp(st.x, r.left+4, r.right-4), py=clamp(st.y, r.top+4, r.bottom-4);
+  const hit=nearestTextLine(px, py, pointOnPaper(px, py));
+  if(!hit) return;
+  let pos=caretPosOnLine(hit, px);
+  // The title page and the script are separate: a selection that began in one stops at its edge.
+  const az=zoneOfNode(sel.anchorNode), pz=zoneOfNode(pos.node);
+  if(az && pz && az!==pz){
+    if(az==='script'){ const fb=firstBodyBlock(); if(fb) pos={node:fb, offset:0}; }
+    else { const tf=titleFields(); const lf=tf[tf.length-1]; if(lf) pos={node:lf, offset:lf.childNodes.length}; }
+  }
+  try{ sel.extend(pos.node, pos.offset); }catch(err){}
+}
+document.addEventListener('mousemove', function(e){
+  if(!_selScroll) return;
+  if(!(e.buttons & 1)){ stopSelScroll(); return; }
+  _selScroll.x=e.clientX; _selScroll.y=e.clientY;
+  const r=viewport.getBoundingClientRect();
+  const outside=e.clientY<r.top || e.clientY>r.bottom || e.clientX<r.left || e.clientX>r.right;
+  if(outside){
+    // Over the toolbar or past the window the browser would stretch the selection to the very
+    // start or end of the script: the selection is carried by the auto-scroll alone there.
+    e.preventDefault();
+  }
+  if(!_selScroll.raf){ _selScroll.last=0; _selScroll.raf=requestAnimationFrame(selScrollTick); }
+}, true);
+document.addEventListener('mouseup', stopSelScroll, true);
+window.addEventListener('blur', stopSelScroll);
+document.addEventListener('dragstart', stopSelScroll, true);
 viewport.addEventListener('pointermove', function(e){
   if(e.pointerType==='touch' && activeTouches.has(e.pointerId)){
     activeTouches.set(e.pointerId, {x:e.clientX, y:e.clientY});
@@ -14787,6 +15068,45 @@ window.addEventListener('blur', hideContextMenu);
    ========================================================= */
 const modalRoot=document.getElementById('modalRoot');
 function closeModal(){ modalRoot.classList.add('hidden'); modalRoot.innerHTML=''; }
+/* POP-UPS KEEP THEIR TOP
+   The box is not centred on its current height (that moves its top edge every
+   time the content gets taller or shorter). Its top is fixed once, when it
+   opens, at the height where a centred box of its FULLEST size would sit, so
+   the space above it and the space below it match when it is as tall as it
+   gets, and a shorter box simply ends higher. A part that grows and shrinks
+   with what it shows (a report's table) is marked data-vary; its own
+   max-height is the fullest size. A dialog that is redrawn in place (same
+   kind, same title) keeps its top. */
+const MODAL_GAP=16;
+let _modalSig='', _modalRefH=0;
+function modalRefHeight(box){
+  let h=box.offsetHeight;
+  const cap=parseFloat(getComputedStyle(box).maxHeight);
+  if(cap>h && isFinite(cap)) h=cap;
+  const v=box.querySelector('[data-vary]');
+  if(v){
+    const mh=parseFloat(getComputedStyle(v).maxHeight);
+    if(mh>0 && isFinite(mh)) h=h-v.offsetHeight+Math.max(mh, v.offsetHeight);
+  }
+  return h;
+}
+function setModalTop(){
+  const vh=window.innerHeight;
+  const top=Math.max(MODAL_GAP, Math.round((vh-Math.min(_modalRefH, vh-2*MODAL_GAP))/2));
+  modalRoot.style.setProperty('--modal-top', top+'px');
+}
+new MutationObserver(()=>{
+  if(modalRoot.classList.contains('hidden')){ _modalSig=''; return; }
+  const box=modalRoot.querySelector('.modal-box');
+  if(!box) return;
+  const t=box.querySelector('.modal-title');
+  const sig=box.className+'|'+(t ? t.textContent : '');
+  if(sig===_modalSig) return;
+  _modalSig=sig;
+  _modalRefH=modalRefHeight(box);
+  setModalTop();
+}).observe(modalRoot, {childList:true, attributes:true, attributeFilter:['class']});
+window.addEventListener('resize', ()=>{ if(!modalRoot.classList.contains('hidden')) setModalTop(); });
 function promptModal(title, placeholder, def){
   return new Promise(resolve=>{
     modalRoot.innerHTML=
@@ -14850,11 +15170,22 @@ const toastEl=document.getElementById('toast');
 /* Every pop-up notice in the app (toasts, the zoom badge, the canvas hint)
    stays up for the same two seconds, then goes. */
 const NOTICE_MS=2000;
-let toastTimer=null;
-function showToast(msg){
+let toastTimer=null, toastSticky=false;
+/* An ordinary notice goes after NOTICE_MS. An instruction ({sticky:true}) --
+   "click a note to connect" -- stays up until the action it asks for is done
+   (or cancelled): hideStickyToast() takes it down, and any other notice shown
+   meanwhile simply replaces it. */
+function showToast(msg, opts){
+  const sticky=!!(opts && opts.sticky);
   toastEl.textContent=msg; toastEl.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>toastEl.classList.remove('show'), NOTICE_MS);
+  toastSticky=sticky;
+  if(!sticky) toastTimer=setTimeout(()=>toastEl.classList.remove('show'), NOTICE_MS);
+}
+function hideStickyToast(){
+  if(!toastSticky) return;
+  toastSticky=false; clearTimeout(toastTimer);
+  toastEl.classList.remove('show');
 }
 
 /* =========================================================
@@ -14938,18 +15269,20 @@ function restoreSnapshot(snapStr){
   if(data.extras) applyProjectExtras(data.extras); // an import's step in the history: its settings go with it
   initScreenplay(data.lines);
   syncProjectTitleFromTitlePage(); // the project's name follows the title it undid back to
-  notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
-  state.notes=migrateNotes(data.notes); state.shots=data.shots; state.drawings=migrateDrawings(data.drawings||[]); state.images=data.images||[];
+  noteInstantFor(450);
+  const notesToBuild=reconcileNotesForRestore(data.notes);
+  state.shots=data.shots; state.drawings=migrateDrawings(data.drawings||[]); state.images=data.images||[];
   state.outline=normalizeOutlinePlan(data.outline);
   state.beatBoard=normalizeBeatBoard(data.beatBoard);
   tcRestoreRef(data.tc);
-  state.notes.forEach(n=>createNoteDOM(n));
+  notesToBuild.forEach(n=>createNoteDOM(n));
   refreshAllShotOptions();
   recomputePagination(); layoutAllNotes(); renderDrawLayer(); renderImagesLayer();
   renderSidebar('left'); renderSidebar('right'); renderTimeline();
   try{ applyViewAidButtons(); }catch(err){}
   if(data.extras){ try{ applySceneNumberMode(); applyRevisionState(); applyPageLockState(); applyBreakdownState(); }catch(err){} }
   try{ renderBeatBoard(true); }catch(err){}
+  try{ scheduleAltsWidget(); }catch(err){} // the alternates bar follows the paragraph that is now under the caret
 }
 function undo(){
   if(readOnlyMode || undoStack.length<2) return;
@@ -15677,7 +16010,8 @@ function fdxTitleParagraph(line){
     return '<Text'+(parts.length ? ' Style="'+parts.join('+')+'"' : '')+'>'+fdxEscape(r.text)+'</Text>';
   }).join('') || '<Text></Text>';
   return '<Paragraph Alignment="'+align+'" FirstIndent="0.00" Leading="Regular" LeftIndent="'+TP_LEFT_IN.toFixed(2)+'" RightIndent="'+TP_RIGHT_IN.toFixed(2)+'" SpaceBefore="0" Spacing="1" StartsNewPage="No"'+
-    (line.titleRole ? ' NDTitleRole="'+fdxEscape(line.titleRole)+'"' : '')+'>'+xml+'</Paragraph>';
+    (line.titleRole ? ' NDTitleRole="'+fdxEscape(line.titleRole)+'"' : '')+
+    (line.alts ? ' NDAlts="'+fdxEscape(JSON.stringify(line.alts))+'"' : '')+'>'+xml+'</Paragraph>';
 }
 /* The reference app nests a dual pair inside a wrapper paragraph:
      <Paragraph><DualDialogue><Paragraph .../>...</DualDialogue></Paragraph>
@@ -18551,6 +18885,7 @@ async function importFile(file){
     try{
       applyImportTransaction(()=>{
         initScreenplay(parts.lines);
+        noteInstantFor(600);
         notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
         state.notes=parts.notes; state.shots=parts.shots; state.drawings=parts.drawings; state.images=parts.images;
         state.sceneNumbers=parts.sceneNumbers;
@@ -18792,7 +19127,7 @@ const dbStorage={
    ========================================================= */
 const PROJECT_PREF_KEYS=['novel-dots-appearance','novel-dots-theme','novel-dots-autoguess','novel-dots-fixcenter','novel-dots-minimap','novel-dots-minimap-geom',
   'novel-dots-navigator','novel-dots-ribbon-tab','novel-dots-show-alts','novel-dots-sidebar','novel-dots-spellcheck',
-  'novel-dots-split','novel-dots-structure','novel-dots-typewriter','novel-dots-view','novel-dots-zoom'];
+  'novel-dots-split','novel-dots-structure','novel-dots-typewriter','novel-dots-view','novel-dots-zoom','novel-dots-author-filled'];
 function projectPrefKey(pid, key){ return 'novel-dots-pp-'+pid+'|'+key; }
 const _dbGetAny=dbStorage.get, _dbSetAny=dbStorage.set;
 dbStorage.get=async function(key){
@@ -18830,7 +19165,7 @@ async function ensureProjectPrefs(pid){
 let _viewStateLoading=false;
 async function applyProjectPrefs(pid){
   await ensureProjectPrefs(pid);
-  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadSidebarSizes(), loadAutoGuessPref(), loadDefaultNoteCategoryPref(),
+  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadSidebarSizes(), loadAutoGuessPref(), loadDefaultNoteCategoryPref(), loadWriterNamePref(),
     loadShowAltsPref(), loadViewAidPrefs(), loadRibbonTabPref(), loadViewNavPrefs()]);
   let view=null;
   try{ const r=await dbStorage.get('novel-dots-view'); view=r && r.value ? JSON.parse(r.value) : null; }catch(err){}
@@ -19054,6 +19389,7 @@ async function enterEditor(id, data){
   const cvBtn=document.getElementById('btnContinuousView');
   if(cvBtn){ cvBtn.classList.remove('active'); cvBtn.title='Continuous Page View'; }
   Object.keys(state.filters).forEach(k=>state.filters[k].clear());
+  noteInstantFor(1500); // the project opens with its notes already in place
   state.notes.forEach(n=>createNoteDOM(n));
   refreshAllShotOptions();
   resetSmartType();
@@ -19065,6 +19401,7 @@ async function enterEditor(id, data){
   reconcileTitleOnOpen();
   const viewState=await applyProjectPrefs(id); // this project's own settings
   await loadZoomPref(); // 100% until the writer zooms; then the zoom they left
+  await fillAuthorOnOpen(id); // the registered name goes on the title page, once
   // A project always opens on the Writing tab, whatever tab it was
   // left on: the ribbon tab is no longer restored per project.
   ribbonTab='write'; applyRibbonTab();
@@ -19521,8 +19858,9 @@ function appearanceIsDark(){
   return currentAppearance==='dark' || (currentAppearance==='system' && !!(darkSchemeQuery && darkSchemeQuery.matches));
 }
 function applyTheme(){
-  document.body.classList.toggle('theme-beige', currentTheme==='beige');
   const dark=appearanceIsDark();
+  document.body.classList.toggle('theme-beige', currentTheme==='beige');
+  document.body.classList.toggle('theme-eye', currentTheme==='eye' && !dark); // Dark appearance has its own pages
   const changed=dark!==document.body.classList.contains('theme-dark');
   document.body.classList.toggle('theme-dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
@@ -19578,11 +19916,11 @@ function toggleSettingsPopover(anchorEl){
   const pop=document.createElement('div'); pop.id='settingsPopover'; pop.className='settings-popover';
   // One choice for how the app looks: the grey or beige desk in light, or
   // dark. (A stored "system" shows as whichever it currently resolves to.)
-  const look=appearanceIsDark() ? 'dark' : (currentTheme==='beige' ? 'beige' : 'gray');
+  const look=appearanceIsDark() ? 'dark' : (currentTheme==='beige' ? 'beige' : (currentTheme==='eye' ? 'eye' : 'gray'));
   const lk=(v, label)=>'<label class="theme-option"><input type="radio" name="lookopt" value="'+v+'"'+(look===v?' checked':'')+'><span class="theme-swatch '+v+'"></span>'+label+'</label>';
   pop.innerHTML=
     '<div class="filter-title">Appearance</div>'+
-    lk('gray', 'Gray')+lk('beige', 'Beige')+lk('dark', 'Dark')+
+    lk('gray', 'Gray')+lk('beige', 'Beige')+lk('eye', 'Eye comfort')+lk('dark', 'Dark')+
     '<div class="settings-divider"></div>'+
     '<div class="filter-title">Writing</div>'+
     '<label class="theme-option"><input type="checkbox" id="optSpellcheck"'+(spellcheckOn?' checked':'')+'>Spell check</label>'+
@@ -20939,7 +21277,10 @@ function pwGeneral(body){
   body.innerHTML=
     pwCard('Appearance', [
       pwRow('Appearance', pwSeg('appearance', [['light','Light'],['dark','Dark'],['system','System']], currentAppearance), 'System follows your computer\u2019s light and dark setting.'),
-      pwRow('Desk', pwSeg('desk', [['gray','Gray'],['beige','Beige']], currentTheme==='beige'?'beige':'gray', dark), 'The colour around the pages in Light appearance.')
+      pwRow('Desk', pwSeg('desk', [['gray','Gray'],['beige','Beige'],['eye','Eye comfort']], (currentTheme==='beige' || currentTheme==='eye') ? currentTheme : 'gray', dark), 'The colour around the pages in Light appearance. Eye comfort is a dark-grey desk with soft grey pages.')
+    ])+
+    pwCard('Writer', [
+      pwRow('Your name', pwText('pwWriterName', writerName, 'Name of First Writer'), 'Written on the title page of each script the first time you open it, if its author line is empty. Scripts you have already opened keep what is there.')
     ])+
     pwCard('Writing', [
       pwRow('Check spelling', pwToggle('pwSpell', spellcheckOn), 'Scene headings, character cues and transitions are skipped \u2014 they are not prose.'),
@@ -20952,6 +21293,7 @@ function pwGeneral(body){
     if(name==='appearance'){ await setAppearance(v); pwShow('general', true); }
     else if(name==='desk'){ await setTheme(v); }
   });
+  body.querySelector('#pwWriterName').addEventListener('change', e=>{ setWriterName(e.target.value); e.target.value=writerName; });
   body.querySelector('#pwSpell').addEventListener('change', e=>setSpellcheck(e.target.checked));
   body.querySelector('#pwGuess').addEventListener('change', e=>setAutoGuess(e.target.checked));
   body.querySelector('#pwNoteCat').addEventListener('change', e=>setDefaultNoteCategory(e.target.value));
@@ -21453,7 +21795,7 @@ function applyDocFormat(repaginate){
       '; text-transform:'+(e.upper?'uppercase':'none')+'; font-weight:'+(e.bold?700:400)+'; font-style:'+(e.italic?'italic':'normal')+
       '; text-decoration-line:'+(e.underline?'underline':'none')+'; line-height:'+(16*e.lineSpacing)+'px;}\n';
     const pad=e.spaceBefore*16;
-    css+='#screenplayContent .line-block.type-'+t+':not(.page-top):not(:first-child), #printRoot .line-block.type-'+t+':not(.pr-first):not(.pr-tail){padding-top:'+pad+'px; --pt:'+pad+'px;}\n';
+    css+='#screenplayContent .line-block.type-'+t+':not(.page-top):not(:first-child), #printRoot .line-block.type-'+t+':not(.pr-first):not(.pr-tail):not(.page-top[data-dual]){padding-top:'+pad+'px; --pt:'+pad+'px;}\n';
   });
   const W=PAGE_W, H=PAGE_H;
   css+='#paperStack{width:'+W+'px; min-height:'+H+'px;}\n'+
@@ -21671,7 +22013,7 @@ function addCommand(id, label, group, keys, run){ COMMANDS.push({id, label, grou
   addCommand('edit:undo','Undo','Edit',['Mod+Z'],()=>undo());
   addCommand('edit:redo','Redo','Edit',['Mod+Shift+Z','Mod+Y'],()=>redo());
   addCommand('edit:dual','Dual Dialogue','Edit',['Mod+D','Alt+D'],()=>{ content.focus({preventScroll:true}); toggleDualDialogue(); });
-  addCommand('edit:altadd','Add Alt Dialogue','Edit',['Mod+Shift+.'],()=>runOnCaretBlock(b=>{ if(b.dataset.type==='dialogue'){ if(!showAltsOn) setShowAlts(true); addAlternate(b); } }));
+  addCommand('edit:altadd','Add Alt Dialogue','Edit',['Mod+Shift+.'],()=>runOnCaretBlock(b=>{ if(altsAllowed(b)){ if(!showAltsOn) setShowAlts(true); addAlternate(b); } }));
   addCommand('edit:altremove','Remove Alt Dialogue','Edit',['Mod+Shift+,'],()=>runOnCaretBlock(b=>{ if(readAlts(b)) removeAlternate(b); }));
   addCommand('file:print','Print\u2026','File',['Mod+P'],()=>openOutputDialog('print'));
   addCommand('file:pdf','Save as PDF\u2026','File',['Mod+Shift+P'],()=>openOutputDialog('pdf'));
@@ -22332,17 +22674,31 @@ function applySplitPane(){
   if(splitPrefs.on){ if(scenes) renderSceneView(true); else if(beats) renderBeatBoard(true); else renderIndexCards(true); }
   requestAnimationFrame(()=>{ try{ updatePageIndicator(); positionZoomIndicator(); }catch(err){} });
 }
+/* The zoom the script had before opening the pane made it smaller, and the
+   zoom it was made. Closing the pane puts the first back -- but only if the
+   writer has not zoomed since: a zoom they chose themselves is theirs. */
+let _splitZoomMemo=null;
 function setSplit(on){
   splitPrefs.on=!!on; saveViewPref('novel-dots-split', splitPrefs);
   applySplitPane();
   // The script keeps its zoom unless the page no longer fits beside the
   // cards; then it is scaled down to fit, around the same point of the page.
+  const opening=splitPrefs.on;
   requestAnimationFrame(()=>{
     try{
       const r=viewport.getBoundingClientRect();
       const cy=(r.height/2-pan.y)/zoom;
       let z=zoom;
-      if(splitPrefs.on && PAGE_W*zoom>r.width-24) z=clamp((r.width-24)/PAGE_W, 0.3, zoom);
+      if(opening){
+        if(PAGE_W*zoom>r.width-24){
+          const orig=zoom;
+          z=clamp((r.width-24)/PAGE_W, 0.3, zoom);
+          if(z<orig-1e-6) _splitZoomMemo={orig, shrunk:z};
+        }
+      } else if(_splitZoomMemo){
+        const m=_splitZoomMemo; _splitZoomMemo=null;
+        if(Math.abs(zoom-m.shrunk)<0.005) z=m.orig;
+      }
       animateTransformTo({x:(r.width-PAGE_W*z)/2, y:r.height/2-cy*z}, z);
       scheduleRulers(); updatePageIndicator();
     }catch(err){}
@@ -25686,7 +26042,7 @@ async function init(){
   // parallel rather than one-after-another so the landing page appears
   // after a single round trip's worth of latency, not two.
   capturePrefFactory(); // before any setting is loaded: these are the starting values
-  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadRulerPref(), loadSidebarSizes(), loadAutoGuessPref(), loadDefaultNoteCategoryPref(), loadShowAltsPref(), loadShortcutPrefs(), loadViewAidPrefs(), loadBackupPrefs(), loadRibbonTabPref(), loadViewNavPrefs(), renderProjectsList()]);
+  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadRulerPref(), loadSidebarSizes(), loadAutoGuessPref(), loadDefaultNoteCategoryPref(), loadWriterNamePref(), loadShowAltsPref(), loadShortcutPrefs(), loadViewAidPrefs(), loadBackupPrefs(), loadRibbonTabPref(), loadViewNavPrefs(), renderProjectsList()]);
   window.addEventListener('resize', debounce(()=>{ if(state.projectId){ recomputePagination(); layoutAllNotes(); } }, 200));
   // Every project that existed before settings became per-project keeps the
   // settings it has always been shown with: copied now, before any of them
