@@ -2293,6 +2293,20 @@ body.theme-dark .page-sheet{box-shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 20px rgba
   -webkit-backdrop-filter:saturate(1.6) blur(14px); backdrop-filter:saturate(1.6) blur(14px);
   box-shadow:var(--ui-shadow-2);
 }
+.script-nav{
+  position:fixed; z-index:230; display:flex; gap:2px; padding:3px; border-radius:999px;
+  background:color-mix(in srgb, var(--chrome-bg) 86%, transparent); color:var(--text-chrome);
+  -webkit-backdrop-filter:saturate(1.6) blur(14px); backdrop-filter:saturate(1.6) blur(14px);
+  box-shadow:var(--ui-shadow-2);
+}
+.script-nav button{
+  width:28px; height:28px; padding:0; border:0; border-radius:50%; background:transparent; color:inherit;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.script-nav button svg{width:16px; height:16px;}
+.script-nav button:hover:not(:disabled){background:rgba(128,128,128,.2);}
+.script-nav button:disabled{opacity:.32; cursor:default;}
+body.bb-full #scriptNav{visibility:hidden;}
 .toast{
   border-radius:999px; padding:9px 16px; font-size:12.5px; font-weight:500;
   background:color-mix(in srgb, #1D1D1F 88%, transparent); color:#fff; border:none;
@@ -2699,6 +2713,10 @@ body.theme-dark .split-seg button.on{background:#4A4A52;}
     <div id="minimap" class="minimap hidden" aria-label="Minimap"><canvas></canvas></div>
     <div id="zoomIndicator" class="zoom-indicator"></div>
     <div id="pageIndicator" class="page-indicator"></div>
+    <div id="scriptNav" class="script-nav" role="group" aria-label="Go to the top or bottom of the script">
+      <button type="button" id="btnScriptTop" title="Top of script" aria-label="Top of script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12"/><path d="M12 20V9"/><path d="m7 13 5-5 5 5"/></svg></button>
+      <button type="button" id="btnScriptBottom" title="Bottom of script" aria-label="Bottom of script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20h12"/><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/></svg></button>
+    </div>
     <div id="selectionBar" class="selection-bar hidden">
       <span class="selection-bar-grip" title="Drag to move" aria-hidden="true"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg></span>
       <span id="selectionCount">0 selected</span>
@@ -2832,6 +2850,47 @@ function registerPdfScriptFont(doc){
     });
     return PDF_SCRIPT_FONT;
   }catch(err){ return 'courier'; }
+}
+
+/* KOREAN (AND OTHER CJK) TEXT IN A PDF
+   The embedded script face has no Hangul, and the PDF library's own faces
+   have none either, so Korean text used to come out blank (or as junk, in a
+   note). When a script, its notes or its page header carry any Hangul or
+   other CJK character, the exporter loads one monospaced Korean face
+   (Nanum Gothic Coding, SIL Open Font License, pinned to an exact package
+   version) and sets those characters in it, run by run, next to the Courier
+   text. The face is fetched only when it is needed and kept for the session.
+   If it cannot be fetched the PDF is not made at all -- a PDF that quietly
+   leaves the Korean out is the bug this replaces. */
+const PDF_CJK_RE=/[\u1100-\u11FF\u2E80-\u2FFF\u3000-\u303F\u3040-\u30FF\u3130-\u318F\u31C0-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA960-\uA97F\uAC00-\uD7FF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]/;
+const PDF_KO_FACE='NDKorean';
+const PDF_KO_FONT_URLS=[
+  'https://cdn.jsdelivr.net/npm/@expo-google-fonts/nanum-gothic-coding@0.4.1/400Regular/NanumGothicCoding_400Regular.ttf',
+  'https://unpkg.com/@expo-google-fonts/nanum-gothic-coding@0.4.1/400Regular/NanumGothicCoding_400Regular.ttf'
+];
+let _pdfKoFontB64=null;
+async function loadPdfKoreanFont(){
+  if(_pdfKoFontB64) return _pdfKoFontB64;
+  for(const url of PDF_KO_FONT_URLS){
+    try{
+      const r=await fetch(url);
+      if(!r.ok) continue;
+      const u8=new Uint8Array(await r.arrayBuffer());
+      if(u8.length<200000) continue; // not the font
+      let bin='';
+      for(let i=0;i<u8.length;i+=0x8000) bin+=String.fromCharCode.apply(null, u8.subarray(i, i+0x8000));
+      _pdfKoFontB64=btoa(bin);
+      return _pdfKoFontB64;
+    }catch(err){ /* the next address */ }
+  }
+  return null;
+}
+function registerPdfKoreanFont(doc){
+  try{
+    doc.addFileToVFS('NDKorean-Regular.ttf', _pdfKoFontB64);
+    doc.addFont('NDKorean-Regular.ttf', PDF_KO_FACE, 'normal');
+    return PDF_KO_FACE;
+  }catch(err){ return null; }
 }
 
 /* =========================================================
@@ -9533,7 +9592,39 @@ function updatePageIndicator(){
   }
   el.style.left=leftOffset+'px';
   el.style.bottom=bottomOffset+'px';
+  positionScriptNav(el, bottomOffset);
 }
+/* THE TOP / BOTTOM BUTTONS
+   Two small buttons sit right of the page number. They move the VIEW to the
+   very top of the script (the title page) or to the foot of its last sheet,
+   keeping the sideways position, and leave the insertion point where it is,
+   like a jump from the Outline does. A button that has nothing to do -- the
+   view is already there -- is dimmed. */
+const SCRIPT_EDGE_GAP=48;
+function scriptEdgePan(which){
+  const r=viewport.getBoundingClientRect();
+  if(which==='top') return SCRIPT_EDGE_GAP;
+  return Math.min(SCRIPT_EDGE_GAP, r.height-SCRIPT_EDGE_GAP-scriptWorldBottom()*zoom);
+}
+function goToScriptEdge(which){
+  if(!state.projectId) return;
+  const y=scriptEdgePan(which);
+  if(Math.abs(y-pan.y)<1) return;
+  animateTransformTo({x:pan.x, y}, zoom);
+}
+function positionScriptNav(indicator, bottomOffset){
+  const nav=document.getElementById('scriptNav');
+  if(!nav) return;
+  const ir=indicator.getBoundingClientRect();
+  nav.style.left=(ir.right+8)+'px';
+  nav.style.bottom=(bottomOffset+(ir.height-nav.offsetHeight)/2)+'px';
+  const top=document.getElementById('btnScriptTop'), bot=document.getElementById('btnScriptBottom');
+  if(top) top.disabled=Math.abs(scriptEdgePan('top')-pan.y)<2;
+  if(bot) bot.disabled=Math.abs(scriptEdgePan('bottom')-pan.y)<2;
+}
+document.getElementById('scriptNav').addEventListener('mousedown', e=>e.preventDefault()); // never steal the writer's selection
+document.getElementById('btnScriptTop').addEventListener('click', ()=>goToScriptEdge('top'));
+document.getElementById('btnScriptBottom').addEventListener('click', ()=>goToScriptEdge('bottom'));
 function animateTransformTo(newPan, newZoom, cb){
   world.classList.add('animated');
   pan=newPan; zoom=newZoom;
@@ -10185,7 +10276,7 @@ function noteInstantFor(ms){
 function reconcileNotesForRestore(rawNotes){
   const incoming=migrateNotes(rawNotes);
   const live=new Map(state.notes.map(n=>[n.id, n]));
-  const body=n=>{ const c={}; Object.keys(n).sort().forEach(k=>{ if(k[0]!=='_' && k!=='z' && n[k]!=null) c[k]=n[k]; }); return JSON.stringify(c); }; // a missing value and null are the same
+  const body=n=>{ const c={}; Object.keys(n).sort().forEach(k=>{ if(k[0]!=='_' && k!=='z' && n[k]!=null && n[k]!=='') c[k]=n[k]; }); return JSON.stringify(c); }; // a missing value, null and '' are the same
   const next=[], build=[];
   incoming.forEach(n=>{
     const o=live.get(n.id);
@@ -10211,6 +10302,50 @@ function applyCategoryColor(note){
   (els.extras||[]).forEach(d=>{ if(els.dot.style.getPropertyValue('--dot-color')) d.style.setProperty('--dot-color', els.dot.style.getPropertyValue('--dot-color')); else d.style.removeProperty('--dot-color'); });
   els.card.style.background = tintColor(baseColor, note.kind==='sticky' ? 0.78 : 0.9);
   els.card.style.borderColor = tintColor(baseColor, 0.55);
+}
+/* THE FORMATTING OF A NOTE'S TEXT
+   A note keeps its text as plain text (note.text -- the chip, the Reports, the
+   PDF margins and Find all read that) and, when any of it is bold, italic,
+   underlined or struck through, the same text with those marks as note.html.
+   Only those four marks are ever kept; anything else a paste or a crafted file
+   brings in is flattened to its text. */
+const NOTE_FORMAT_TAGS={B:'b', STRONG:'b', I:'i', EM:'i', U:'u', STRIKE:'strike', S:'strike', DEL:'strike'};
+function noteBodyHtml(root){
+  let any=false;
+  const walk=node=>{
+    let out='';
+    node.childNodes.forEach(c=>{
+      if(c.nodeType===3) out+=escapeHtml(c.nodeValue);
+      else if(c.nodeType===1){
+        const t=NOTE_FORMAT_TAGS[c.tagName], inner=walk(c);
+        if(t && inner){ any=true; out+='<'+t+'>'+inner+'</'+t+'>'; } else out+=inner;
+      }
+    });
+    return out;
+  };
+  const h=walk(root);
+  return any ? h : '';
+}
+function setNoteBodyContent(body, note){
+  if(note.html){
+    const t=document.createElement('template'); t.innerHTML=String(note.html);          // inert: nothing in it runs or loads
+    const clean=noteBodyHtml(t.content);
+    const probe=document.createElement('template'); probe.innerHTML=clean;
+    if(clean && probe.content.textContent===(note.text||'')){ body.innerHTML=clean; return; }
+  }
+  body.textContent=note.text||''; // what was written comes back with the note (reopened project, imported file, undo)
+}
+/* The key that formats the text of a note: whatever Bold, Italic, Underline and
+   Strikethrough are set to in Keyboard Shortcuts -- the same keys as in the script. */
+const NOTE_FORMAT_COMMANDS={'fmt:bold':'bold', 'fmt:italic':'italic', 'fmt:underline':'underline', 'fmt:strike':'strike'};
+function noteFormatKindForKey(e){
+  const combo=comboFromEvent(e);
+  if(!combo) return null;
+  for(const id of Object.keys(NOTE_FORMAT_COMMANDS)){
+    const keys=customShortcuts[id] ? customShortcuts[id] : ((COMMANDS.find(c=>c.id===id)||{}).keys||[]);
+    if(keys.includes(combo)) return NOTE_FORMAT_COMMANDS[id];
+  }
+  return null;
 }
 function createNoteDOM(note){
   const wrap=document.createElement('div');
@@ -10241,7 +10376,7 @@ function createNoteDOM(note){
 
   const body=document.createElement('div'); body.className='note-body'; body.contentEditable='true';
   body.spellcheck=spellcheckOn; // note text is prose, so it follows the same setting
-  body.textContent=note.text||''; // what was written comes back with the note (reopened project, imported file, undo)
+  setNoteBodyContent(body, note);
   body.dataset.placeholder= note.kind==='sticky' ? 'Write a persistent note…' : 'Write a note…';
 
   const foot=document.createElement('div'); foot.className='note-foot';
@@ -10308,7 +10443,17 @@ function createNoteDOM(note){
     showShotPicker(r.left, r.bottom+4, shot=>applyShotToNote(note.id, shot));
   });
   dayInput.addEventListener('change', function(){ updateNote(note.id,{shootDay:dayInput.value.trim()}); refreshFilterOptions(); });
-  body.addEventListener('input', function(){ updateNote(note.id,{text:body.textContent}); updateChipLabel(note); keepNoteInSightSideways(note.id); });
+  const saveBody=function(){ updateNote(note.id,{text:body.textContent, html:noteBodyHtml(body)||undefined}); updateChipLabel(note); };
+  body.addEventListener('input', function(){ saveBody(); keepNoteInSightSideways(note.id); });
+  // Bold / Italic / Underline / Strikethrough by key, as in the script (the buttons already work here).
+  body.addEventListener('keydown', function(e){
+    if(e.isComposing || e.keyCode===229) return;
+    const kind=noteFormatKindForKey(e);
+    if(!kind) return;
+    e.preventDefault(); e.stopPropagation();
+    document.execCommand(INLINE_COMMANDS[kind], false, null);
+    saveBody(); refreshFormatButtonStates();
+  });
   body.addEventListener('contextmenu', function(e){ e.stopPropagation(); });
 
   wrap.addEventListener('contextmenu', function(e){
@@ -14700,7 +14845,7 @@ function caretPosOnLine(hit, x){
 const PAGE_PRESS_BLOCKERS='button, input, textarea, select, a, [contenteditable="true"]:not(#screenplayContent), '+
   '.tc-del, .tc-caret, .tc-bar, .alts-widget, .note-card, .dot-marker, .context-menu, '+
   '#notesLayer *, #imagesLayer *, #drawLayer *, #connectorLayer *, #connectorFrontLayer *, '+
-  '#minimap, #minimap *, #zoomIndicator, #pageIndicator, #selectionBar, #drawPalette, #drawPalette *, '+
+  '#minimap, #minimap *, #zoomIndicator, #pageIndicator, #scriptNav, #scriptNav *, #selectionBar, #drawPalette, #drawPalette *, '+
   '#canvasHint, #canvasHint *, #splitPane, #splitPane *, #leftEdgeTab, #rightEdgeTab';
 function pointOnPaper(x, y){ // the sheet's screen rect, or null
   const sheets=pageDecor.querySelectorAll('.page-sheet');
@@ -16141,6 +16286,18 @@ async function exportScriptPDF(opts){
   if(!jsPDFCtor){ showToast('PDF library failed to initialize'); return; }
   const lines=exportLines();
   const {titleLines, bodyLines}=splitTitleAndBody(lines);
+  // Any Hangul / CJK in what this PDF will print? Then the Korean face is loaded before anything is laid out.
+  const pdfTexts=lines.map(l=>l.text||'');
+  if(opts && opts.includeNotes) (state.notes||[]).forEach(n=>{ pdfTexts.push(String(n.text||''), String(n.keyword||'')); });
+  try{ pdfTexts.push(JSON.stringify((state.format||{}).header||''), JSON.stringify((state.format||{}).footer||'')); }catch(err){}
+  const needKo=PDF_CJK_RE.test(pdfTexts.join('\n'));
+  if(needKo){
+    if(!_pdfKoFontB64) showToast('Building PDF… (loading the Korean font)');
+    if(!(await loadPdfKoreanFont())){
+      showToast('Could not load the Korean font — check your connection and try again. No PDF was made.');
+      return;
+    }
+  }
   /* One page model (Hard Rule): the PDF breaks its pages where the editor
      does -- the same paragraphs open each page and the same speeches split
      at the same word. Both set the same face at exactly 10 characters to the
@@ -16170,6 +16327,69 @@ async function exportScriptPDF(opts){
   const doc=new jsPDFCtor({unit:'in', format:[PDF_IN.pageW, PDF_IN.pageH]});
   const PDF_FACE=scriptFontDef().pdf==='core' ? 'courier' : registerPdfScriptFont(doc); // the screen's own face, embedded
   doc.setFont(PDF_FACE,'normal'); doc.setFontSize(12);
+  const KO_FACE=needKo ? registerPdfKoreanFont(doc) : null;
+  doc.setFont(PDF_FACE,'normal');
+  /* Text that may hold Korean: measured, wrapped and drawn run by run -- the
+     CJK characters in the Korean face, everything else in whatever face is
+     set at the moment. Text with no CJK character takes the library's own
+     path, exactly as before. */
+  function cjkRuns(str){
+    const out=[];
+    for(let i=0;i<str.length;i++){
+      const ch=str[i], k=PDF_CJK_RE.test(ch), last=out[out.length-1];
+      if(last && last.k===k) last.t+=ch; else out.push({t:ch, k});
+    }
+    return out;
+  }
+  const hasCjk=str=>!!KO_FACE && PDF_CJK_RE.test(str);
+  function pdfWidth(str){
+    if(!hasCjk(str)) return doc.getTextWidth(str);
+    const f=doc.getFont(); let w=0;
+    cjkRuns(str).forEach(r=>{ if(r.k) doc.setFont(KO_FACE,'normal'); else doc.setFont(f.fontName, f.fontStyle); w+=doc.getTextWidth(r.t); });
+    doc.setFont(f.fontName, f.fontStyle);
+    return w;
+  }
+  function pdfText(str, x, yy, opts, bold){
+    if(!hasCjk(str)){ doc.text(str, x, yy, opts); return; }
+    const f=doc.getFont(), align=opts && opts.align;
+    let px=x;
+    if(align==='right') px=x-pdfWidth(str); else if(align==='center') px=x-pdfWidth(str)/2;
+    cjkRuns(str).forEach(r=>{
+      if(r.k){
+        doc.setFont(KO_FACE,'normal');
+        if(bold){ const lw=doc.getLineWidth(); doc.setLineWidth(0.006); doc.text(r.t, px, yy, {renderingMode:'fillThenStroke'}); doc.setLineWidth(lw); }
+        else doc.text(r.t, px, yy);
+      } else { doc.setFont(f.fontName, f.fontStyle); doc.text(r.t, px, yy); }
+      px+=doc.getTextWidth(r.t);
+    });
+    doc.setFont(f.fontName, f.fontStyle);
+  }
+  /* Lines break at spaces, as the editor's text does; a word wider than the
+     line is cut between characters. Every line is a piece of the text itself,
+     in order, so the callers can find where it came from. */
+  function pdfWrap(str, width){
+    if(!hasCjk(str)) return doc.splitTextToSize(str, width);
+    const out=[];
+    String(str).split('\n').forEach(par=>{
+      if(!par.trim()){ out.push(''); return; }
+      let ls=-1, le=-1, m;
+      const re=/\S+/g;
+      const flush=()=>{ if(ls>=0) out.push(par.slice(ls, le)); ls=-1; le=-1; };
+      while((m=re.exec(par))){
+        const a=m.index, b=a+m[0].length;
+        if(ls<0){ ls=a; le=b; }
+        else if(pdfWidth(par.slice(ls, b))<=width){ le=b; }
+        else{ flush(); ls=a; le=b; }
+        while(pdfWidth(par.slice(ls, le))>width && le-ls>1){
+          let cut=ls+1;
+          while(cut<le && pdfWidth(par.slice(ls, cut+1))<=width) cut++;
+          out.push(par.slice(ls, cut)); ls=cut;
+        }
+      }
+      flush();
+    });
+    return out;
+  }
   // The library's default line width is 0.2 units -- with inches that is a 0.2 in
   // (14 pt) band. Underlines and strike-throughs are lines, so set a hairline
   // (0.5 pt) before anything is drawn; the note-margin code restores to this.
@@ -16229,8 +16449,8 @@ async function exportScriptPDF(opts){
       if(!head.length && !foot.length) continue;
       doc.setPage(p+1);
       doc.setFont(PDF_FACE,'normal');
-      head.forEach(sl=>doc.text(sl.text, sl.xIn, fmt.headerDist+0.125, sl.align==='left' ? undefined : {align:sl.align}));
-      foot.forEach(sl=>doc.text(sl.text, sl.xIn, PDF_IN.pageH-fmt.footerDist, sl.align==='left' ? undefined : {align:sl.align}));
+      head.forEach(sl=>pdfText(sl.text, sl.xIn, fmt.headerDist+0.125, sl.align==='left' ? undefined : {align:sl.align}));
+      foot.forEach(sl=>pdfText(sl.text, sl.xIn, PDF_IN.pageH-fmt.footerDist, sl.align==='left' ? undefined : {align:sl.align}));
     }
     doc.setPage(physicalPage+1);
   }
@@ -16255,7 +16475,7 @@ async function exportScriptPDF(opts){
     return out;
   }
   function drawStyledSegment(seg, segStart, styles, lineStyle, col){
-    const width=doc.getTextWidth(seg); // every face is 600/1000 em, so any face measures it
+    const width=pdfWidth(seg); // every Courier face is 600/1000 em, so any of them measures it
     const left = col.align==='right' ? PDF_IN.mLeft+col.left+col.width-width
                : col.align==='center' ? PDF_IN.mLeft+col.left+col.width/2-width/2
                : PDF_IN.mLeft+col.left;
@@ -16270,11 +16490,11 @@ async function exportScriptPDF(opts){
         e++;
       }
       const piece=seg.slice(k, e);
-      const px=left+doc.getTextWidth(seg.slice(0, k));
+      const px=left+pdfWidth(seg.slice(0, k));
       doc.setFont(PDF_FACE, pdfFontStyle(st.bold, st.italic));
-      doc.text(piece, px, y);
+      pdfText(piece, px, y, undefined, st.bold);
       if(st.underline || st.strike){
-        const w=doc.getTextWidth(piece);
+        const w=pdfWidth(piece);
         if(st.underline) doc.line(px, y+0.02, px+w, y+0.02);
         if(st.strike) doc.line(px, y-0.035, px+w, y-0.035);
       }
@@ -16282,7 +16502,7 @@ async function exportScriptPDF(opts){
     }
   }
   function printWrapped(text, col, style, rev, styles){
-    const wrapped=doc.splitTextToSize(text, col.width);
+    const wrapped=pdfWrap(text, col.width);
     let cursor=0;
     wrapped.forEach(seg=>{
       if(y+PDF_LINE_H > PDF_IN.pageH-PDF_IN.mBottom){ newPage(); }
@@ -16323,7 +16543,7 @@ async function exportScriptPDF(opts){
     const byId=new Map((state.notes||[]).map(n=>[n.id, n]));
     const items=[];
     (state.notes||[]).forEach(n=>{
-      if(n.kind!=='dot') return;
+      if(n.kind==='sticky') return; // sticky notes are pinned to no paragraph; every other note is a dot note, old ones with no kind saved included
       const text=String(n.text||'').replace(/\s+\n/g, '\n').trim(), kw=String(n.keyword||'').trim();
       if(!text && !kw) return;
       let root=n, guard=0;
@@ -16350,38 +16570,66 @@ async function exportScriptPDF(opts){
       doc.setPage(pg+1);
       const busy=marginBusy.filter(m=>m.page===pg && (m.side==='both' || m.side===side));
       const textW=g.w-PAD*2-BAR;
-      let next=0.3;
-      list.forEach(it=>{
+      const GAP_N=0.06, TOP0=0.3, limit=PDF_IN.pageH-0.25;
+      const ell=str=>str.replace(/\s*\S?$/, '')+'\u2026';
+      /* 1. Each note's lines, in the face it will be drawn in (Korean included). */
+      const boxes=list.map(it=>{
         doc.setFontSize(FS);
         doc.setFont('helvetica', 'bold');
-        const head=it.kw ? doc.splitTextToSize(it.kw, textW) : [];
+        const head=it.kw ? pdfWrap(it.kw, textW) : [];
         doc.setFont('helvetica', 'normal');
-        let body=it.text ? doc.splitTextToSize(it.text, textW) : [];
+        let body=it.text ? pdfWrap(it.text, textW) : [];
         const MAXL=18;
-        if(head.length+body.length>MAXL){ body=body.slice(0, Math.max(1, MAXL-head.length)); body[body.length-1]=body[body.length-1].replace(/\s*\S?$/, '')+'\u2026'; }
-        const h=PAD*2+(head.length+body.length)*LH;
-        let top=Math.max(next, it.at.y-0.13);
+        if(head.length+body.length>MAXL){ body=body.slice(0, Math.max(1, MAXL-head.length)); body[body.length-1]=ell(body[body.length-1]); }
+        return {it, head, body, h:0, top:0};
+      });
+      const hOf=bx=>PAD*2+(bx.head.length+bx.body.length)*LH;
+      boxes.forEach(bx=>{ bx.h=hOf(bx); });
+      /* 2. A crowded page: if all the boxes on this side together are taller than the margin,
+            the longest ones lose their last lines (an ellipsis marks the cut) until they fit --
+            none is drawn over another and none is drawn off the sheet. */
+      const stackH=()=>boxes.reduce((t, bx)=>t+bx.h, 0)+GAP_N*(boxes.length-1);
+      for(let guard=0; guard<600 && stackH()>limit-TOP0; guard++){
+        let worst=null;
+        boxes.forEach(bx=>{ if(bx.body.length>1 && (!worst || bx.body.length>worst.body.length)) worst=bx; });
+        if(!worst) break;
+        worst.body.pop(); worst.body[worst.body.length-1]=ell(worst.body[worst.body.length-1]);
+        worst.h=hOf(worst);
+      }
+      /* 3. Down the page, each beside its own line, stepping past scene numbers and revision marks. */
+      let next=TOP0;
+      boxes.forEach(bx=>{
+        let top=Math.max(next, bx.it.at.y-0.13);
         for(let guard=0, moved=true; moved && guard<30; guard++){
           moved=false;
-          busy.forEach(m=>{ if(top<m.y+0.05 && top+h>m.y-0.14){ top=m.y+0.06; moved=true; } });
+          busy.forEach(m=>{ if(top<m.y+0.05 && top+bx.h>m.y-0.14){ top=m.y+0.06; moved=true; } });
         }
-        if(top+h>PDF_IN.pageH-0.25) top=Math.max(next, PDF_IN.pageH-0.25-h);
+        bx.top=top; next=top+bx.h+GAP_N;
+      });
+      /* 4. Whatever ran past the bottom edge is pushed back up, last box first. */
+      for(let i=boxes.length-1; i>=0; i--){
+        const maxTop=(i===boxes.length-1 ? limit : boxes[i+1].top-GAP_N)-boxes[i].h;
+        if(boxes[i].top>maxTop) boxes[i].top=Math.max(0.1, maxTop);
+      }
+      /* 5. Drawn. */
+      boxes.forEach(bx=>{
+        const {it, head, body, h, top}=bx;
         const base=rgb(it.color);
         doc.setLineWidth(0.006);
         doc.setFillColor(...mixW(base, 0.86)); doc.setDrawColor(...mixW(base, 0.35));
         doc.roundedRect(g.x, top, g.w, h, 0.03, 0.03, 'FD');
         doc.setFillColor(...base); doc.rect(g.x+0.004, top+0.02, BAR-0.008, h-0.04, 'F');
         doc.setTextColor(38, 38, 38);
+        doc.setFontSize(FS);
         let ly=top+PAD+LH*0.78;
-        doc.setFont('helvetica', 'bold'); head.forEach(t=>{ doc.text(t, g.x+BAR+PAD*0.8, ly); ly+=LH; });
-        doc.setFont('helvetica', 'normal'); body.forEach(t=>{ doc.text(t, g.x+BAR+PAD*0.8, ly); ly+=LH; });
+        doc.setFont('helvetica', 'bold'); head.forEach(t=>{ pdfText(t, g.x+BAR+PAD*0.8, ly, undefined, true); ly+=LH; });
+        doc.setFont('helvetica', 'normal'); body.forEach(t=>{ pdfText(t, g.x+BAR+PAD*0.8, ly); ly+=LH; });
         // Dotted leader from the box to the line it is about.
-        const bx=side==='left' ? g.x+g.w : g.x, by=Math.min(top+h-0.02, Math.max(top+0.04, it.at.y-0.04));
+        const lx=side==='left' ? g.x+g.w : g.x, by=Math.min(top+h-0.02, Math.max(top+0.04, it.at.y-0.04));
         doc.setDrawColor(...mixW(base, 0.15));
         if(typeof doc.setLineDashPattern==='function') doc.setLineDashPattern([0.02, 0.025], 0);
-        doc.line(bx, by, g.lead, it.at.y-0.04);
+        doc.line(lx, by, g.lead, it.at.y-0.04);
         if(typeof doc.setLineDashPattern==='function') doc.setLineDashPattern([], 0);
-        next=top+h+0.06;
       });
     });
     doc.setTextColor(0, 0, 0); doc.setDrawColor(0, 0, 0); doc.setFillColor(255, 255, 255);
@@ -16443,7 +16691,7 @@ async function exportScriptPDF(opts){
   }
   function estimateLines(line){
     const col=PDF_COLS[line.type]||PDF_COLS.action;
-    return doc.splitTextToSize(line.text||'', col.width).length || 1;
+    return pdfWrap(line.text||'', col.width).length || 1;
   }
   /* "(MORE)" under the last line of a speech on this page, a fresh page,
      and "CHARACTER (CONT'D)" over the rest of it -- the same labels the
@@ -16465,7 +16713,7 @@ async function exportScriptPDF(opts){
     doc.setFont(PDF_FACE,'normal');
     if(state.pageOptions.contd){
       const name=speechNameBefore(idx);
-      doc.text((name ? name+' ' : '')+"(CONT'D)", PDF_IN.mLeft+PDF_COLS.character.left, y);
+      pdfText((name ? name+' ' : '')+"(CONT'D)", PDF_IN.mLeft+PDF_COLS.character.left, y);
     }
     y+=PDF_LINE_H; // the line is kept even with the label switched off, as on screen
   }
@@ -16543,7 +16791,7 @@ async function exportScriptPDF(opts){
       // rest starts a line of its own on the next page.
       const splitAt=layoutSplits ? layoutSplits.get(line.id) : undefined;
       const wrapped=[];
-      const wrapFrom=(str, base)=>{ let c=0; doc.splitTextToSize(str, col.width).forEach(seg=>{ const a=str.indexOf(seg, c); if(a>=0) c=a+seg.length; wrapped.push({seg, at:a>=0 ? base+a : -1}); }); };
+      const wrapFrom=(str, base)=>{ let c=0; pdfWrap(str, col.width).forEach(seg=>{ const a=str.indexOf(seg, c); if(a>=0) c=a+seg.length; wrapped.push({seg, at:a>=0 ? base+a : -1}); }); };
       if(splitAt!=null && splitAt>0 && splitAt<text.length){
         wrapFrom(text.slice(0, splitAt), 0);
         wrapped.push({split:true});
@@ -22038,6 +22286,8 @@ function addCommand(id, label, group, keys, run){ COMMANDS.push({id, label, grou
   addCommand('view:prevtab','Previous Toolbar Tab','View',[IS_MAC ? 'Ctrl+Shift+Tab' : 'Mod+Shift+Tab'],()=>cycleRibbonTab(-1));
   addCommand('tools:sprint','Sprint\u2026','Tools',[],()=>openSprintDialog());
   addCommand('production:track','Track Changes','Production',[],()=>setTrackChanges(!tcOn()));
+  addCommand('view:scripttop','Go to Top of Script','View',[],()=>goToScriptEdge('top'));
+  addCommand('view:scriptbottom','Go to Bottom of Script','View',[],()=>goToScriptEdge('bottom'));
   addCommand('view:typewriter','Typewriter Mode','View',[],()=>setTypewriter(!twPrefs.on));
   addCommand('view:charhl','Character Highlighting\u2026','View',[],()=>openCharHighlightDialog());
   addCommand('view:structure','Structure Lines','View',[],()=>setStructureOn(!stPrefs.on));
