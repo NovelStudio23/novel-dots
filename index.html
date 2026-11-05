@@ -1273,7 +1273,7 @@ body.show-alts .line-block.type-dialogue[data-alts]:not(.alts-current)::after, b
    Headings lane: a highlighter band over the heading's own line (the blank
    space above it is left out), held while the page slides in, then faded. */
 @keyframes shFlash{0%,55%{background-color:rgba(255,200,0,.6);} 100%{background-color:rgba(255,200,0,0);}}
-.line-block.sh-flash{background-clip:content-box; animation:shFlash 2.4s ease-out;}
+.line-block.sh-flash{background-clip:content-box; animation:shFlash 1.4s ease-out;}
 /* Hovering the Dual Dialogue button previews the result in faint text. */
 .line-block.dual-preview{opacity:.4;}
 .type-dialogue{margin-left:96px; width:336px; padding-top:0;}
@@ -2294,16 +2294,17 @@ body.theme-dark .page-sheet{box-shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 20px rgba
   box-shadow:var(--ui-shadow-2);
 }
 .script-nav{
-  position:fixed; z-index:230; display:flex; gap:2px; padding:3px; border-radius:999px;
+  position:fixed; z-index:230; display:flex; flex-direction:column; border-radius:8px; overflow:hidden;
   background:color-mix(in srgb, var(--chrome-bg) 86%, transparent); color:var(--text-chrome);
   -webkit-backdrop-filter:saturate(1.6) blur(14px); backdrop-filter:saturate(1.6) blur(14px);
   box-shadow:var(--ui-shadow-2);
 }
 .script-nav button{
-  width:28px; height:28px; padding:0; border:0; border-radius:50%; background:transparent; color:inherit;
+  width:34px; height:34px; padding:0; border:0; border-radius:0; background:transparent; color:inherit;
   display:flex; align-items:center; justify-content:center; cursor:pointer;
 }
-.script-nav button svg{width:16px; height:16px;}
+.script-nav button + button{border-top:1px solid rgba(128,128,128,.28);}
+.script-nav button svg{width:17px; height:17px;}
 .script-nav button:hover:not(:disabled){background:rgba(128,128,128,.2);}
 .script-nav button:disabled{opacity:.32; cursor:default;}
 body.bb-full #scriptNav{visibility:hidden;}
@@ -9592,7 +9593,7 @@ function updatePageIndicator(){
   }
   el.style.left=leftOffset+'px';
   el.style.bottom=bottomOffset+'px';
-  positionScriptNav(el, bottomOffset);
+  positionZoomIndicator(); // it keeps beside the page number, whose width changes with the number
 }
 /* THE TOP / BOTTOM BUTTONS
    Two small buttons sit right of the page number. They move the VIEW to the
@@ -9612,12 +9613,27 @@ function goToScriptEdge(which){
   if(Math.abs(y-pan.y)<1) return;
   animateTransformTo({x:pan.x, y}, zoom);
 }
-function positionScriptNav(indicator, bottomOffset){
+/* Bottom-right of the canvas, clear of the On-Set sidebar and the Index Cards
+   pane; with the minimap open it sits just above that, right edges aligned. */
+function positionScriptNav(){
   const nav=document.getElementById('scriptNav');
   if(!nav) return;
-  const ir=indicator.getBoundingClientRect();
-  nav.style.left=(ir.right+8)+'px';
-  nav.style.bottom=(bottomOffset+(ir.height-nav.offsetHeight)/2)+'px';
+  if(isPortraitChrome()){
+    const bottomBar=document.getElementById('rightSidebar');
+    nav.style.right='20px';
+    nav.style.bottom=((state.panelsVisible.right && bottomBar ? bottomBar.getBoundingClientRect().height : 0)+splitPaneExtent('h')+20)+'px';
+  } else {
+    let rightOffset=20;
+    if(state.panelsVisible.right){
+      const sb=document.getElementById('rightSidebar');
+      if(sb) rightOffset=sb.getBoundingClientRect().width+20;
+    }
+    rightOffset+=splitPaneExtent('w');
+    nav.style.right=rightOffset+'px';
+    const pi=document.getElementById('pageIndicator');
+    nav.style.bottom=(pi && pi.style.bottom ? pi.style.bottom : '20px'); // level with the page number
+  }
+  stackZoomOnMinimap(nav);
   const top=document.getElementById('btnScriptTop'), bot=document.getElementById('btnScriptBottom');
   if(top) top.disabled=Math.abs(scriptEdgePan('top')-pan.y)<2;
   if(bot) bot.disabled=Math.abs(scriptEdgePan('bottom')-pan.y)<2;
@@ -9641,29 +9657,22 @@ function zoomAt(sx, sy, newZoom){
   scheduleZoomSave();
 }
 let zoomIndicatorTimer=null;
+/* The zoom badge sits right of the page number, bottom-left, on the same line. */
 function positionZoomIndicator(){
   const el=document.getElementById('zoomIndicator');
-  if(!el) return;
-  if(isPortraitChrome()){
-    // The On-Set panel is along the bottom now, not the right edge.
-    const bottomBar=document.getElementById('rightSidebar');
-    el.style.right='20px';
-    el.style.bottom = ((state.panelsVisible.right && bottomBar ? bottomBar.getBoundingClientRect().height : 0) + splitPaneExtent('h') + 20)+'px';
-    stackZoomOnMinimap(el);
-    return;
+  if(el){
+    const pi=document.getElementById('pageIndicator');
+    if(pi){
+      const r=pi.getBoundingClientRect();
+      el.style.right='auto';
+      el.style.left=(r.right+8)+'px';
+      el.style.bottom=pi.style.bottom || '20px';
+    }
   }
-  el.style.bottom='20px';
-  let rightOffset=20;
-  if(state.panelsVisible.right){
-    const sb=document.getElementById('rightSidebar');
-    if(sb) rightOffset = sb.getBoundingClientRect().width + 20;
-  }
-  rightOffset += splitPaneExtent('w');
-  el.style.right=rightOffset+'px';
-  stackZoomOnMinimap(el);
+  positionScriptNav();
 }
-/* With the minimap open in the canvas's bottom-right corner, the zoom badge
-   sits just above it, right edges aligned. */
+/* With the minimap open in the canvas's bottom-right corner, a badge or
+   button group that lives there sits just above it, right edges aligned. */
 function stackZoomOnMinimap(el){
   const mm=document.getElementById('minimap');
   if(!mm || mm.classList.contains('hidden')) return;
@@ -13784,7 +13793,7 @@ function goToSceneEl(el){
 /* Lights a scene heading for a moment so the eye finds it at once after a
    jump. Only a class on the block (never saved, never an undo step); one
    heading at a time, and a second jump moves the light. */
-const SH_FLASH_MS=2400;
+const SH_FLASH_MS=1400;
 let _shFlashEl=null, _shFlashTimer=0;
 function flashSceneHeading(el){
   if(el && !content.contains(el)){ const id=el.dataset && el.dataset.id; el=id ? lineBlockById(id) : null; }
