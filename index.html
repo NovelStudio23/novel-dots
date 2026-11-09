@@ -56,17 +56,24 @@
   --mono: 'ND Courier', Courier, 'Courier New', monospace;
 }
 body.theme-beige{ --canvas:var(--canvas-beige); }
+/* Pinboard: Green is the soft "eye-protection" green (bean-paste green, #C7EDCC = 199, 237, 204) that Word's
+   and Windows' eye-protection settings use. Only the pinboard around the pages takes it; dialog fields stay as they are. */
+body.theme-green{ --desk:#C7EDCC; }
+body.theme-dark.theme-green{ --desk:#17211B; }
 /* The desk the pages sit on, apart from --canvas: --canvas is also the fill of
    the form fields in the dialogs, so a dark desk must not change it. */
 body{ --desk:var(--canvas); }
 /* ---------- EYE COMFORT ----------
-   A dark-grey pinboard (Premiere Pro's panel grey) around soft grey pages with
-   the ink unchanged. The pages are two steps greyer than the Gray look's, and
-   everything that sits ON a page -- the secondary text, the empty title-page
-   lines, the page edges -- is darkened to keep its contrast on the grey. The
-   toolbars and dialogs stay as they are in Light. */
+   A grey workspace in the manner of Premiere Pro's main layout: the desk, the
+   top and bottom bars, the sidebars, the dialogs and the Settings window are
+   all mid-dark greys (see "EYE COMFORT: the grey workspace" further down, where
+   the chrome palette is set). The pages are soft grey, two steps greyer than
+   the Gray look's, with the ink unchanged, and everything that sits ON a page
+   -- the secondary text, the empty title-page lines, the page edges -- is
+   darkened to keep its contrast on the grey. Everything inside #world (the
+   pages, notes, images, drawings, connectors) keeps its light palette. */
 body.theme-eye{
-  --desk:#232323;
+  --desk:#424242;
   --paper:#D1D1D1; --paper-edge:#B4B4B4;
   --ink-soft:#4A4A4A; --drawingbg:#D6D6D3;
 }
@@ -110,6 +117,7 @@ body.theme-dark .note-close-btn:hover{ background:rgba(255,255,255,.09); }
 body.theme-dark .note-category-select{ background:rgba(255,255,255,.08); }
 body.theme-dark .theme-swatch.gray{ background:#141416; }
 body.theme-dark .theme-swatch.beige{ background:#1B1915; }
+body.theme-dark .theme-swatch.green{ background:#17211B; }
 body.theme-dark .theme-swatch.eye{ background:linear-gradient(135deg,#232323 50%,#D1D1D1 50%); }
 /* The near-black pen would vanish on a dark page. Only what is displayed
    changes: the stroke keeps its stored colour, so it still prints dark. */
@@ -404,6 +412,7 @@ body.read-only-mode .drawing-hit{cursor:default;}
 .theme-swatch{width:18px; height:18px; border-radius:5px; border:1px solid var(--chrome-line-strong); flex:none;}
 .theme-swatch.gray{background:#E8E8E8;}
 .theme-swatch.beige{background:#EDE6D6;}
+.theme-swatch.green{background:#C7EDCC;}
 .theme-swatch.eye{background:linear-gradient(135deg,#232323 50%,#D1D1D1 50%);}
 .theme-option input{accent-color:var(--accent);}
 
@@ -447,6 +456,24 @@ body.read-only-mode .drawing-hit{cursor:default;}
 }
 .project-folder-head svg{width:13px; height:13px; flex:none;}
 .landing-empty{color:var(--text-chrome-dim); font-size:13px; padding:6px 8px;}
+/* The Trash: a row under My Projects, and its list in the centre pane. */
+.trash-row{flex:none; display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 11px; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--text-chrome); font-size:13px; text-align:left; cursor:pointer;}
+.trash-row svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+.trash-row .tr-count{margin-left:auto; font-size:11.5px; color:var(--text-chrome-dim);}
+.trash-row:hover{background:var(--ui-hover, var(--chrome-bg-soft));}
+.trash-row.selected{background:var(--accent); color:#fff;}
+.trash-row.selected .tr-count{color:rgba(255,255,255,.85);}
+.trash-view{width:min(600px,100%); align-self:center; display:flex; flex-direction:column; gap:12px; min-height:0; max-height:100%;}
+.trash-head{display:flex; align-items:center; gap:12px;}
+.trash-head h2{margin:0; font-family:var(--serif); font-size:20px; font-weight:500; flex:1;}
+.trash-note{font-size:12.5px; color:var(--text-chrome-dim); margin:0;}
+.trash-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; min-height:0;}
+.trash-item{display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--chrome-line); border-radius:10px; background:var(--chrome-bg);}
+.trash-item .ti-main{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+.trash-item .ti-title{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.trash-item .ti-meta{font-size:11.5px; color:var(--text-chrome-dim);}
+.trash-item .ti-meta.soon{color:var(--danger);}
+.trash-empty{color:var(--text-chrome-dim); font-size:13px; text-align:center; padding:30px 0;}
 .landing-preview{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:40px;}
 /* ---------- SELECTED PROJECT (centre pane) ---------- */
 .preview-doc{width:104px; height:130px; filter:drop-shadow(0 8px 18px rgba(0,0,0,.14));}
@@ -676,14 +703,17 @@ body.sidebar-resizing.row{cursor:row-resize;}
 .right-topbar{justify-content:flex-start; gap:10px;}
 
 .edge-tab{
-  position:absolute; top:12px; width:16px; height:40px; border-radius:0 8px 8px 0;
-  background:var(--chrome-bg); border:1px solid var(--chrome-line-strong); border-left:none; color:var(--text-chrome-dim);
+  /* A square tab hung straight from the bottom edge of the top bar (no gap, no
+     rounded corners). Its width is the scrollbar column's, so the script
+     scrollbar, which starts just below it, reads as one line with it. */
+  position:absolute; top:0; width:16px; height:40px; border-radius:0;
+  background:var(--chrome-bg); border:1px solid var(--chrome-line-strong); border-left:none; border-top:none; color:var(--text-chrome-dim);
   display:flex; align-items:center; justify-content:center; z-index:31; padding:0;
 }
 .edge-tab svg{width:13px; height:13px;}
 .edge-tab:hover{color:var(--accent); background:var(--accent-tint);}
 #leftEdgeTab{left:0;}
-#rightEdgeTab{right:0; border-radius:8px 0 0 8px; border-left:1px solid var(--chrome-line-strong); border-right:none;}
+#rightEdgeTab{right:0; border-radius:0; border-left:1px solid var(--chrome-line-strong); border-right:none;}
 .edge-tab.hidden{display:none;}
 
 /* Word-style floating zoom-level badge: bottom-right of the window when the
@@ -831,6 +861,15 @@ body.note-select-mode #screenplayContent, body.note-select-mode #screenplayConte
 /* The location line: a hairline in red running the full width of the
    sidebar, edge to edge (past the content padding), over every lane. */
 .oe-now{position:absolute; left:-12px; right:-12px; height:0; border-top:1px solid #E5383B; pointer-events:none; z-index:5;}
+/* "Pick up where you left off": the bookmark that marks where the writer last typed (see WELCOME BACK). */
+.bookmark-mark{
+  position:absolute; width:18px; height:24px; padding:0; border:none; background:none; cursor:pointer; z-index:30;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); transition:transform .15s;
+}
+.bookmark-mark svg{display:block; width:18px; height:24px; fill:var(--accent); stroke:#fff; stroke-width:1.4; stroke-linejoin:round;}
+.bookmark-mark:hover{transform:translateY(-2px) scale(1.1);}
+.bookmark-mark.in-lane{right:-6px; z-index:6;}
+.bookmark-mark.on-bar{position:fixed; z-index:210;}   /* above the scrollbar (200) it marks */
 /* ---------- Outline Editor, laid flat (portrait) ---------- */
 .oe-hgrid{display:grid; grid-template-columns:auto auto; align-items:start;}
 .oe-gutter{
@@ -1594,6 +1633,15 @@ body.note-dragging, body.note-dragging *{cursor:grabbing !important;}
   padding:20px; box-shadow:0 20px 50px rgba(0,0,0,.22);
 }
 .modal-title{font-family:var(--serif); font-size:16px; margin:0 0 12px;}
+/* A window with no Cancel and no Close of its own gets an x (see ensureModalClose). */
+.modal-box{position:relative;}
+.modal-x{
+  position:absolute; top:10px; right:12px; width:26px; height:26px; padding:0; border:none; border-radius:6px;
+  background:none; color:var(--text-chrome-dim); font-size:20px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.modal-x:hover{background:var(--ui-hover); color:var(--text-chrome);}
+.modal-box.has-x .modal-title{padding-right:30px;}
 .modal-box input[type=text], .modal-box textarea{
   width:100%; background:var(--canvas); border:1px solid var(--chrome-line-strong); color:var(--text-chrome);
   border-radius:6px; padding:9px 10px; font-size:13px; margin-bottom:10px;
@@ -1706,7 +1754,7 @@ body.ruler-h-on #canvasHint{top:32px;}
 #app.portrait-mode #leftSidebar .sidebar-resize::after{inset:3px 0;}
 /* The ribbon is wider than a portrait iPad: let the panel scroll sideways
    rather than clipping half its buttons off the edge. */
-#app.portrait-mode .ribbon-panel{overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; scrollbar-width:thin;}
+/* (the toolbar's panels scroll as one strip now, in every layout: see TOOLBAR STRIP) */
 #app.portrait-mode .ribbon-tabs{overflow-x:auto; flex-wrap:nowrap;}
 #app.portrait-mode #rightSidebar{border-left:none; border-top:1px solid var(--chrome-line); width:auto; height:var(--strip-right-h);}
 /* In portrait the right panel is the bottom strip: its handle is the top edge, and dragging up grows it. */
@@ -1778,8 +1826,8 @@ body.ruler-h-on #canvasHint{top:32px;}
 
 /* Edge tabs reappear on the edge the panel left from. */
 #app.portrait-mode .edge-tab{top:auto; bottom:auto; left:auto; right:12px; width:40px; height:16px;}
-#app.portrait-mode #leftEdgeTab{top:0; border-radius:0 0 8px 8px; border:1px solid var(--chrome-line-strong); border-top:none;}
-#app.portrait-mode #rightEdgeTab{bottom:0; border-radius:8px 8px 0 0; border:1px solid var(--chrome-line-strong); border-bottom:none;}
+#app.portrait-mode #leftEdgeTab{top:0; border-radius:0; border:1px solid var(--chrome-line-strong); border-top:none;}
+#app.portrait-mode #rightEdgeTab{bottom:0; border-radius:0; border:1px solid var(--chrome-line-strong); border-bottom:none;}
 #app.portrait-mode .edge-tab svg{transform:rotate(90deg);}
 /* On iPad the show-toolbar tabs are 20% larger, for a fingertip. */
 html.device-ipad .edge-tab{width:19.2px; height:48px;}
@@ -2198,6 +2246,29 @@ body{font-family:var(--sans); font-size:13px;}
 #topbar{background:var(--chrome-bg); border-bottom:1px solid var(--chrome-line); box-shadow:0 1px 0 rgba(0,0,0,.02);}
 .tb-bar{height:42px; border-bottom:1px solid var(--chrome-line); padding:0 12px;}
 .tb-ribbon{height:60px; padding:0 12px;}
+/* ---------- TOOLBAR STRIP ----------
+   The three tabs' buttons lie side by side in one strip that scrolls sideways,
+   so a button on another tab is a scroll away, not a tab click and a button
+   click. Each tab keeps its own empty space to the right of its last button
+   (a panel is never narrower than the bar), so only one tab's buttons show at
+   rest, and a thin line marks the start of the next tab. Which tab is "current"
+   is decided by the strip's position (see RIBBON TABS in the script). */
+#ribbonPanels{
+  position:relative; display:flex; flex-wrap:nowrap; align-items:stretch; gap:0; padding:0;
+  overflow-x:auto; overflow-y:hidden; scrollbar-width:none; overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+}
+#ribbonPanels::-webkit-scrollbar{display:none;}
+#ribbonPanels .ribbon-panel{
+  display:flex; flex:0 0 auto; align-items:center; gap:10px;
+  min-width:100%; box-sizing:border-box; padding:0 12px; position:relative;
+}
+#ribbonPanels .ribbon-panel::before{
+  content:''; position:absolute; left:0; top:50%; width:1px; height:44px; transform:translateY(-50%);
+  background:var(--chrome-line-strong); pointer-events:none;
+}
+/* Nothing comes before the first tab, unless the strip loops round. */
+#ribbonPanels:not(.rb-loop) .ribbon-panel:first-child::before{display:none;}
 #topbar .tb-sep{height:26px; margin:0 6px; background:var(--chrome-line);}
 .tb-bar .tb-sep{height:18px;}
 #projectTitle{font-family:var(--sans); font-size:13.5px; font-weight:600; letter-spacing:-.01em; padding:4px 8px; border-radius:var(--ui-radius-s);}
@@ -2418,6 +2489,60 @@ body.theme-dark .report-tab.active{background:#4A4A52;}
 .split-seg button:hover{background:var(--ui-hover);}
 .split-seg button.on{background:var(--chrome-bg); color:var(--text-chrome); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.05);}
 body.theme-dark .split-seg button.on{background:#4A4A52;}
+
+/* ---------- EYE COMFORT: the grey workspace ----------
+   Neutral greys (no blue cast), Premiere Pro's manner: bars, sidebars and
+   dialogs #333, their soft fills #3D3D3D, the desk a step lighter at #424242
+   so the pages stand out, the dialog fields a step darker at #2B2B2B. Text and
+   accents use the Dark appearance's values, which are made for a dark surface.
+   The script's own colours are untouched: the pages and everything in #world
+   take the light palette back (second rule), so notes, images and drawings look
+   exactly as they did. Nothing here applies in Dark, which wins. */
+body.theme-eye{
+  --canvas:#2B2B2B;
+  --chrome-bg:#333333; --chrome-bg-soft:#3D3D3D;
+  --chrome-line:#4A4A4A; --chrome-line-strong:#5E5E5E;
+  --text-chrome:#E8E8E8; --text-chrome-dim:#ABABAB; --text-dim:#A0A0A0;
+  --accent:#3D7CF2; --accent-bright:#74A7FA; --accent-dim:#6A9CF2; --accent-tint:#2B3B55;
+  --resolved:#46C685; --danger:#E46767;
+  --ui-well:rgba(128,128,128,.26); --ui-hover:rgba(255,255,255,.07); --ui-press:rgba(255,255,255,.12);
+  --ui-knob:#666666;
+  --ui-shadow-1:0 1px 2px rgba(0,0,0,.4), 0 0 0 .5px rgba(255,255,255,.05);
+  --ui-shadow-2:0 6px 18px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+  --ui-shadow-pop:0 20px 54px rgba(0,0,0,.55), 0 3px 10px rgba(0,0,0,.35), 0 0 0 .5px rgba(255,255,255,.08);
+}
+body.theme-eye #world{
+  color-scheme:light;
+  --canvas:#E8E8E8;
+  --chrome-bg:#FBFBFC; --chrome-bg-soft:#F2F2F5; --chrome-line:#E3E3E8; --chrome-line-strong:#D1D1D7;
+  --text-chrome:#1D1D1F; --text-chrome-dim:#6E6E76; --text-dim:#767676;
+  --accent:#2B6CDE; --accent-bright:#3D7CF2; --accent-dim:#1E52AE; --accent-tint:#E9F1FE;
+  --resolved:#1E9E5A; --danger:#C43D3D;
+  --ui-well:rgba(118,118,128,.12); --ui-hover:rgba(118,118,128,.10); --ui-press:rgba(118,118,128,.18);
+  --ui-knob:#FFFFFF;
+  --ui-shadow-1:0 1px 2px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.04);
+  --ui-shadow-2:0 4px 14px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.06);
+  --ui-shadow-pop:0 18px 48px rgba(0,0,0,.18), 0 3px 10px rgba(0,0,0,.08), 0 0 0 .5px rgba(0,0,0,.06);
+}
+body.theme-eye .pw-overlay{
+  --chrome-bg:#2E2E2E; --chrome-bg-soft:#383838; --chrome-line:#444444; --chrome-line-strong:#5A5A5A;
+  --text-chrome:#E8E8E8; --text-chrome-dim:#ABABAB;
+}
+body.theme-eye .pw-overlay.in{background:rgba(0,0,0,.5);}
+body.theme-eye .pw-seg button.on{background:color-mix(in srgb, var(--text-chrome) 22%, transparent);}
+body.theme-eye .ribbon-tab.active{background:#505050; box-shadow:0 1px 2px rgba(0,0,0,.4);}
+body.theme-eye .report-tab.active, body.theme-eye .split-seg button.on{background:#505050;}
+body.theme-eye .toast{background:color-mix(in srgb, #454545 92%, transparent);}
+body.theme-eye .modal-overlay{background:rgba(0,0,0,.5);}
+body.theme-eye .modal-btn.danger{color:#2A1111;}
+body.theme-eye .modal-btn.danger-outline:hover{background:#3F2A2A;}
+body.theme-eye .tc-what del, body.theme-eye .cmp-text del{color:#F09A9A;}
+body.theme-eye #projectTitle:focus,
+body.theme-eye .fr-row input[type=text]{background:var(--chrome-bg-soft);}
+body.theme-eye .page-indicator{background:var(--chrome-bg-soft); box-shadow:0 6px 18px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);}
+body.theme-eye #canvasHint{background:rgba(51,51,51,.94);}
+/* The near-black pen swatch would vanish on a dark palette. */
+body.theme-eye .pen-swatch[data-color="#242424"]{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);}
 .split-x{width:28px; height:28px; border-radius:7px; color:var(--text-chrome-dim);}
 .split-x:hover, .split-x.on{background:var(--ui-hover); color:var(--text-chrome);}
 /* index cards */
@@ -2714,8 +2839,8 @@ body.theme-dark .split-seg button.on{background:#4A4A52;}
     <div id="minimap" class="minimap hidden" aria-label="Minimap"><canvas></canvas></div>
     <div id="zoomIndicator" class="zoom-indicator"></div>
     <div id="pageIndicator" class="page-indicator"></div>
-    <div id="scriptNav" class="script-nav" role="group" aria-label="Go to the top or bottom of the script">
-      <button type="button" id="btnScriptTop" title="Top of script" aria-label="Top of script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12"/><path d="M12 20V9"/><path d="m7 13 5-5 5 5"/></svg></button>
+    <div id="scriptNav" class="script-nav" role="group" aria-label="Go to the first page or the bottom of the script">
+      <button type="button" id="btnScriptTop" title="First page of the script" aria-label="First page of the script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12"/><path d="M12 20V9"/><path d="m7 13 5-5 5 5"/></svg></button>
       <button type="button" id="btnScriptBottom" title="Bottom of script" aria-label="Bottom of script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20h12"/><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/></svg></button>
     </div>
     <div id="selectionBar" class="selection-bar hidden">
@@ -2774,6 +2899,10 @@ body.theme-dark .split-seg button.on{background:#4A4A52;}
       </div>
       <div class="landing-section-label">Projects</div>
       <div class="landing-projects-list" id="projectsList"></div>
+      <button class="trash-row" id="trashRow" type="button" title="Deleted projects wait here for 30 days">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+        <span class="tr-label">Trash</span><span class="tr-count" id="trashCount"></span>
+      </button>
     </div>
     <div class="landing-preview" id="landingPreview"></div>
   </div>
@@ -3490,8 +3619,9 @@ function applySpellcheckToBlock(el){
 function applySpellcheck(){
   content.spellcheck=spellcheckOn;
   allLineEls().forEach(applySpellcheckToBlock);
-  // Note bodies are prose too, and get the same setting.
-  document.querySelectorAll('.note-body[contenteditable]').forEach(el=>{ el.spellcheck=spellcheckOn; });
+  // Note bodies, Index Card titles and summaries and Beat Board text are prose too,
+  // and get the same setting (they used to be always on, whatever the setting said).
+  document.querySelectorAll('.note-body[contenteditable], .ic-title[contenteditable], .ic-summary[contenteditable], .bb-edit[contenteditable]').forEach(el=>{ el.spellcheck=spellcheckOn; });
 }
 async function loadSpellcheckPref(){
   try{
@@ -9112,7 +9242,75 @@ function applyTransform(){
   scheduleRulers();
   scheduleMinimap();
   scheduleCanvasScrollbar();
+  scheduleNativeTextUiNudge();
 }
+/* =========================================================
+   NATIVE SPELLING / AUTOCORRECT BUBBLE
+   ---------------------------------------------------------
+   The blue dotted underline, and the little bubble with the suggested word
+   that goes with it, are drawn by the system (Safari / WebKit), in a window
+   of their own above the page: the app does not draw them. The system moves or
+   closes that bubble when the page SCROLLS or the selection changes. This
+   canvas never scrolls, it pans (a CSS transform), so the system never hears
+   of the move and the bubble stays where it was on the screen.
+   The fix: while the view moves and the caret or a selection sits in text, the
+   selection is nudged by one character and put straight back (one task, so
+   nothing is painted in between and the page sees the same selection as
+   before). The system takes that as a selection change and closes the bubble;
+   it may show it again, in the right place, once the view has stopped.
+   Never while typing, never during IME composition, never with no selection,
+   never in a field that is not editable, and the selection is always valid.
+   ========================================================= */
+var NU_EVERY=120, NU_SETTLE=160, NU_SETTLE_ANIMATED=560, NU_TYPING_QUIET=500;
+var _nuLast=0, _nuTimer=0, _nuTypedAt=0, _nuComposing=false, _nuBroken=false, _nuQuietUntil=0, _nuPressInText=false;
+/* Returns true when it nudged, false when there was nothing to do, and 'wait'
+   when the writer is busy with the selection (typing, composing, a mouse press
+   inside the text, i.e. selecting by dragging) and it should try again soon. */
+function nudgeNativeTextUi(){
+  if(_nuBroken) return false;
+  if(_nuComposing || _nuPressInText) return 'wait';
+  if(typeof spellcheckOn!=='undefined' && !spellcheckOn) return false;   // spelling off: no bubble to move
+  if(performance.now()-_nuTypedAt<NU_TYPING_QUIET) return 'wait';         // the writer is typing
+  try{
+    if(!document.hasFocus()) return false;
+    const sel=window.getSelection();
+    if(!sel || sel.rangeCount===0 || !sel.focusNode || typeof sel.modify!=='function') return false;
+    const fn=sel.focusNode;
+    const host=(fn.nodeType===1 ? fn : fn.parentElement);
+    if(!host || !host.isContentEditable) return false;
+    const block=host.closest('.line-block, .tp-line, .note-body, .bb-edit, [contenteditable]');
+    if(block && !block.textContent) return false;                         // an empty line holds no word
+    const a=sel.anchorNode, ao=sel.anchorOffset, f=sel.focusNode, fo=sel.focusOffset;
+    // Stay inside the same text: step back when there is text before the focus, forward when not.
+    sel.modify('extend', fo>0 ? 'backward' : 'forward', 'character');
+    sel.setBaseAndExtent(a, ao, f, fo);
+    return true;
+  }catch(err){ _nuBroken=true; return false; }                            // never break panning over this
+}
+function scheduleNativeTextUiNudge(){
+  const sel=window.getSelection ? window.getSelection() : null;
+  if(!sel || sel.rangeCount===0) return;                                  // cheap exit on every frame
+  const now=performance.now();
+  if(now<_nuQuietUntil) return;                                            // the nudge's own echo
+  if(now-_nuLast>=NU_EVERY){
+    _nuLast=now;
+    if(nudgeNativeTextUi()===true) _nuQuietUntil=performance.now()+40;
+  }
+  // One more once the view has settled (and again shortly if the writer was busy then).
+  clearTimeout(_nuTimer);
+  let tries=0;
+  const settle=()=>{
+    _nuLast=performance.now();
+    if(nudgeNativeTextUi()==='wait' && ++tries<4) _nuTimer=setTimeout(settle, 250);
+  };
+  _nuTimer=setTimeout(settle, world.classList.contains('animated') ? NU_SETTLE_ANIMATED : NU_SETTLE);
+}
+['keydown','beforeinput','input'].forEach(t=>document.addEventListener(t, ()=>{ _nuTypedAt=performance.now(); }, true));
+document.addEventListener('mousedown', e=>{ _nuPressInText=(e.button===0 && !!(e.target && e.target.closest && e.target.closest('[contenteditable]'))); }, true);
+['mouseup','dragend'].forEach(t=>document.addEventListener(t, ()=>{ _nuPressInText=false; }, true));
+window.addEventListener('blur', ()=>{ _nuPressInText=false; });
+document.addEventListener('compositionstart', ()=>{ _nuComposing=true; _nuTypedAt=performance.now(); }, true);
+document.addEventListener('compositionend', ()=>{ _nuComposing=false; _nuTypedAt=performance.now(); }, true);
 /* =========================================================
    SCRIPT SCROLLBAR
    ---------------------------------------------------------
@@ -9137,28 +9335,50 @@ function scheduleCanvasScrollbar(){
   const raf=window.requestAnimationFrame || (f=>setTimeout(f, 16));
   _csbRaf=raf(()=>{ _csbRaf=0; updateCanvasScrollbar(); });
 }
+/* The "show sidebar" tabs that are on screen, as rectangles. Both scrollbars
+   keep a gap clear of them: the vertical bar starts below a tab at the top
+   (or stops above one at the bottom), the horizontal bar stops short of one
+   on its line. A tab that is hidden takes no room. */
+function visibleEdgeTabRects(){
+  const out=[];
+  ['leftEdgeTab','rightEdgeTab'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el || el.classList.contains('hidden')) return;
+    const b=el.getBoundingClientRect();
+    if(b.width && b.height) out.push(b);
+  });
+  return out;
+}
 function updateCanvasScrollbar(){
   updateCanvasScrollbarH(); // first: the vertical bar leaves the corner to it
   const sb=canvasScrollbar;
   const r=viewport.getBoundingClientRect();
   const landing=document.getElementById('landingPage');
-  if(!state.projectId || !r.width || !r.height || (landing && !landing.classList.contains('hidden'))){ sb.classList.add('hidden'); _csbGeom=null; return; }
+  if(!state.projectId || !r.width || !r.height || (landing && !landing.classList.contains('hidden'))){ sb.classList.add('hidden'); _csbGeom=null; positionScrollbarBookmark(); return; }
   const bottom=scriptWorldBottom();
   const viewTop=-pan.y/zoom, viewH=r.height/zoom;
   const lo=Math.min(0, viewTop), hi=Math.max(bottom, viewTop+viewH), total=hi-lo;
-  if(total<=viewH+1 && !_csbDrag){ sb.classList.add('hidden'); _csbGeom=null; return; }
+  if(total<=viewH+1 && !_csbDrag){ sb.classList.add('hidden'); _csbGeom=null; positionScrollbarBookmark(); return; }
   const inset=6;
   const canvasBottom=canvasVisibleBottom(r);
   let bottomInset=inset+(r.bottom-canvasBottom)+(_csbHVisible ? 14 : 0);
   const mm=document.getElementById('minimap');
   if(mm && !mm.classList.contains('hidden')){ const mr=mm.getBoundingClientRect(); if(mr.height && mr.top<r.bottom && mr.right>r.right-24) bottomInset=Math.max(bottomInset, r.bottom-mr.top+8); }
-  const trackH=Math.max(48, r.height-inset-bottomInset);
-  sb.style.top=(r.top+inset)+'px'; sb.style.left=(r.right-14)+'px'; sb.style.height=trackH+'px';
+  let topInset=inset;
+  const tabGap=8;
+  visibleEdgeTabRects().forEach(b=>{
+    if(b.right<r.right-14-tabGap || b.left>r.right-2+tabGap) return; // not over or under the bar
+    if(b.top+b.height/2<r.top+r.height/2) topInset=Math.max(topInset, b.bottom-r.top+tabGap);
+    else bottomInset=Math.max(bottomInset, r.bottom-b.top+tabGap);
+  });
+  const trackH=Math.max(48, r.height-topInset-bottomInset);
+  sb.style.top=(r.top+topInset)+'px'; sb.style.left=(r.right-14)+'px'; sb.style.height=trackH+'px';
   const thumbH=Math.max(32, trackH*Math.min(1, viewH/total));
   const thumbTop=(trackH-thumbH)*Math.max(0, Math.min(1, (viewTop-lo)/Math.max(1, total-viewH)));
   const th=sb.firstChild; th.style.top=thumbTop+'px'; th.style.height=thumbH+'px';
-  _csbGeom={lo, total, viewH, trackH, thumbH, thumbTop, top:r.top+inset};
+  _csbGeom={lo, total, viewH, trackH, thumbH, thumbTop, top:r.top+topInset};
   sb.classList.remove('hidden');
+  positionScrollbarBookmark();
 }
 canvasScrollbar.addEventListener('pointerdown', e=>{
   if(e.button>0 || !_csbGeom) return;
@@ -9231,14 +9451,21 @@ function updateCanvasScrollbarH(){
   if(total<=viewW+1 && !_csbHDrag) return hide();
   const inset=6, bottom=canvasVisibleBottom(r);
   let rightEnd=r.right-inset-14; // leave the corner to the vertical bar
+  let leftStart=r.left+inset;
   const mm=document.getElementById('minimap');
   if(mm && !mm.classList.contains('hidden')){ const mr=mm.getBoundingClientRect(); if(mr.width && mr.bottom>bottom-20 && mr.left<rightEnd) rightEnd=Math.max(r.left+80, mr.left-8); }
-  const trackW=Math.max(48, rightEnd-(r.left+inset));
-  sb.style.left=(r.left+inset)+'px'; sb.style.top=(bottom-14)+'px'; sb.style.width=trackW+'px';
+  const tabGap=8;
+  visibleEdgeTabRects().forEach(b=>{
+    if(b.bottom<bottom-14-tabGap || b.top>bottom-2+tabGap) return; // not on the bar's line
+    if(b.left+b.width/2>r.left+r.width/2) rightEnd=Math.min(rightEnd, b.left-tabGap);
+    else leftStart=Math.max(leftStart, b.right+tabGap);
+  });
+  const trackW=Math.max(48, rightEnd-leftStart);
+  sb.style.left=leftStart+'px'; sb.style.top=(bottom-14)+'px'; sb.style.width=trackW+'px';
   const thumbW=Math.max(32, trackW*Math.min(1, viewW/total));
   const thumbLeft=(trackW-thumbW)*Math.max(0, Math.min(1, (viewLeft-lo)/Math.max(1, total-viewW)));
   const th=sb.firstChild; th.style.left=thumbLeft+'px'; th.style.width=thumbW+'px';
-  _csbHGeom={lo, total, viewW, trackW, thumbW, thumbLeft, left:r.left+inset};
+  _csbHGeom={lo, total, viewW, trackW, thumbW, thumbLeft, left:leftStart};
   _csbHVisible=true;
   sb.classList.remove('hidden');
 }
@@ -9602,9 +9829,24 @@ function updatePageIndicator(){
    like a jump from the Outline does. A button that has nothing to do -- the
    view is already there -- is dimmed. */
 const SCRIPT_EDGE_GAP=48;
+/* World y of the top of the first page of the SCRIPT: the sheet after the
+   title page, the one the first scene heading sits on. Found from the first
+   line after the title page's closing break, so it holds in paged and in
+   continuous view (the sheets stay drawn in both). With no title page there
+   is no such line and the first sheet (y 0) is the answer. */
+function firstScriptPageTop(){
+  const fb=firstBodyBlock();
+  if(!fb) return 0;
+  const t=lineWorldTop(fb);
+  let top=null;
+  pageDecor.querySelectorAll('.page-sheet').forEach(sh=>{
+    if(sh.offsetTop<=t+1 && (top===null || sh.offsetTop>top)) top=sh.offsetTop;
+  });
+  return top!==null ? top : Math.max(0, t-M_TOP);
+}
 function scriptEdgePan(which){
   const r=viewport.getBoundingClientRect();
-  if(which==='top') return SCRIPT_EDGE_GAP;
+  if(which==='top') return SCRIPT_EDGE_GAP-firstScriptPageTop()*zoom; // page 1, not the title page
   return Math.min(SCRIPT_EDGE_GAP, r.height-SCRIPT_EDGE_GAP-scriptWorldBottom()*zoom);
 }
 function goToScriptEdge(which){
@@ -9736,6 +9978,116 @@ function placeOpeningCaret(){
   const b=firstScriptBlock();
   if(!b) return;
   try{ content.focus({preventScroll:true}); placeCaretAtStart(b); }catch(err){}
+}
+/* =========================================================
+   WELCOME BACK -- "pick up where you left off"
+   ---------------------------------------------------------
+   Word's way: the project remembers where the writer last TYPED (the
+   paragraph and the place in it), saved with the project. When the project is
+   opened again a bookmark marks that spot -- in the Scene Headings lane of the
+   left sidebar when the sidebar is open, on the right-hand scrollbar when it is
+   closed -- and clicking it takes the writer there, caret and all. The
+   bookmark goes when it is clicked or when the writer types.
+   ========================================================= */
+let lastEditPos=null;        // {id, off}: the paragraph last typed in, and the character offset in it
+let bookmarkPending=false;   // the bookmark is on offer
+function normalizeLastEdit(v){
+  if(!v || typeof v!=='object' || typeof v.id!=='string' || !v.id) return null;
+  const off=Number(v.off);
+  return {id:v.id, off:(isFinite(off) && off>=0) ? Math.floor(off) : 0};
+}
+function recordLastEdit(){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  const block=(sel && sel.rangeCount) ? getCurrentBlock(sel) : null;
+  if(!block || !block.dataset.id) return;
+  let off=0;
+  try{
+    const r=document.createRange();
+    r.selectNodeContents(block);
+    r.setEnd(sel.focusNode, sel.focusOffset);
+    off=r.toString().length;
+  }catch(err){}
+  lastEditPos={id:block.dataset.id, off};
+  if(bookmarkPending) dismissBookmark();       // the writer is back at work
+}
+content.addEventListener('input', recordLastEdit);
+function lastEditLine(){
+  if(!lastEditPos) return null;
+  return allLineEls().find(el=>el.dataset.id===lastEditPos.id) || null;
+}
+function bookmarkSvg(){ return '<svg viewBox="0 0 18 24"><path d="M2 1.5h14v21l-7-5-7 5z"/></svg>'; }
+function makeBookmarkEl(cls){
+  const b=document.createElement('button');
+  b.type='button'; b.className='bookmark-mark '+cls; b.id=cls==='on-bar' ? 'bookmarkOnBar' : '';
+  b.title='Pick up where you left off'; b.setAttribute('aria-label','Pick up where you left off');
+  b.innerHTML=bookmarkSvg();
+  b.addEventListener('pointerdown', e=>{ e.stopPropagation(); });   // a press on it never starts a pan or takes the caret
+  b.addEventListener('mousedown', e=>{ e.preventDefault(); e.stopPropagation(); });
+  b.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); jumpToLastEdit(); });
+  return b;
+}
+/* The bookmark for the Scene Headings lane (called while the lanes are built). */
+function bookmarkLaneNode(model, horiz){
+  if(!bookmarkPending || !state.panelsVisible.left) return null;
+  const el=lastEditLine();
+  if(!el) return null;
+  const rec=model.exact && model.exact.get(el.dataset.id);
+  if(!rec && model.pos.get(el.dataset.id)==null) return null;
+  const pos=(rec && model.pos.get(el.dataset.id)>=0) ? rec.p : 0;        // the title page: the top of the lanes
+  const at=(pos/8*outlineZoom)+'px';
+  const b=makeBookmarkEl('in-lane');
+  if(horiz){ b.style.left=at; b.style.top='-14px'; b.style.right='auto'; } else { b.style.top=at; }
+  return b;
+}
+function removeBookmarkMarks(){ document.querySelectorAll('.bookmark-mark').forEach(e=>e.remove()); }
+function dismissBookmark(){ bookmarkPending=false; removeBookmarkMarks(); }
+/* Show the bookmark where it belongs now: in the lanes when the left sidebar is open, on the scrollbar when not. */
+function syncBookmark(){
+  removeBookmarkMarks();
+  if(!bookmarkPending) return;
+  if(!lastEditLine()){ bookmarkPending=false; return; }
+  if(state.panelsVisible.left){ renderSidebar('left'); return; }      // the lane builds its own
+  document.body.appendChild(makeBookmarkEl('on-bar'));
+  positionScrollbarBookmark();
+}
+/* On the scrollbar the bookmark sits where the thumb would be if the view were taken to that spot. */
+function positionScrollbarBookmark(){
+  const b=document.getElementById('bookmarkOnBar');
+  if(!b) return;
+  const g=_csbGeom, el=lastEditLine();
+  if(!g || !el || !bookmarkPending){ b.style.display='none'; return; }
+  const ty=lineWorldTop(el);
+  const viewTop=Math.max(g.lo, Math.min(g.lo+g.total-g.viewH, ty-g.viewH*0.3));
+  const frac=(viewTop-g.lo)/Math.max(1, g.total-g.viewH);
+  const y=g.top+g.thumbH/2+(g.trackH-g.thumbH)*frac;
+  const sbl=parseFloat(canvasScrollbar.style.left)||0;
+  b.style.display='';
+  b.style.left=(sbl+6-9)+'px';   // centred on the scrollbar's track
+  b.style.top=(y-12)+'px';
+}
+function jumpToLastEdit(){
+  const el=lastEditLine();
+  const off=lastEditPos ? lastEditPos.off : 0;
+  dismissBookmark();
+  if(!el) return;
+  const r=viewport.getBoundingClientRect();
+  const y=lineWorldTop(el);
+  animateTransformTo({x:pan.x, y:r.height*0.35-y*zoom}, zoom);       // the spot a third of the way down the view
+  if(!readOnlyMode){
+    try{ content.focus({preventScroll:true}); placeCaretAt(el, off); }catch(err){}
+  }
+}
+/* Offered when a project opens, unless the spot is already on screen. */
+function offerBookmarkOnOpen(){
+  bookmarkPending=false; removeBookmarkMarks();
+  const el=lastEditLine();
+  if(!el) return;
+  const r=viewport.getBoundingClientRect();
+  const sy=pan.y+lineWorldTop(el)*zoom;
+  if(sy>=0 && sy<r.height-40) return;           // already in view: nothing to point to
+  bookmarkPending=true;
+  syncBookmark();
 }
 function panToWorldPoint(wx, wy){
   const r=viewport.getBoundingClientRect();
@@ -9942,7 +10294,7 @@ function drawMinimap(){
   const accent=(css.getPropertyValue('--accent')||'#4a6cf7').trim();
   const dark=document.body.classList.contains('theme-dark');
   // the sheets
-  ctx.fillStyle=dark ? '#3a3a3e' : '#ffffff';
+  ctx.fillStyle=dark ? '#3a3a3e' : ((css.getPropertyValue('--paper')||'').trim() || '#ffffff'); // the page's own colour (grey in Eye comfort)
   ctx.strokeStyle=dark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.14)'; ctx.lineWidth=1;
   if(continuousView){ ctx.fillRect(ox, oy, PAGE_W*s, bottom*s); ctx.strokeRect(ox+.5, oy+.5, PAGE_W*s-1, bottom*s-1); }
   else {
@@ -10117,8 +10469,10 @@ function linesTouchedBySelection(){
    offset that puts the card next to the dot has to be derived from the
    dot's own X. The floor is what keeps the promise that a card never sits
    on the paper: a dot dropped inside the script can't have its card beside
-   it, so the card stops at the page edge and the connector stretches to
-   reach it. A dot out in the open canvas gets its card right there. */
+   it, so the card starts at the page edge nearest the dot and the connector
+   stretches to reach it. A dot out in the open canvas gets its card right
+   there. This is only where a NEW card starts: once it exists the writer can
+   put it anywhere, over the script included. */
 const CARD_DOT_GAP=36;
 function defaultCardOffsetX(side, dotX){
   const beside = side==='left' ? (CARD_DOT_GAP-dotX) : (dotX+CARD_DOT_GAP-PAGE_W);
@@ -10211,16 +10565,49 @@ function createNote(kind, worldX, worldY, explicitLineId, extraLineIds){
   return note;
 }
 function noteKindLabel(k){ return k==='dot'?'Dot Note':k==='sticky'?'Sticky Note':'Drawing'; }
+/* Where a Dot Note made with the keyboard puts its dot: just above the caret
+   (above the start of the selection, if text is selected), the way a star or
+   a correction mark is written above a word. The card then goes to whichever
+   side of the script is nearer the dot (createNote decides by the dot's X).
+   Returns the spot in world coordinates and the paragraph the dot belongs to,
+   or null if the caret cannot be measured. */
+const DOT_ABOVE_CARET_GAP=8;   // the dot is 11px across: centre 8px above the line's top leaves a hair of air
+function dotSpotAboveCaret(block){
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || !content.contains(sel.anchorNode) || !content.contains(sel.focusNode)) return null;
+  let line=block;
+  let box=null;
+  try{
+    const rg=sel.getRangeAt(0).cloneRange();
+    rg.collapse(true);                                   // the caret, or the start of a selection
+    const startEl=rg.startContainer.nodeType===1 ? rg.startContainer : rg.startContainer.parentElement;
+    const startLine=startEl && startEl.closest ? startEl.closest('.line-block') : null;
+    if(startLine && content.contains(startLine)) line=startLine;
+    const sc=(content.getBoundingClientRect().width/ (content.offsetWidth||1)) || zoom;
+    const rs=Array.from(rg.getClientRects()).filter(r=>r.height>0 && r.height<LINE_H*3*sc);
+    if(rs.length){ const c=rs[rs.length-1]; box={x:c.left, top:c.top}; }
+  }catch(err){}
+  if(!box && sel.isCollapsed){ const cb=caretScreenBox(); if(cb) box={x:cb.x, top:cb.top}; }
+  if(!box) return null;
+  const w=domToWorld(box.x, box.top);
+  return {x:w.x, y:w.y-DOT_ABOVE_CARET_GAP, line};
+}
 function createNoteForBlock(kind, block){
   if(!block) return;
-  const y=lineWorldTop(block)+(block.offsetHeight||16)/2;
   if(kind==='sticky'){
+    const y=lineWorldTop(block)+(block.offsetHeight||16)/2;
     const x=lineTextEdgeWorldX(block,'right')+40;
     return createNote('sticky', x, y);
   }
-  const x=lineTextEdgeWorldX(block,'left')+18;
-  const extraLines=linesTouchedBySelection().map(b=>b.dataset.id).filter(id=>id!==block.dataset.id);
-  return createNote('dot', x, y, block.dataset.id, extraLines);
+  const spot=dotSpotAboveCaret(block);
+  if(!spot){   // the caret cannot be measured: beside the line, as before
+    const y=lineWorldTop(block)+(block.offsetHeight||16)/2;
+    const x=lineTextEdgeWorldX(block,'left')+18;
+    const extra=linesTouchedBySelection().map(b=>b.dataset.id).filter(id=>id!==block.dataset.id);
+    return createNote('dot', x, y, block.dataset.id, extra);
+  }
+  const extraLines=linesTouchedBySelection().map(b=>b.dataset.id).filter(id=>id!==spot.line.dataset.id);
+  return createNote('dot', spot.x, spot.y, spot.line.dataset.id, extraLines);
 }
 
 function migrateNote(note){
@@ -11105,8 +11492,10 @@ function attachDragReposition(handleEl, note, mode){
       grabOffsetX=downWorld.x-note.dotX; grabOffsetY=downWorld.y-note.dotY;
       freezeExtraDots(note); // the note's triangles stay put while its dot moves
     } else if(mode==='card' || dotActsAsCard){
+      // Measured from the card's LEFT edge, whichever margin it hangs in, so the
+      // card keeps its grip even if it is carried across the middle of the script.
       const g=noteCardGeom(note);
-      grabOffsetX=downWorld.x-g.nearX; grabOffsetY=downWorld.y-g.connectY;
+      grabOffsetX=downWorld.x-g.left; grabOffsetY=downWorld.y-g.connectY;
     }
     handleEl.setPointerCapture(e.pointerId);
   });
@@ -11167,10 +11556,13 @@ function attachDragReposition(handleEl, note, mode){
         note.dotAnchorOffsetY = targetY - lineWorldTop(line);
         // The note follows its dot: cardYOffset is stored relative to the
         // dot, so leaving it alone carries the card vertically; sideways the
-        // card moves by the dot's own step, never into the page (the same
-        // floor a card drag has, or the card's own offset if already nearer).
+        // card moves by the dot's own step. A card in the margin stops at the
+        // margin when the dot is taken into the script; a card the writer has
+        // put over the script (or onto the page edge) simply keeps its place
+        // relative to the dot.
         const nextOff = note.cardOffsetX + (note.side==='left' ? -ddx : ddx);
-        note.cardOffsetX = clamp(nextOff, Math.min(CARD_DOT_GAP, note.cardOffsetX), 1400);
+        const floor = note.cardOffsetX<20 ? 0-(PAGE_W+CARD_W_MAX) : Math.min(CARD_DOT_GAP, note.cardOffsetX);  // 20 = the nearest a card was ever let sit to the page edge
+        note.cardOffsetX = clamp(nextOff, floor, 1400);
         layoutAllNotes(); updateConnectors();
         // ...and so does everything pinned below it (Additional Notes).
         moveRestOfFamilyBy(before, noteVisualAnchor(note));
@@ -11178,16 +11570,21 @@ function attachDragReposition(handleEl, note, mode){
       return;
     }
     if(mode==='card' || dotActsAsCard){
-      const before=noteVisualAnchor(note);
-      const targetNearX=w.x-grabOffsetX, targetConnectY=w.y-grabOffsetY;
-      const side = targetNearX < PAGE_W/2 ? 'left' : 'right';
+      // A card can be put anywhere, over the script too: nothing pushes it out
+      // (only a NEW Dot Note starts outside the script). Its side is the one
+      // whose margin it is nearer to, by its centre; the stored offset is worked
+      // out so that the card stays exactly where it is dragged, on either side.
+      const g0=noteCardGeom(note);
+      const before={x:g0.left, y:noteVisualAnchor(note).y};
+      const left=w.x-grabOffsetX, targetConnectY=w.y-grabOffsetY;
+      const side = (left+g0.width/2) < PAGE_W/2 ? 'left' : 'right';
       note.side=side;
-      note.cardOffsetX = clamp(side==='left' ? (0-targetNearX) : (targetNearX-PAGE_W), 20, 1400);
+      note.cardOffsetX = clamp(side==='left' ? (0-(left+g0.width)) : (left-PAGE_W), 0-(PAGE_W+CARD_W_MAX), 1400);
       const dotY=dotWorldY(note);
       note.cardYOffset = targetConnectY - dotY;
       noteEls[note.id].wrap.dataset.side=note.side;
       layoutNote(note); updateConnectors();
-      moveRestOfFamilyBy(before, noteVisualAnchor(note));
+      moveRestOfFamilyBy(before, {x:noteCardGeom(note).left, y:noteVisualAnchor(note).y});
       return;
     }
   });
@@ -11383,8 +11780,12 @@ function resolveOverlapForNote(note){
     changed=false; iterations++;
     for(const other of sameSideNotes){
       const oEls=noteEls[other.id];
-      const oTop=noteCardGeom(other).top;
+      const og=noteCardGeom(other);
+      const oTop=og.top;
       const oH=other.height||oEls.card.offsetHeight||150;
+      // A card the writer has put elsewhere (over the script, say) is only stacked
+      // against when it really overlaps sideways as well.
+      if(cardLeft+cardW+GAP<=og.left || og.left+og.width+GAP<=cardLeft) continue;
       if(top<oTop+oH+GAP && top+cardH+GAP>oTop){
         const newTop=oTop+oH+GAP;
         if(newTop>top){ top=newTop; changed=true; }
@@ -13734,7 +14135,7 @@ function normalizeOutlinePlan(raw){
    the top of script page 1, from the same page model the editor draws. */
 function outlineScriptModel(){
   const blocks=Array.from(content.children).filter(el=>el.classList.contains('line-block'));
-  const m={pos:new Map(), end:0, labels:[], titleOffset:0, scenes:[], order:[]};
+  const m={pos:new Map(), exact:new Map(), end:0, labels:[], titleOffset:0, scenes:[], order:[]};
   if(!blocks.length) return m;
   const layout=computePageLayout(blocks);
   const breakEls=new Set(layout.breaks.map(b=>b.beforeEl));
@@ -13748,6 +14149,8 @@ function outlineScriptModel(){
     const h=naturalBlockHeight(el);
     const p=(page-off)*8+Math.min(7, Math.floor(used/BUDGET*8));
     m.pos.set(el.dataset.id, p);
+    // The same position without the rounding to eighths, and how far the paragraph runs (in eighths): the location line uses them.
+    m.exact.set(el.dataset.id, {p:(page-off)*8+used/BUDGET*8, span:h/BUDGET*8});
     if(page>=off) m.order.push({el, pos:p});
     const sp=splitOf.get(el);
     if(sp){ page++; used=Math.max(0, h-(sp.spaceLeft||0)); } else used+=h;
@@ -14086,13 +14489,33 @@ function showScenePopover(row, anchor){
   _oePop=pop;
 }
 document.addEventListener('pointerdown', e=>{ if(_oePop && !_oePop.contains(e.target)) closeOutlinePopover(); });
-/* The page position of the caret -- the reference app's location line. */
+/* Where the caret is along the script, in eighths of a page, as a fraction:
+   the reference app's location line. It follows the caret itself -- down
+   through a paragraph, line by line -- not just the page it is on. A paragraph
+   made since the lanes were last drawn (they are redrawn a moment after each
+   edit) is placed just after the nearest one before it that they know. */
 function outlineCaretPos(){
   const m=_oeModel;
   if(!m) return null;
-  const block=getCurrentBlock(window.getSelection());
-  if(block && m.pos.has(block.dataset.id)){ const p=m.pos.get(block.dataset.id); return p>=0 ? p : null; }
-  return null;
+  const sel=window.getSelection();
+  const block=getCurrentBlock(sel);
+  if(!block) return null;
+  const rec=m.exact && m.exact.get(block.dataset.id);
+  let p;
+  if(rec){
+    if(m.pos.get(block.dataset.id)<0) return null;                // on the title page
+    p=rec.p;
+    const br=block.getBoundingClientRect();
+    const cb=(sel && sel.rangeCount) ? caretScreenBox() : null;
+    if(cb && br.height>0) p+=Math.max(0, Math.min(0.999, (cb.top-br.top)/br.height))*rec.span;
+  } else {
+    let prev=block.previousElementSibling, steps=0;
+    while(prev && !(prev.dataset && m.exact.has(prev.dataset.id)) && steps<400){ prev=prev.previousElementSibling; steps++; }
+    if(!prev || m.pos.get(prev.dataset.id)<0) return null;
+    const r=m.exact.get(prev.dataset.id);
+    p=r.p+r.span;
+  }
+  return Math.max(0, p);
 }
 /* The Outline Editor draws the same model in whichever direction the chrome
    gives it room. Upright in the left sidebar (page 1 at the top, lanes side
@@ -14110,9 +14533,9 @@ function updateOutlineIndicator(){
   if(!line) return;
   const p=outlineCaretPos();
   if(p==null){ line.style.display='none'; return; }
-  // The line marks the PAGE containing the cursor, as the reference app's does.
+  // The line sits where the caret is, to a fraction of an eighth of a page.
   line.style.display='';
-  const at=(Math.floor(p/8)*outlineZoom)+'px';
+  const at=(p/8*outlineZoom)+'px';
   if(document.querySelector('.oe-hbody')){ line.style.left=at; line.style.top=''; }
   else { line.style.top=at; line.style.left=''; }
 }
@@ -14344,6 +14767,7 @@ function outlineBodyNode(el, horiz){
   body.appendChild(tgt);
   const now=document.createElement('div'); now.className='oe-now';
   body.appendChild(now);
+  const bmNode=bookmarkLaneNode(m, horiz); if(bmNode) body.appendChild(bmNode);
 
   let node=body;
   if(horiz){
@@ -14625,8 +15049,9 @@ function setPanel(name, visible){
   const edgeMap={left:'leftEdgeTab', right:'rightEdgeTab'};
   document.getElementById(map[name]).classList.toggle('hidden-panel', !visible);
   document.getElementById(edgeMap[name]).classList.toggle('hidden', visible);
+  scheduleCanvasScrollbar();
   if(name==='right') positionZoomIndicator();
-  if(name==='left') updatePageIndicator();
+  if(name==='left'){ updatePageIndicator(); if(bookmarkPending) syncBookmark(); }
   saveProjectViewState();
 }
 
@@ -15129,17 +15554,13 @@ document.getElementById('hintClose').addEventListener('click', ()=>{
   clearTimeout(_canvasHintTimer);
   document.getElementById('canvasHint').classList.add('hidden');
 });
-/* The canvas hint shows when a project opens and fades after NOTICE_MS,
-   like every other notice; its × still closes it at once. */
+/* The canvas hint shows when a project opens and STAYS until the writer
+   presses its x: it is a permanent notice, not one of the two-second ones. */
 let _canvasHintTimer=null;
 function showCanvasHint(){
   const h=document.getElementById('canvasHint'); if(!h) return;
   clearTimeout(_canvasHintTimer);
   h.classList.remove('hidden', 'fading');
-  _canvasHintTimer=setTimeout(()=>{
-    h.classList.add('fading');
-    _canvasHintTimer=setTimeout(()=>{ h.classList.add('hidden'); h.classList.remove('fading'); }, 250);
-  }, NOTICE_MS-250);
 }
 
 /* =========================================================
@@ -15261,6 +15682,32 @@ new MutationObserver(()=>{
   setModalTop();
 }).observe(modalRoot, {childList:true, attributes:true, attributeFilter:['class']});
 window.addEventListener('resize', ()=>{ if(!modalRoot.classList.contains('hidden')) setModalTop(); });
+/* Every window can be closed without choosing anything. One with a Cancel or a
+   Close of its own is left alone; one whose only button is Done (it applies as
+   you go: Reports, Breakdown, Typewriter Mode, Goals, Milestones, the export
+   result ...) is given an x in its corner, and Esc presses it. The x does what
+   the window's own Done does, so any tidying-up it has runs too. */
+function ensureModalClose(){
+  if(modalRoot.classList.contains('hidden')) return;
+  const box=modalRoot.querySelector('.modal-box');
+  if(!box || box.querySelector('.modal-x')) return;
+  const hasWayOut=Array.from(box.querySelectorAll('button')).some(b=>/^\s*(cancel|close|\u00d7|x|back to writing)\s*$/i.test(b.textContent));
+  if(hasWayOut) return;
+  const x=document.createElement('button');
+  x.type='button'; x.className='modal-x'; x.title='Close'; x.setAttribute('aria-label','Close'); x.textContent='\u00d7';
+  x.addEventListener('click', ()=>{
+    const done=Array.from(box.querySelectorAll('button')).reverse().find(b=>b!==x && /^\s*(done|ok)\s*$/i.test(b.textContent));
+    if(done) done.click(); else closeModal();
+  });
+  box.classList.add('has-x');
+  box.insertBefore(x, box.firstChild);
+}
+new MutationObserver(ensureModalClose).observe(modalRoot, {childList:true, subtree:true});
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Escape' || e.defaultPrevented || modalRoot.classList.contains('hidden')) return;
+  const x=modalRoot.querySelector('.modal-x');
+  if(x){ e.preventDefault(); x.click(); }
+});
 function promptModal(title, placeholder, def){
   return new Promise(resolve=>{
     modalRoot.innerHTML=
@@ -15771,6 +16218,8 @@ function projectData(){
     charHighlight:normalizeCharHighlight(state.charHighlight),
     // Track Changes' baseline: the script as it stood when tracking began.
     trackChanges:tcForSave(),
+    // Where the writer last typed: the "pick up where you left off" bookmark (WELCOME BACK).
+    ...(lastEditPos ? {lastEdit:{id:lastEditPos.id, off:lastEditPos.off}} : {}),
     // Only a project whose old in-file milestones could not yet be moved
     // into the milestone store still carries them (see MILESTONES).
     ...(legacyMilestones.length ? {milestones:legacyMilestones} : {})
@@ -19413,7 +19862,8 @@ async function ensureProjectPrefs(pid){
   for(const key of PROJECT_PREF_KEYS){
     let r=null;
     try{ r=await _dbGetAny.call(dbStorage, key); }catch(err){}
-    const v=(r && r.value!=null) ? r.value : (_prefFactory ? _prefFactory[key] : undefined);
+    let v=(r && r.value!=null) ? r.value : (_prefFactory ? _prefFactory[key] : undefined);
+    if(key==='novel-dots-ribbon-tab') v='write'; // a new project always starts on the Writing tab
     if(v!==undefined){ try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, key), v); }catch(err){} }
   }
   try{ await _dbSetAny.call(dbStorage, projectPrefKey(pid, '__init'), '1'); }catch(err){}
@@ -19501,6 +19951,8 @@ async function rebuildProjectsIndexFromStorage(skipIds){
 }
 async function ensureProjectsIndexLoaded(){
   if(projectsIndexCache!==undefined) return projectsIndexCache;
+  // A project in the Trash keeps its data in storage for 30 days; the rebuilds below must never mistake it for a lost one.
+  const trashedIds=new Set((await ensureTrashLoaded()).map(e=>e.id));
   let res=await readProjectsIndexRaw();
   if(res.status==='error'){ await new Promise(r=>setTimeout(r, 300)); res=await readProjectsIndexRaw(); } // one retry
   let idx=null, rebuilt=false;
@@ -19510,19 +19962,19 @@ async function ensureProjectsIndexLoaded(){
     // A project stored but missing from the list (the list was not saved in a session
     // that could not read it, or the app closed first) is added back, never left unreachable.
     try{
-      const extra=await rebuildProjectsIndexFromStorage(new Set(idx.map(p=>p.id)));
+      const extra=await rebuildProjectsIndexFromStorage(new Set(idx.map(p=>p.id).concat(Array.from(trashedIds))));
       if(extra.length){ idx=idx.concat(extra); rebuilt=true; }
     }catch(err){}
   } else if(res.status==='absent'){
     // Only a first visit if no project is stored either; otherwise the list was lost, not never made.
     let found=[];
-    try{ found=await rebuildProjectsIndexFromStorage(); }catch(err){ found=[]; }
+    try{ found=await rebuildProjectsIndexFromStorage(trashedIds); }catch(err){ found=[]; }
     if(found.length){ idx=found; rebuilt=true; try{ showToast('The project list was missing and was rebuilt from your saved projects'); }catch(err){} }
   } else {
     // corrupt or unreadable: keep what was there, rebuild around it, and never seed.
     if(res.status==='corrupt'){ try{ await dbStorage.set('novel-dots-projects-index-damaged-'+Date.now(), res.raw); }catch(err){} }
     let found=[];
-    try{ found=await rebuildProjectsIndexFromStorage(); }catch(err){ found=[]; }
+    try{ found=await rebuildProjectsIndexFromStorage(trashedIds); }catch(err){ found=[]; }
     idx=found; rebuilt=true;
     if(res.status==='error') _projectsIndexUnsafe=true; // the stored list may be fine; do not overwrite it from here
     try{ showToast(res.status==='corrupt' ? 'The project list was damaged and was rebuilt from your saved projects' : 'Could not read the project list \u2014 showing the projects found. Reload to try again.'); }catch(err){}
@@ -19549,6 +20001,11 @@ async function ensureProjectsIndexLoaded(){
   let backfilled=false;
   idx.forEach(p=>{ if(!p.createdAt){ p.createdAt=p.updatedAt||Date.now(); backfilled=true; } });
   projectsIndexCache=idx;
+  // A project found both in the list and in the Trash (the app closed between the two writes of a delete or a restore)
+  // stays in the list: it is never lost to the Trash's clean-up.
+  const listed=new Set(idx.map(p=>p.id));
+  const both=trashCache.filter(e=>listed.has(e.id));
+  if(both.length){ trashCache=trashCache.filter(e=>!listed.has(e.id)); persistTrash(); }
   if(backfilled || rebuilt) persistProjectsIndex();
   return projectsIndexCache;
 }
@@ -19577,6 +20034,92 @@ function reportSaveFailure(){
 }
 async function deleteProjectData(id){
   try{ await dbStorage.delete('novel-dots-project-'+id); }catch(err){}
+}
+/* =========================================================
+   THE TRASH
+   ---------------------------------------------------------
+   Deleting a project moves it to the Trash: its entry leaves My Projects and
+   waits in a list of its own (novel-dots-trash-index) with the day it was
+   deleted, while its script, milestones and settings stay in storage exactly
+   as they were. For 30 days it can be restored, whole. After that it is
+   deleted for good (script, milestones and settings together), the next time
+   the project list is drawn. "Delete Forever" and "Empty Trash" do the same at
+   once, and ask first.
+   ========================================================= */
+const TRASH_KEY='novel-dots-trash-index';
+const TRASH_DAYS=30, TRASH_MS=TRASH_DAYS*24*60*60*1000;
+let trashCache;             // undefined = not read yet this session
+let _trashUnsafe=false;     // true: the stored list could not be read -- never write over it
+async function ensureTrashLoaded(){
+  if(trashCache!==undefined) return trashCache;
+  let list=[];
+  try{
+    const r=await dbStorage.get(TRASH_KEY);
+    if(r && r.value){
+      const v=JSON.parse(r.value);
+      if(Array.isArray(v)) list=v.filter(e=>e && typeof e==='object' && typeof e.id==='string' && e.id);
+    }
+  }catch(err){ _trashUnsafe=true; }
+  trashCache=list;
+  return trashCache;
+}
+function persistTrash(){
+  if(trashCache===undefined || _trashUnsafe) return;
+  dbStorage.set(TRASH_KEY, JSON.stringify(trashCache)).catch(()=>{});
+}
+function trashDaysLeft(e){ return Math.max(0, Math.ceil(((e.trashedAt||0)+TRASH_MS-Date.now())/86400000)); }
+async function moveProjectToTrash(id){
+  const idx=await ensureProjectsIndexLoaded();
+  const tr=await ensureTrashLoaded();
+  const entry=idx.find(p=>p.id===id);
+  if(!entry) return false;
+  tr.push({...entry, trashedAt:Date.now()});
+  persistTrash();                                  // the Trash first: a project is never in neither list
+  projectsIndexCache=idx.filter(p=>p.id!==id);
+  persistProjectsIndex();
+  return true;
+}
+async function restoreFromTrash(id){
+  const idx=await ensureProjectsIndexLoaded();
+  const tr=await ensureTrashLoaded();
+  const e=tr.find(x=>x.id===id);
+  if(!e) return false;
+  const entry={...e}; delete entry.trashedAt;
+  if(!idx.some(p=>p.id===id)) idx.push(entry);
+  persistProjectsIndex();                          // the list first: a project is never in neither list
+  trashCache=tr.filter(x=>x.id!==id);
+  persistTrash();
+  return true;
+}
+function wipeProjectForGood(id){
+  deleteProjectData(id).catch(()=>{});
+  deleteAllMilestones(id).catch(()=>{});
+  deleteProjectPrefs(id).catch(()=>{});
+}
+async function deleteFromTrashForever(id){
+  const tr=await ensureTrashLoaded();
+  if(!tr.some(x=>x.id===id)) return;
+  trashCache=tr.filter(x=>x.id!==id);
+  persistTrash();
+  wipeProjectForGood(id);
+}
+async function emptyTrash(){
+  const tr=await ensureTrashLoaded();
+  const ids=tr.map(x=>x.id);
+  trashCache=[];
+  persistTrash();
+  ids.forEach(wipeProjectForGood);
+}
+/* Anything that has been in the Trash 30 days goes for good. */
+async function purgeExpiredTrash(){
+  const tr=await ensureTrashLoaded();
+  const now=Date.now();
+  const gone=tr.filter(e=>now-(e.trashedAt||0)>=TRASH_MS);
+  if(!gone.length) return 0;
+  trashCache=tr.filter(e=>now-(e.trashedAt||0)<TRASH_MS);
+  persistTrash();
+  gone.forEach(e=>wipeProjectForGood(e.id));
+  return gone.length;
 }
 /* Synchronous: updates the in-memory index immediately (so any render right
    after this call already reflects it) and kicks off a background persist. */
@@ -19632,6 +20175,7 @@ async function enterEditor(id, data){
   state.projectTitle=data.projectTitle || 'Untitled Screenplay';
   document.getElementById('projectTitle').textContent=state.projectTitle;
   initScreenplay(data.lines && data.lines.length ? data.lines : [{type:'scene_heading', text:''}]);
+  lastEditPos=normalizeLastEdit(data.lastEdit); bookmarkPending=false; removeBookmarkMarks();
   if(state.trackChanges && Array.isArray(state.trackChanges.baseline)) state.trackChanges.baseline=capsNormalizeLines(state.trackChanges.baseline);
   notesLayer.innerHTML=''; Object.keys(noteEls).forEach(k=>delete noteEls[k]);
   state.notes=migrateNotes(data.notes); state.shots=data.shots||[]; state.drawings=migrateDrawings(data.drawings||[]); state.images=data.images||[];
@@ -19659,10 +20203,11 @@ async function enterEditor(id, data){
   const viewState=await applyProjectPrefs(id); // this project's own settings
   await loadZoomPref(); // 100% until the writer zooms; then the zoom they left
   await fillAuthorOnOpen(id); // the registered name goes on the title page, once
-  // A project always opens on the Writing tab, whatever tab it was
-  // left on: the ribbon tab is no longer restored per project.
-  ribbonTab='write'; applyRibbonTab();
+  // A project opens on the toolbar tab it was left on (loadRibbonTabPref, above, read it
+  // from the project's own settings); a new project starts on Writing (ensureProjectPrefs).
+  applyRibbonTab();
   showEditorView();
+  ribbonPlace(); // the strip is measurable now: put it exactly on that tab
   scheduleDualButtonState();
   recomputePagination();
   fitInitialView(); // after pagination: it fits the first two sheets
@@ -19678,6 +20223,7 @@ async function enterEditor(id, data){
   refreshFoldToggle();
   placeOpeningCaret();
   showCanvasHint();
+  offerBookmarkOnOpen();
 }
 async function createBlankProject(){
   return createProjectFromTemplate('blank');
@@ -19860,6 +20406,8 @@ async function renderProjectsList(){
   const listEl=document.getElementById('projectsList');
   if(projectsIndexCache===undefined) listEl.innerHTML='<div class="landing-empty">Loading…</div>';
   let idx=await ensureProjectsIndexLoaded();
+  await purgeExpiredTrash();   // what has been in the Trash 30 days goes for good
+  renderTrashRow();
   idx=idx.slice().sort((a,b)=>(b.createdAt||b.updatedAt||0)-(a.createdAt||a.updatedAt||0));
   listEl.innerHTML='';
   if(!idx.length){
@@ -19902,7 +20450,8 @@ function projectRow(p, listEl){
   // the nearest common ancestor (the list container) instead of the row
   // itself — silently breaking double-click-to-open.
   row.addEventListener('click', ()=>{
-    if(landingSelectedId===p.id) return;
+    if(landingSelectedId===p.id && !landingTrashOpen) return;
+    landingTrashOpen=false;
     landingSelectedId=p.id;
     listEl.querySelectorAll('.project-row.selected').forEach(el=>el.classList.remove('selected'));
     row.classList.add('selected');
@@ -19930,6 +20479,7 @@ document.addEventListener('keydown', e=>{
 /* ---- the New options: choose, never create ---- */
 function setLandingTemplate(key){
   landingTemplateKey=key;
+  landingTrashOpen=false;
   // Choosing what to start deselects whatever project was being looked at:
   // the two are one selection, and the centre pane shows one of them.
   if(landingSelectedId){
@@ -19940,17 +20490,21 @@ function setLandingTemplate(key){
 }
 /* ---- the centre pane ---- */
 const PREVIEW_DOC_SVG='<svg class="preview-doc" viewBox="0 0 64 80" fill="none"><rect x="1" y="1" width="62" height="78" rx="3" fill="#fff" stroke="var(--chrome-line-strong)"/><line x1="12" y1="20" x2="44" y2="20" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="30" x2="52" y2="30" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="40" x2="52" y2="40" stroke="var(--paper-edge)" stroke-width="2"/><line x1="12" y1="50" x2="38" y2="50" stroke="var(--paper-edge)" stroke-width="2"/></svg>';
+let landingTrashOpen=false; // the centre pane shows the Trash
 function renderLandingCenter(){
   const el=document.getElementById('landingPreview');
   if(!el) return;
   const entry=(projectsIndexCache||[]).find(p=>p.id===landingSelectedId);
+  if(entry) landingTrashOpen=false;
+  const trashRowEl=document.getElementById('trashRow'); if(trashRowEl) trashRowEl.classList.toggle('selected', landingTrashOpen);
   // One selection across the whole sidebar: while a project is selected, no
   // New row shows as selected (the chosen kind is remembered, just not lit).
   document.querySelectorAll('#newOptions .new-option-row').forEach(btn=>{
-    const on=!entry && btn.dataset.template===landingTemplateKey;
+    const on=!entry && !landingTrashOpen && btn.dataset.template===landingTemplateKey;
     btn.classList.toggle('selected', on);
     btn.setAttribute('aria-checked', on ? 'true' : 'false');
   });
+  if(landingTrashOpen){ renderTrashView(el); return; }
   if(!entry){ renderStartZone(el); return; }
   const title=entry.title||'Untitled Screenplay';
   const created=entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : '—';
@@ -19966,16 +20520,72 @@ function renderLandingCenter(){
   document.getElementById('btnPreviewOpen').addEventListener('click', ()=>openProject(entry.id));
   document.getElementById('btnPreviewBackup').addEventListener('click', ()=>exportFullBackup(entry.id));
   document.getElementById('btnPreviewDelete').addEventListener('click', async ()=>{
-    const ok=await confirmModal('Delete project', 'Delete "'+title+'"? This cannot be undone.', 'Delete', true);
-    if(!ok) return;
-    // Update the visible list and in-memory index immediately; the actual
-    // storage delete/persist happens in the background.
-    if(projectsIndexCache) projectsIndexCache=projectsIndexCache.filter(x=>x.id!==entry.id);
-    persistProjectsIndex();
-    deleteProjectData(entry.id).catch(()=>{});
-    deleteAllMilestones(entry.id).catch(()=>{});
-    deleteProjectPrefs(entry.id).catch(()=>{});
+    // Deleting moves the project to the Trash: it can be restored for 30 days.
+    const moved=await moveProjectToTrash(entry.id);
+    if(!moved) return;
     landingSelectedId=null;
+    await renderProjectsList();
+    showToast('\u201c'+title+'\u201d is in the Trash \u2014 it can be restored for '+TRASH_DAYS+' days');
+  });
+}
+function renderTrashRow(){
+  const row=document.getElementById('trashRow'); if(!row) return;
+  const n=(trashCache||[]).length;
+  const c=document.getElementById('trashCount'); if(c) c.textContent=n ? String(n) : '';
+  row.classList.toggle('selected', landingTrashOpen);
+  if(!row._wired){
+    row._wired=true;
+    row.addEventListener('click', ()=>{
+      landingTrashOpen=true; landingSelectedId=null;
+      document.querySelectorAll('#projectsList .project-row.selected').forEach(el=>el.classList.remove('selected'));
+      renderLandingCenter();
+    });
+  }
+}
+function renderTrashView(el){
+  const items=(trashCache||[]).slice().sort((a,b)=>(b.trashedAt||0)-(a.trashedAt||0));
+  el.innerHTML='';
+  const view=document.createElement('div'); view.className='trash-view';
+  const head=document.createElement('div'); head.className='trash-head';
+  head.innerHTML='<h2>Trash</h2><button class="modal-btn danger-outline" id="btnEmptyTrash">Empty Trash</button>';
+  view.appendChild(head);
+  const note=document.createElement('p'); note.className='trash-note';
+  note.textContent='Deleted projects wait here for '+TRASH_DAYS+' days, then they are deleted for good.';
+  view.appendChild(note);
+  const list=document.createElement('div'); list.className='trash-list';
+  if(!items.length){
+    list.innerHTML='<div class="trash-empty">The Trash is empty.</div>';
+  }
+  items.forEach(e=>{
+    const left=trashDaysLeft(e);
+    const row=document.createElement('div'); row.className='trash-item';
+    const main=document.createElement('div'); main.className='ti-main';
+    const t=document.createElement('span'); t.className='ti-title'; t.textContent=e.title||'Untitled Screenplay';
+    const m=document.createElement('span'); m.className='ti-meta'+(left<=3 ? ' soon' : '');
+    m.textContent='Deleted '+new Date(e.trashedAt||Date.now()).toLocaleDateString()+' \u00b7 '+(left<=0 ? 'deleted for good soon' : left+(left===1?' day':' days')+' left');
+    main.appendChild(t); main.appendChild(m);
+    const restore=document.createElement('button'); restore.className='modal-btn primary'; restore.textContent='Restore';
+    const gone=document.createElement('button'); gone.className='modal-btn danger-outline'; gone.textContent='Delete Forever';
+    restore.addEventListener('click', async ()=>{
+      if(await restoreFromTrash(e.id)){ await renderProjectsList(); showToast('\u201c'+(e.title||'Untitled Screenplay')+'\u201d was restored'); }
+    });
+    gone.addEventListener('click', async ()=>{
+      const ok=await confirmModal('Delete Forever', 'Delete \u201c'+(e.title||'Untitled Screenplay')+'\u201d for good? This cannot be undone.', 'Delete Forever', true);
+      if(!ok) return;
+      await deleteFromTrashForever(e.id);
+      renderProjectsList();
+    });
+    row.appendChild(main); row.appendChild(restore); row.appendChild(gone);
+    list.appendChild(row);
+  });
+  view.appendChild(list);
+  el.appendChild(view);
+  const empty=head.querySelector('#btnEmptyTrash');
+  empty.disabled=!items.length;
+  empty.addEventListener('click', async ()=>{
+    const ok=await confirmModal('Empty Trash', 'Delete all '+items.length+' project'+(items.length===1?'':'s')+' in the Trash for good? This cannot be undone.', 'Empty Trash', true);
+    if(!ok) return;
+    await emptyTrash();
     renderProjectsList();
   });
 }
@@ -20117,15 +20727,21 @@ function appearanceIsDark(){
 function applyTheme(){
   const dark=appearanceIsDark();
   document.body.classList.toggle('theme-beige', currentTheme==='beige');
-  document.body.classList.toggle('theme-eye', currentTheme==='eye' && !dark); // Dark appearance has its own pages
+  document.body.classList.toggle('theme-green', currentTheme==='green');
+  const eye=(currentTheme==='eye' && !dark);                  // Dark appearance has its own pages
+  const eyeChanged=eye!==document.body.classList.contains('theme-eye');
+  document.body.classList.toggle('theme-eye', eye);
   const changed=dark!==document.body.classList.contains('theme-dark');
   document.body.classList.toggle('theme-dark', dark);
-  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  // Eye comfort has dark chrome around light pages: native controls (menus, scrollbars) go dark with it.
+  // The pages and notes keep a light scheme of their own (CSS: body.theme-eye #world).
+  document.documentElement.style.colorScheme = (dark || eye) ? 'dark' : 'light';
   const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', dark ? '#1C1C1F' : '#2B6CDE');
+  if(meta) meta.setAttribute('content', dark ? '#1C1C1F' : (eye ? '#333333' : '#2B6CDE'));
   const btn=document.getElementById('btnDarkMode');
   if(btn){ btn.classList.toggle('active', dark); btn.setAttribute('aria-pressed', dark ? 'true' : 'false'); }
   if(changed) refreshAppearanceDependents();
+  else if(eyeChanged){ scheduleRulers(); scheduleMinimap(); } // both are drawn in the theme's colours
 }
 /* Colours computed in script rather than CSS have to be recomputed. */
 function refreshAppearanceDependents(){
@@ -20173,11 +20789,11 @@ function toggleSettingsPopover(anchorEl){
   const pop=document.createElement('div'); pop.id='settingsPopover'; pop.className='settings-popover';
   // One choice for how the app looks: the grey or beige desk in light, or
   // dark. (A stored "system" shows as whichever it currently resolves to.)
-  const look=appearanceIsDark() ? 'dark' : (currentTheme==='beige' ? 'beige' : (currentTheme==='eye' ? 'eye' : 'gray'));
+  const look=appearanceIsDark() ? 'dark' : (['beige','green','eye'].includes(currentTheme) ? currentTheme : 'gray');
   const lk=(v, label)=>'<label class="theme-option"><input type="radio" name="lookopt" value="'+v+'"'+(look===v?' checked':'')+'><span class="theme-swatch '+v+'"></span>'+label+'</label>';
   pop.innerHTML=
     '<div class="filter-title">Appearance</div>'+
-    lk('gray', 'Gray')+lk('beige', 'Beige')+lk('eye', 'Eye comfort')+lk('dark', 'Dark')+
+    lk('gray', 'Gray')+lk('beige', 'Beige')+lk('green', 'Green')+lk('eye', 'Eye comfort')+lk('dark', 'Dark')+
     '<div class="settings-divider"></div>'+
     '<div class="filter-title">Writing</div>'+
     '<label class="theme-option"><input type="checkbox" id="optSpellcheck"'+(spellcheckOn?' checked':'')+'>Spell check</label>'+
@@ -20738,7 +21354,9 @@ function toggleElementTypePopover(){
   document.body.appendChild(pop);
   const r=elementTypeBtn.getBoundingClientRect();
   pop.style.top=(r.bottom+6)+'px';
-  pop.style.left=r.left+'px';
+  // The button can be scrolled out of sight in the toolbar strip (a shortcut opens this from any tab):
+  // keep the menu on screen either way.
+  pop.style.left=Math.max(10, Math.min(r.left, window.innerWidth-pop.offsetWidth-10))+'px';
   setTimeout(()=>{
     document.addEventListener('pointerdown', function closePop(e){
       if(!pop.contains(e.target) && e.target!==elementTypeBtn && !elementTypeBtn.contains(e.target)){
@@ -21321,11 +21939,21 @@ function captionFromTitle(el){
    the theme and the spell-check setting -- it describes how this person
    works, not anything about the script, so it does not belong in a project.
    ========================================================= */
-let ribbonTab='write';
+const RIBBON_ORDER=['write','tools','view'];  // the order of the tab buttons
+let ribbonTab='write';        // the tab the strip is on (the one at the strip's left edge)
+let ribbonLoop=false;         // app-wide: keep scrolling past the last tab and the first comes round again
+let _rbSaved='write', _rbSettleTimer=0, _rbTouching=false, _rbAligned=true, _rbSnaps=0;
+function ribbonStrip(){ return document.getElementById('ribbonPanels'); }
+function ribbonPanelEls(){
+  const st=ribbonStrip();
+  return st ? Array.from(st.children).filter(c=>c.classList.contains('ribbon-panel')) : [];
+}
+function ribbonPanelOf(key){ return ribbonPanelEls().find(p=>p.dataset.tab===key) || null; }
+/* Marks which tab is current: the tab button and its panel. It does not move the strip. */
 function applyRibbonTab(){
-  const panels=Array.from(document.querySelectorAll('#ribbonPanels .ribbon-panel'));
+  const panels=ribbonPanelEls();
   if(!panels.length) return;
-  if(!panels.some(p=>p.dataset.tab===ribbonTab)) ribbonTab=panels[0].dataset.tab;
+  if(!panels.some(p=>p.dataset.tab===ribbonTab)) ribbonTab=RIBBON_ORDER[0];
   panels.forEach(p=>p.classList.toggle('active', p.dataset.tab===ribbonTab));
   document.querySelectorAll('#ribbonTabs .ribbon-tab').forEach(t=>{
     const on=t.dataset.tab===ribbonTab;
@@ -21333,18 +21961,149 @@ function applyRibbonTab(){
     t.setAttribute('aria-selected', on ? 'true' : 'false');
   });
 }
+/* The panel under the strip's left edge: the one whose dividing line has reached
+   the edge (going right) or not yet left it behind (going left). */
+function ribbonPanelAtLeftEdge(){
+  const st=ribbonStrip(), els=ribbonPanelEls();
+  if(!st || !els.length) return null;
+  const x=st.scrollLeft;
+  let at=els[0];
+  els.forEach(p=>{ if(p.offsetLeft<=x+0.5) at=p; });
+  return at;
+}
+/* Where the panels lie. Loop off: Writing, Tools, View, with a wall at each end.
+   Loop on: the current tab in the middle with its two neighbours either side, so
+   the strip can always be scrolled both ways; when the writer comes to rest on
+   another tab the panels are dealt again (one is moved from one end to the other
+   and the scroll position is corrected by the same amount, so nothing appears to
+   move). The panels are the real ones, never copies. */
+function ribbonDealBelt(centerKey){
+  const st=ribbonStrip(), els=ribbonPanelEls();
+  if(!st || els.length<2) return false;
+  const keys=RIBBON_ORDER.filter(k=>els.some(p=>p.dataset.tab===k));
+  let want=keys;
+  if(ribbonLoop && keys.length>=3){
+    const i=Math.max(0, keys.indexOf(centerKey));
+    want=[keys[(i+keys.length-1)%keys.length], keys[i], keys[(i+1)%keys.length]];
+  }
+  if(want.join()===els.map(p=>p.dataset.tab).join()) return false;
+  const measured=st.clientWidth>0;
+  let anchor=null, into=0;
+  if(measured){ anchor=ribbonPanelAtLeftEdge(); into=st.scrollLeft-anchor.offsetLeft; }
+  want.forEach((k,i)=>{ const p=ribbonPanelOf(k); if(ribbonPanelEls()[i]!==p) st.insertBefore(p, ribbonPanelEls()[i]||null); });
+  if(measured) st.scrollLeft=anchor.offsetLeft+into;
+  return true;
+}
+/* Put the strip exactly on the current tab's start (no gliding). */
+function ribbonPlace(){
+  const st=ribbonStrip();
+  if(!st || !st.clientWidth) return;          // not on screen (no project open): nothing to place
+  ribbonDealBelt(ribbonTab);
+  const p=ribbonPanelOf(ribbonTab);
+  if(p) st.scrollLeft=p.offsetLeft;
+  _rbAligned=true;
+}
+function ribbonGlideTo(key){
+  const st=ribbonStrip(), p=ribbonPanelOf(key);
+  if(!st || !p || !st.clientWidth) return;
+  st.scrollTo({left:p.offsetLeft, behavior:'smooth'});
+}
+function saveRibbonTab(){
+  if(ribbonTab===_rbSaved) return;
+  _rbSaved=ribbonTab;
+  try{ Promise.resolve(dbStorage.set('novel-dots-ribbon-tab', ribbonTab)).catch(()=>{}); }catch(err){}
+}
+/* Called when the strip has stopped moving (no scroll for a moment and no finger
+   down). If it stands across a dividing line it glides to the start of the tab
+   that fills more of the bar; if only one tab shows (a tab wider than the window,
+   scrolled to see its far end) it stays where it is. */
+function ribbonSettle(){
+  const st=ribbonStrip();
+  if(!st || !st.clientWidth) return;
+  if(_rbTouching){ _rbSettleTimer=setTimeout(ribbonSettle, 130); return; }
+  const els=ribbonPanelEls(), x=st.scrollLeft, w=st.clientWidth;
+  let best=null, bestOv=0, shown=0;
+  els.forEach(p=>{
+    const ov=Math.min(x+w, p.offsetLeft+p.offsetWidth)-Math.max(x, p.offsetLeft);
+    if(ov>0.5){ shown++; if(ov>bestOv){ bestOv=ov; best=p; } }
+  });
+  if(!best) return;
+  if(shown>1 && Math.abs(x-best.offsetLeft)>1 && _rbSnaps<4){
+    _rbSnaps++;
+    ribbonTab=best.dataset.tab; applyRibbonTab();
+    st.scrollTo({left:best.offsetLeft, behavior:'smooth'});   // the glide's own scroll events bring us back here
+    return;
+  }
+  _rbSnaps=0;
+  const at=ribbonPanelAtLeftEdge();
+  if(at && at.dataset.tab!==ribbonTab){ ribbonTab=at.dataset.tab; applyRibbonTab(); }
+  _rbAligned=Math.abs(x-best.offsetLeft)<1.5;
+  if(ribbonLoop) ribbonDealBelt(ribbonTab);
+  saveRibbonTab();
+}
+function ribbonScrolled(){
+  const at=ribbonPanelAtLeftEdge();
+  if(at && at.dataset.tab!==ribbonTab){ ribbonTab=at.dataset.tab; applyRibbonTab(); }  // the instant its line reaches the edge
+  _rbAligned=false;
+  clearTimeout(_rbSettleTimer);
+  _rbSettleTimer=setTimeout(ribbonSettle, 130);
+}
 async function setRibbonTab(key){
   ribbonTab=key;
   applyRibbonTab();
-  try{ await dbStorage.set('novel-dots-ribbon-tab', key); }catch(err){}
+  ribbonGlideTo(key);
+  saveRibbonTab();
 }
 async function loadRibbonTabPref(){
   try{
     const r=await dbStorage.get('novel-dots-ribbon-tab');
     if(r && typeof r.value==='string') ribbonTab = r.value==='notes' ? 'tools' : r.value;
   }catch(err){}
+  _rbSaved=ribbonTab;
   applyRibbonTab();
 }
+/* Settings › General › Loop toolbar tabs (app-wide, off by default). */
+function applyRibbonLoop(){
+  const st=ribbonStrip();
+  if(st) st.classList.toggle('rb-loop', ribbonLoop);
+  ribbonDealBelt(ribbonTab);
+}
+async function loadRibbonLoopPref(){
+  try{
+    const r=await dbStorage.get('novel-dots-ribbon-loop');
+    if(r && r.value!=null) ribbonLoop=(r.value===true || r.value==='1' || r.value==='true');
+  }catch(err){}
+  applyRibbonLoop();
+}
+async function setRibbonLoop(on){
+  ribbonLoop=!!on;
+  applyRibbonLoop();
+  try{ await dbStorage.set('novel-dots-ribbon-loop', ribbonLoop ? '1' : '0'); }catch(err){}
+}
+(()=>{
+  const st=ribbonStrip();
+  if(!st) return;
+  st.addEventListener('scroll', ribbonScrolled, {passive:true});
+  // Sideways swipes scroll the strip natively. A plain vertical wheel (a mouse
+  // wheel, Shift+wheel on some browsers) over the one-row bar scrolls it sideways too.
+  st.addEventListener('wheel', e=>{
+    if(e.ctrlKey) return;                                       // a pinch is a zoom, not ours
+    if(Math.abs(e.deltaY)<=Math.abs(e.deltaX)) return;
+    e.preventDefault();
+    st.scrollLeft+=e.deltaY*(e.deltaMode===1 ? 16 : e.deltaMode===2 ? st.clientWidth : 1);
+  }, {passive:false});
+  st.addEventListener('touchstart', ()=>{ _rbTouching=true; }, {passive:true});
+  ['touchend','touchcancel'].forEach(t=>st.addEventListener(t, ()=>{
+    _rbTouching=false; clearTimeout(_rbSettleTimer); _rbSettleTimer=setTimeout(ribbonSettle, 130);
+  }, {passive:true}));
+  // The bar's width changes with the window (and from nothing when the editor first shows):
+  // a strip resting on a tab stays on it.
+  if(window.ResizeObserver) new ResizeObserver(()=>{
+    if(!st.clientWidth) return;
+    if(_rbAligned) ribbonPlace();
+    else { clearTimeout(_rbSettleTimer); _rbSettleTimer=setTimeout(ribbonSettle, 130); }
+  }).observe(st);
+})();
 /* Control+Tab / Control+Shift+Tab (view:nexttab / view:prevtab). Taken on
    capture, before the script's own Tab (element cycling, title-page
    fields) can see it. A browser keeps Control+Tab for its own tabs in an
@@ -21419,7 +22178,7 @@ const PW_ICON={
   search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>'
 };
 const PW_PANES=[
-  {id:'general', label:'General', color:'#8E8E93', keys:'appearance light dark auto system desk gray grey beige colour color theme spell spelling check auto-guess guess character cue'},
+  {id:'general', label:'General', color:'#8E8E93', keys:'appearance light dark auto system desk pinboard green gray grey beige colour color theme spell spelling check auto-guess guess character cue toolbar ribbon tabs loop scroll'},
   {id:'document', label:'Document', color:'#2B6CDE', keys:'document setup paper letter a4 page font courier margin margins top bottom header footer page number first page'},
   {id:'elements', label:'Elements', color:'#8B5CF6', keys:'elements setup indent indents spacing line spacing alignment align case caps capitals bold italic underline next element return tab'},
   {id:'keyboard', label:'Keyboard', color:'#5B6170', keys:'keyboard shortcut shortcuts keys full keys fullscreen full screen control key layout mac option control customize'},
@@ -21534,7 +22293,7 @@ function pwGeneral(body){
   body.innerHTML=
     pwCard('Appearance', [
       pwRow('Appearance', pwSeg('appearance', [['light','Light'],['dark','Dark'],['system','System']], currentAppearance), 'System follows your computer\u2019s light and dark setting.'),
-      pwRow('Desk', pwSeg('desk', [['gray','Gray'],['beige','Beige'],['eye','Eye comfort']], (currentTheme==='beige' || currentTheme==='eye') ? currentTheme : 'gray', dark), 'The colour around the pages in Light appearance. Eye comfort is a dark-grey desk with soft grey pages.')
+      pwRow('Pinboard', pwSeg('desk', [['gray','Gray'],['beige','Beige'],['green','Green'],['eye','Eye comfort']], ['beige','green','eye'].includes(currentTheme) ? currentTheme : 'gray', dark), 'The colour of the pinboard around the pages in Light appearance. Green is the soft eye-protection green; Eye comfort turns the whole workspace grey, with soft grey pages.')
     ])+
     pwCard('Writer', [
       pwRow('Your name', pwText('pwWriterName', writerName, 'Name of First Writer'), 'Written on the title page of each script the first time you open it, if its author line is empty. Scripts you have already opened keep what is there.')
@@ -21542,6 +22301,9 @@ function pwGeneral(body){
     pwCard('Writing', [
       pwRow('Check spelling', pwToggle('pwSpell', spellcheckOn), 'Scene headings, character cues and transitions are skipped \u2014 they are not prose.'),
       pwRow('Auto-guess next character', pwToggle('pwGuess', autoGuessOn), 'In an empty character cue, offers whoever is being answered. Return takes it; typing replaces it.')
+    ])+
+    pwCard('Toolbar', [
+      pwRow('Loop toolbar tabs', pwToggle('pwRibbonLoop', ribbonLoop), 'Off: the toolbar has two ends. On: keep scrolling past the last tab and the first one comes round again.')
     ])+
     pwCard('Notes', [
       pwRow('Default category', pwSelect('pwNoteCat', [['','No Category']].concat(CATEGORIES.map(c=>[c.id, c.label])), defaultNoteCategory||''), 'Every new note starts in this category. You can still change it on the note.')
@@ -21553,6 +22315,7 @@ function pwGeneral(body){
   body.querySelector('#pwWriterName').addEventListener('change', e=>{ setWriterName(e.target.value); e.target.value=writerName; });
   body.querySelector('#pwSpell').addEventListener('change', e=>setSpellcheck(e.target.checked));
   body.querySelector('#pwGuess').addEventListener('change', e=>setAutoGuess(e.target.checked));
+  body.querySelector('#pwRibbonLoop').addEventListener('change', e=>setRibbonLoop(e.target.checked));
   body.querySelector('#pwNoteCat').addEventListener('change', e=>setDefaultNoteCategory(e.target.value));
 }
 /* ---- Document ---- */
@@ -22295,7 +23058,7 @@ function addCommand(id, label, group, keys, run){ COMMANDS.push({id, label, grou
   addCommand('view:prevtab','Previous Toolbar Tab','View',[IS_MAC ? 'Ctrl+Shift+Tab' : 'Mod+Shift+Tab'],()=>cycleRibbonTab(-1));
   addCommand('tools:sprint','Sprint\u2026','Tools',[],()=>openSprintDialog());
   addCommand('production:track','Track Changes','Production',[],()=>setTrackChanges(!tcOn()));
-  addCommand('view:scripttop','Go to Top of Script','View',[],()=>goToScriptEdge('top'));
+  addCommand('view:scripttop','Go to First Page of Script','View',[],()=>goToScriptEdge('top'));
   addCommand('view:scriptbottom','Go to Bottom of Script','View',[],()=>goToScriptEdge('bottom'));
   addCommand('view:typewriter','Typewriter Mode','View',[],()=>setTypewriter(!twPrefs.on));
   addCommand('view:charhl','Character Highlighting\u2026','View',[],()=>openCharHighlightDialog());
@@ -22993,7 +23756,7 @@ function renderIndexCards(force){
     s.dataset.ph=r.preview || 'Summary';
     [t, s].forEach(ed=>{
       ed.contentEditable=editable ? 'true' : 'false';
-      ed.spellcheck=true;
+      ed.spellcheck=spellcheckOn;
       ed.addEventListener('paste', e=>{ e.preventDefault(); const txt=(e.clipboardData||window.clipboardData).getData('text/plain')||''; document.execCommand('insertText', false, ed===t ? txt.replace(/\s+/g,' ') : txt); });
       ed.addEventListener('keydown', e=>{
         e.stopPropagation();
@@ -24046,7 +24809,7 @@ function bbStartEdit(b, typed){
 function bbOpenEditor(el, b, typed){
   if(!b || el.querySelector('.bb-edit')) return;
   const ta=document.createElement('div');
-  ta.className='bb-edit'; ta.contentEditable='true'; ta.spellcheck=true; ta.setAttribute('role','textbox'); ta.setAttribute('aria-multiline','true');
+  ta.className='bb-edit'; ta.contentEditable='true'; ta.spellcheck=spellcheckOn; ta.setAttribute('role','textbox'); ta.setAttribute('aria-multiline','true');
   bbFillText(ta, b);
   if(typed) ta.appendChild(document.createTextNode(typed));
   el.querySelector('.bb-text').style.visibility='hidden';
@@ -26301,7 +27064,7 @@ async function init(){
   // parallel rather than one-after-another so the landing page appears
   // after a single round trip's worth of latency, not two.
   capturePrefFactory(); // before any setting is loaded: these are the starting values
-  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadRulerPref(), loadSidebarSizes(), loadAutoGuessPref(), loadDefaultNoteCategoryPref(), loadWriterNamePref(), loadShowAltsPref(), loadShortcutPrefs(), loadViewAidPrefs(), loadBackupPrefs(), loadRibbonTabPref(), loadViewNavPrefs(), renderProjectsList()]);
+  await Promise.all([loadThemePref(), loadSpellcheckPref(), loadRulerPref(), loadSidebarSizes(), loadAutoGuessPref(), loadDefaultNoteCategoryPref(), loadWriterNamePref(), loadRibbonLoopPref(), loadShowAltsPref(), loadShortcutPrefs(), loadViewAidPrefs(), loadBackupPrefs(), loadRibbonTabPref(), loadViewNavPrefs(), renderProjectsList()]);
   window.addEventListener('resize', debounce(()=>{ if(state.projectId){ recomputePagination(); layoutAllNotes(); } }, 200));
   // Every project that existed before settings became per-project keeps the
   // settings it has always been shown with: copied now, before any of them
