@@ -3967,6 +3967,7 @@ function cleanBlockText(block){
   return clone.textContent;
 }
 function cleanBlockHTML(block){
+  if(!(block.textContent||'').length && block.innerHTML==='<br>') return '';   // the placeholder of an empty paragraph is not part of the script
   if(!block.querySelector('.dlg-gap-spacer')) return block.innerHTML;
   const clone=block.cloneNode(true);
   clone.querySelectorAll('.dlg-gap-spacer').forEach(n=>n.remove());
@@ -4029,10 +4030,29 @@ function clampParentheticalCaret(){
   sel.addRange(nr);
 }
 document.addEventListener('selectionchange', clampParentheticalCaret);
+/* AN EMPTY PARAGRAPH HOLDS ONE <br>
+   A paragraph with nothing in it has no line box: its height is only the blank line above it
+   (16 px), so a new line made by Return was one line too short (the lines below sat too close
+   until a letter was typed) and its caret was drawn in the space under the paragraph, outside
+   its box -- nothing shows it there when the paragraph is the last one of the script. A <br>
+   gives the empty paragraph the same line a typed one has (the browsers put one there
+   themselves when the last letter is deleted). It is never saved (cleanBlockHTML) and never
+   read as text, and it is dropped before two paragraphs are joined. The title page's own lines
+   are left as they are: there empty lines ARE the layout. */
+function ensureBlankPlaceholder(block){
+  if(!block || !block.classList || !block.classList.contains('line-block')) return;
+  if(block.classList.contains('tp-line') || block.dataset.titleRole || block.getAttribute('contenteditable')==='false') return;
+  if(block.firstChild) return;
+  block.appendChild(document.createElement('br'));
+}
+function dropBlankPlaceholder(block){
+  if(!block || (block.textContent||'').length) return;
+  Array.from(block.children).forEach(c=>{ if(c.tagName==='BR') c.remove(); });
+}
 function placeCaretAtStart(el){
   if(!el || !document.contains(el)) return;
   const r=document.createRange();
-  if(el.firstChild) r.setStart(el.firstChild,0); else r.setStart(el,0);
+  if(el.firstChild && el.firstChild.nodeName!=='BR') r.setStart(el.firstChild,0); else r.setStart(el,0);
   r.collapse(true);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
   if(content.contains(el)) armCaretWatch();
@@ -4050,7 +4070,8 @@ function placeCaretAt(el, offset){
 function placeCaretAtEnd(el){
   if(!el || !document.contains(el)) return;
   const r=document.createRange();
-  r.selectNodeContents(el);
+  if(!(el.textContent||'').length && el.firstChild && el.firstChild.nodeName==='BR') r.setStart(el,0);   // before the placeholder <br>
+  else r.selectNodeContents(el);
   r.collapse(false);
   const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
   if(content.contains(el)) armCaretWatch();
@@ -4341,6 +4362,7 @@ function splitToNewLine(block, sel, newType){
   if(block.dataset.dual && newLineStaysInDualColumn(block, newType)) newBlock.dataset.dual=block.dataset.dual;
   block.after(newBlock);
   pruneEmptyInline(block); pruneEmptyInline(newBlock);
+  ensureBlankPlaceholder(newBlock); ensureBlankPlaceholder(block);   // Return at either end leaves one of the two empty
   placeCaretAtStart(newBlock);
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
   return newBlock;
@@ -4366,6 +4388,7 @@ function handleEnter(block, sel){
   // Parenthetical leads to, instead of leaving an empty "()" behind.
   if(!titlePage && block.dataset.type==='parenthetical' && isBlankParagraph(block)){
     block.textContent='';
+    ensureBlankPlaceholder(block);
     setBlockType(block, ENTER_MAP.parenthetical||'dialogue');
     placeCaretAtStart(block);
     refreshToolbarForBlock(block);
@@ -4400,6 +4423,7 @@ function handleEnter(block, sel){
   // make the new paragraph a "blank" line that isn't empty. Drop them.
   if(atEnd && newBlock && (newBlock.textContent||'').length && !(newBlock.textContent||'').replace(/\u00a0/g,' ').trim()){
     newBlock.innerHTML='';
+    ensureBlankPlaceholder(newBlock);
     placeCaretAtStart(newBlock);
   }
   if(wasDialogue && newType==='action' && newBlock){
@@ -4965,6 +4989,7 @@ function reuseBlankAfter(block, type){
   if(!isStrayBlank(next)) return null;
   if(type && next.dataset.type!==type) setBlockType(next, type);
   if(type) next.innerHTML='';
+  ensureBlankPlaceholder(next);   // an empty paragraph waiting after this one (a template's, or one left by an earlier Return)
   if(next.dataset.type==='parenthetical' && next.textContent==='()') placeCaretAt(next, 1);
   else placeCaretAtStart(next);
   scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
@@ -4997,7 +5022,7 @@ function openBlankLineElementMenu(block){
     if(!block.isConnected) return;
     delete block.dataset.fromDialogueEnter;
     if(t!==block.dataset.type){
-      if(block.dataset.type==='parenthetical') block.textContent=''; // its "()" goes with it
+      if(block.dataset.type==='parenthetical'){ block.textContent=''; ensureBlankPlaceholder(block); } // its "()" goes with it
       setBlockType(block, t);
       markBlocksRevised([block]);
     }
@@ -5098,6 +5123,7 @@ function nextLineBlock(el){
 function mergeBlocks(prev, block){
   if(prev.querySelector('.dlg-gap-spacer')) removeDialogueSplit(prev);
   if(block.querySelector('.dlg-gap-spacer')) removeDialogueSplit(block);
+  dropBlankPlaceholder(prev); dropBlankPlaceholder(block);   // a placeholder <br> would push the joined text onto a second line
   const boundaryOffset=prev.childNodes.length;
   while(block.firstChild){ prev.appendChild(block.firstChild); }
   block.remove();
@@ -5923,7 +5949,7 @@ function discardGuess(){
   const b=smartTypeBlock();
   const pending=isUnacceptedGuess(b);
   clearSmartType();
-  if(pending) b.textContent='';
+  if(pending){ b.textContent=''; ensureBlankPlaceholder(b); }
 }
 function maybeAutoGuess(block){
   if(!autoGuessOn || readOnlyMode || !block || block.dataset.type!=='character') return false;
@@ -6093,6 +6119,7 @@ content.addEventListener('keydown', function(e){
       // an empty Character line on the same line, rather than leaving the
       // parenthetical behind or splitting off a further new line.
       block.textContent='';
+      ensureBlankPlaceholder(block);
       setBlockType(block, 'character');
       refreshToolbarForBlock(block);
       scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); ensureCaretVisible();
@@ -6955,6 +6982,7 @@ function addAlternate(block){
   a.list.push(''); a.index=a.list.length-1;
   writeAlts(block, a);
   block.innerHTML='';
+  ensureBlankPlaceholder(block);
   placeCaretAtStart(block);
   altsChanged(block);
 }
@@ -7305,6 +7333,7 @@ function newBlockAfter(block, type){
   if(waiting) return waiting;
   const nb=createLineElement({type, text:''});
   nb.innerHTML='';
+  ensureBlankPlaceholder(nb);
   block.after(nb);
   placeCaretAtStart(nb);
   return nb;
@@ -8889,6 +8918,7 @@ function recomputePagination(){ recomputePaginationCore(); noteLayoutSettled(); 
 function recomputePaginationCore(){
   sanitizeDirtyBlocks();     // nothing the browser slipped in may escape measurement
   markTitlePageLines();      // before anything is measured: title-page lines have no space above
+  Array.from(content.children).forEach(ensureBlankPlaceholder);   // an empty paragraph is as tall as a typed one (see ensureBlankPlaceholder)
   applyShownCaseAll();       // Replace, macros, dictation, the Navigator: text reads as the page shows it
   const blocks=Array.from(content.children).filter(el=>el.classList.contains('line-block'));
   renumberScenes();          // a new or deleted scene heading changes the numbering
@@ -16684,6 +16714,7 @@ function msPreviewRender(fresh){
       return;
     }
     const el=createLineElement({id:'msp'+i, type:l.t, html:l.h!=='' ? l.h : undefined, text:l.x});
+    ensureBlankPlaceholder(el);
     page.appendChild(el);
     if(term) msMarkEl(el, term, mc, groups);
   });
@@ -16850,7 +16881,8 @@ function textOffsetToNodeOffset(block, targetOffset){
     acc+=len; last=node;
   }
   if(last) return {node:last, offset:last.nodeValue.length};
-  return {node:block, offset:block.childNodes.length};
+  // No text: the caret goes before a placeholder <br>, not after it (that would be a second line).
+  return {node:block, offset:(block.firstChild && block.firstChild.nodeName==='BR') ? 0 : block.childNodes.length};
 }
 /* Replaces [startOffset, endOffset) of a paragraph's text and keeps its
    formatting: the replacement goes into the run the replaced text starts
