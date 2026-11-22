@@ -1725,6 +1725,19 @@ body.ruler-h-on #canvasHint{top:32px;}
   border:1px solid var(--chrome-line-strong);
 }
 .tl-milestone:hover .tl-tip{opacity:1;}
+/* ---- Restored from the Trash: a box on what came back ---- */
+#restoreBoxLayer{position:absolute; left:0; top:0; width:0; height:0; z-index:900000; pointer-events:none;}
+.rh-box{position:absolute; box-sizing:border-box; border:2px solid var(--accent); border-radius:8px;
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent), 0 0 6px 2px color-mix(in srgb, var(--accent) 42%, transparent), 0 0 14px 4px color-mix(in srgb, var(--accent) 18%, transparent);}
+.rh-box.script{background:color-mix(in srgb, var(--accent) 7%, transparent); pointer-events:auto; cursor:grab; touch-action:none;}
+.rh-box.script.dragging{cursor:grabbing; opacity:.7;}
+.rh-box.note{pointer-events:none;}
+.rh-edge{position:absolute; pointer-events:auto; cursor:grab; touch-action:none;}
+.rh-edge.t{left:-6px; right:-6px; top:-8px; height:14px;} .rh-edge.b{left:-6px; right:-6px; bottom:-8px; height:14px;}
+.rh-edge.l{top:-6px; bottom:-6px; left:-8px; width:14px;} .rh-edge.r{top:-6px; bottom:-6px; right:-8px; width:14px;}
+.rh-drop{position:absolute; height:3px; border-radius:2px; background:var(--accent); pointer-events:none; box-shadow:0 0 6px 1px color-mix(in srgb, var(--accent) 55%, transparent);}
+.ptv-body, .ptv-body *{user-select:text; -webkit-user-select:text;}
+.ptv-body{cursor:text;}
 
 /* ---- Find in milestones ---- */
 .fr-opts{align-items:center;}
@@ -1741,23 +1754,25 @@ body.ruler-h-on #canvasHint{top:32px;}
 .tl-milestone.ms-dim{opacity:.28;}
 .tl-milestone.ms-auto{background:var(--chrome-bg); border-color:var(--accent);}
 .tl-milestone.ms-cur{box-shadow:0 0 0 3px var(--chrome-bg), 0 0 0 5px var(--accent), 0 0 12px 5px color-mix(in srgb, var(--accent) 40%, transparent);}
-#msPreview{position:absolute; inset:0; z-index:212; background:var(--desk); display:flex; flex-direction:column;}
-#msPreview[hidden]{display:none;}
-.msp-head{flex:none; display:flex; align-items:baseline; gap:12px; padding:9px 18px; background:var(--chrome-bg); border-bottom:1px solid var(--chrome-line); font-size:12px; color:var(--text-chrome-dim);}
-.msp-title{font-weight:600; color:var(--text-chrome); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
-.msp-sub{white-space:nowrap;}
-.msp-scroll{flex:1; min-height:0; overflow:auto; padding:24px 16px 90px; touch-action:pan-y; -webkit-overflow-scrolling:touch; user-select:text; -webkit-user-select:text; cursor:text;}
-.msp-page{width:816px; box-sizing:border-box; margin:0 auto; padding:96px 96px 120px 144px; background:var(--paper); color:var(--ink);
-  font-family:var(--mono); font-size:12pt; line-height:16px; box-shadow:0 14px 34px rgba(0,0,0,.16), inset 0 0 0 1px var(--paper-edge);}
-.msp-titlepage{margin-bottom:48px; text-align:center; padding-bottom:24px; border-bottom:1px dashed var(--paper-edge);}
+#msPane{position:relative; flex:1; min-width:0; display:flex; flex-direction:column; background:var(--canvas); border-left:1px solid var(--chrome-line);}
+#msPane .cp-head{flex:none; display:flex; align-items:baseline; gap:12px; min-height:44px; padding:8px 14px; font:600 12.5px var(--sans); color:var(--text-chrome); background:var(--chrome-bg); border-bottom:1px solid var(--chrome-line);}
+#msPane .cp-title{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+#msPane .msp-sub{font-weight:400; font-size:11.5px; color:var(--text-chrome-dim); white-space:nowrap;}
+#msPane{min-height:0; overflow:hidden;}
+#msPane .cp-scroll{flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:24px 16px 90px; cursor:text; -webkit-overflow-scrolling:touch;}
+/* The app turns text selection off for everything (* rule), so the preview turns it back on for every element in it. */
+#msPane .cp-scroll, #msPane .cp-scroll *{user-select:text; -webkit-user-select:text;}
+#msPane .cp-page{width:816px; margin:0 auto; background:var(--paper, #fff); color:var(--ink, #111); padding:96px 0; font-family:var(--mono); font-size:16px; line-height:16px; user-select:text; -webkit-user-select:text; box-shadow:0 1px 2px rgba(0,0,0,.08), 0 6px 20px rgba(0,0,0,.07); border-radius:2px;}
+#msPane .cp-line{box-sizing:border-box; white-space:pre-wrap; word-wrap:break-word; border-radius:2px;}
+#msPane .cp-line.cp-np{opacity:.55;}
+.msp-titlepage{margin:0 96px 48px; text-align:center; padding-bottom:24px; border-bottom:1px dashed var(--paper-edge);}
 .msp-tline{min-height:16px; margin:4px 0; white-space:pre-wrap; word-wrap:break-word;}
-.msp-notes-h{margin-top:48px; padding-top:14px; border-top:1px dashed var(--paper-edge); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft);}
-.msp-note{margin:10px 0; padding:8px 10px; background:rgba(128,128,128,.12); border-radius:4px; white-space:pre-wrap; word-wrap:break-word; font-size:11pt;}
-.msp mark.ms-hit{background:rgba(255,200,0,.5); color:inherit; border-radius:2px;}
-.msp mark.ms-hit.cur{background:rgba(255,140,0,.8); box-shadow:0 0 0 1px rgba(255,120,0,.9);}
-.msp-back{position:absolute; right:30px; bottom:18px; padding:9px 16px; border-radius:18px; border:1px solid var(--chrome-line-strong); background:var(--chrome-bg); color:var(--text-chrome); font-size:12.5px; box-shadow:0 6px 18px rgba(0,0,0,.2); cursor:pointer;}
+.msp-notes-h{margin:48px 96px 0; padding-top:14px; border-top:1px dashed var(--paper-edge); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft);}
+.msp-note{margin:10px 96px; padding:8px 10px; background:rgba(128,128,128,.12); border-radius:4px; white-space:pre-wrap; word-wrap:break-word; font-size:14px;}
+#msPane mark.ms-hit{background:rgba(255,200,0,.5); color:inherit; border-radius:2px;}
+#msPane mark.ms-hit.cur{background:rgba(255,140,0,.8); box-shadow:0 0 0 1px rgba(255,120,0,.9);}
+.msp-back{position:absolute; right:88px; bottom:18px; padding:9px 16px; border-radius:18px; border:1px solid var(--chrome-line-strong); background:var(--chrome-bg); color:var(--text-chrome); font-size:12.5px; box-shadow:0 6px 18px rgba(0,0,0,.2); cursor:pointer;}
 .msp-back:hover{background:var(--chrome-bg-soft);}
-body.msp-open #scriptNav, body.msp-open #pageIndicator, body.msp-open #zoomIndicator, body.msp-open #minimap{display:none !important;}
 
 /* ---------- iPad portrait: rotated chrome ----------
    In portrait the three chrome panels rotate one position:
@@ -5527,6 +5542,31 @@ function deleteAcrossBlocks(range, noTrash){
   placeCaretAtFlatOffset(a, flat);
   return a;
 }
+/* DELETING SELECTED TEXT TAKES AN EMPTIED LINE WITH IT
+   When the text that is deleted was all of a line's text, the line goes too (it is not left behind as an
+   empty one, with its caret hidden and its lines too close, to be removed by a second Backspace): the caret
+   goes to the end of the paragraph before it, or to the start of the one after it when it was the first.
+   A line that carries something of its own (a note, a shot, a scene number, an Alt, a dual dialogue side,
+   a page anchor) stays, empty but whole, with the caret in it. Typing or pasting over a selection, and Cut,
+   do not use this: the writer is about to put something there. Returns the block that holds the caret. */
+function vanishEmptyLine(block){
+  if(!block || !block.isConnected) return block;
+  if((block.textContent||'').length || block.querySelector('img')) return block;
+  const d=block.dataset;
+  let holder=null;
+  if(isStrayBlank(block) && !d.dual && !d.alts && !faLineReferenced(d.id)){
+    const lineBeside=(el, dir)=>{
+      let n=dir<0 ? el.previousElementSibling : el.nextElementSibling;
+      while(n && !n.classList.contains('line-block')) n=dir<0 ? n.previousElementSibling : n.nextElementSibling;
+      return (n && !inTitlePage(n)) ? n : null;
+    };
+    const prev=lineBeside(block, -1), next=lineBeside(block, 1);
+    if(prev){ block.remove(); placeCaretAtEnd(prev); holder=prev; }
+    else if(next){ block.remove(); placeCaretAtStart(next); holder=next; }
+  }
+  if(!holder){ ensureBlankPlaceholder(block); placeCaretAtStart(block); holder=block; }
+  return holder;
+}
 function selectionSpansBlocks(sel){
   if(!sel || !sel.rangeCount) return false;
   const r=sel.getRangeAt(0);
@@ -6014,7 +6054,7 @@ content.addEventListener('keydown', function(e){
     const kept=deleteAcrossBlocks(sel.getRangeAt(0));
     if(kept){
       scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); markSmartTypeDirty();
-      if(e.key==='Backspace' || e.key==='Delete'){ e.preventDefault(); ensureCaretVisible(); return; }
+      if(e.key==='Backspace' || e.key==='Delete'){ e.preventDefault(); vanishEmptyLine(kept); ensureCaretVisible(); return; }
       if(e.key.length===1){
         e.preventDefault();
         insertTextAtCaret(e.key);
@@ -6316,6 +6356,7 @@ content.addEventListener('beforeinput', function(e){
   e.preventDefault();
   const kept=deleteAcrossBlocks(sel.getRangeAt(0));
   if(!kept) return;
+  if(/^delete/.test(t)) vanishEmptyLine(kept);
   if(t==='insertText' || t==='insertReplacementText'){
     const d=e.data || (e.dataTransfer && e.dataTransfer.getData('text/plain')) || '';
     if(d){ insertTextAtCaret(d); content.dispatchEvent(new InputEvent('input', {inputType:'insertText', data:d, bubbles:true})); }
@@ -6359,6 +6400,7 @@ content.addEventListener('paste', function(e){
   let block=getCurrentBlock(sel);
   if(!block || !sel.rangeCount) return;
   const revBefore=revisionIdSnapshot();
+  if(!sel.isCollapsed) trashScriptRange(sel.getRangeAt(0).cloneRange());   // the text a paste replaces is kept like one that was deleted (same rule)
   // Pasting over a selection that spans paragraphs: join them first, as
   // typing would, then paste at the joined point.
   if(selectionSpansBlocks(sel)){ const kept=deleteAcrossBlocks(sel.getRangeAt(0)); if(kept) block=kept; }
@@ -10145,7 +10187,7 @@ async function loadZoomPref(){
    straight under this project's key: the shared copy every other setting also
    keeps would hand the zoom to a project that has never been zoomed. */
 function scheduleZoomSave(){
-  if(!state.projectId || (typeof _compareActive!=='undefined' && _compareActive)) return;
+  if(!state.projectId || (typeof _compareActive!=='undefined' && _compareActive) || _msSplit) return;
   const pid=state.projectId;
   _savedZoom=zoom;
   clearTimeout(_zoomSaveTimer);
@@ -16314,7 +16356,7 @@ function showToast(msg, opts){
   toastEl.textContent=msg; toastEl.classList.add('show');
   clearTimeout(toastTimer);
   toastSticky=sticky;
-  if(!sticky) toastTimer=setTimeout(()=>toastEl.classList.remove('show'), NOTICE_MS);
+  if(!sticky) toastTimer=setTimeout(()=>toastEl.classList.remove('show'), (opts && opts.ms) || NOTICE_MS);
 }
 function hideStickyToast(){
   if(!toastSticky) return;
@@ -16583,7 +16625,7 @@ let _mspTok=0;
 function msSearchActive(){ return !!(msSearch.on && findTerm && msSearch.pid===state.projectId); }
 function msParseData(d){
   const raw=Array.isArray(d && d.lines) ? d.lines : [];
-  const lines=raw.filter(l=>l && typeof l==='object').map(l=>({t:String(l.type||'action'), x:(typeof l.text==='string' ? l.text : '').replace(/\u00a0/g,' '), h:typeof l.html==='string' ? l.html : '', role:!!l.titleRole, brk:!!l.forceBreakAfter, title:false}));
+  const lines=raw.filter(l=>l && typeof l==='object').map(l=>({t:String(l.type||'action'), x:(typeof l.text==='string' ? l.text : '').replace(/\u00a0/g,' '), h:typeof l.html==='string' ? l.html : '', a:(typeof l.align==='string' && l.align) ? l.align : null, role:!!l.titleRole, brk:!!l.forceBreakAfter, title:false}));
   // The title page is the lines up to the first forced page break, when any of them is a title field.
   let end=-1;
   for(let i=0;i<lines.length;i++){ if(lines[i].brk){ end=i; break; } }
@@ -16633,7 +16675,8 @@ async function msSearchRun(){
   if(!pid) return;
   if(!term){
     msSearch.hits=new Map(); msSearch.running=false;
-    msPreviewClose(); msSearchInfo('Type something to search the milestones'); renderTimeline();
+    msSearchInfo('Type something to search the milestones'); renderTimeline();
+    if(msPrev.open) msPreviewRender(false);   // an open preview stays; its matches just go out
     return;
   }
   msOpenBar();
@@ -16663,20 +16706,47 @@ function msSearchStop(){
   const c=document.getElementById('fpMilestones'); if(c) c.checked=false;
   if(had){ try{ renderTimeline(); }catch(err){} }
 }
-/* ---- the read-only preview ---- */
-function msPreviewEnsure(){
-  let el=document.getElementById('msPreview');
-  if(el) return el;
-  el=document.createElement('div'); el.id='msPreview'; el.className='msp'; el.hidden=true;
-  el.innerHTML='<div class="msp-head"><span class="msp-title" id="mspTitle"></span><span class="msp-sub">Read-only preview \u2014 your script has not changed</span></div>'+
-    '<div class="msp-scroll" id="mspScroll"><div class="msp-page" id="mspPage"></div></div>'+
+/* ---- the preview, beside the script (like Compare) ----
+   The sidebars close, THIS script stays on the left -- live and editable, so a copy from the preview can
+   be pasted straight into it -- and the milestone is shown on the right as formatted pages with the
+   matches lit. The layout is not saved as the project's layout; "Back to Script" (or turning the switch
+   off, or closing Find) puts everything back as it was. */
+var _msSplit=false, _msRestore=null;
+function msLayoutEnter(){
+  if(_msSplit) return;
+  if(_compareActive) endCompareMode(true);
+  _msSplit=true;
+  _msRestore={left:!!state.panelsVisible.left, right:!!state.panelsVisible.right, split:!!splitPrefs.on, nav:!!navPrefs.open};
+  setPanel('left', false); setPanel('right', false);
+  if(splitPrefs.on){ splitPrefs.on=false; applySplitPane(); }
+  if(navPrefs.open){ navPrefs.open=false; placeNavigator(); }
+  const pane=document.createElement('section'); pane.id='msPane';
+  pane.innerHTML='<div class="cp-head"><span class="cp-title" id="mspTitle"></span><span class="msp-sub">Read-only preview \u2014 your script has not changed</span></div>'+
+    '<div class="cp-scroll" id="mspScroll"><div class="cp-page" id="mspPage"></div></div>'+
     '<button type="button" class="msp-back" id="mspBack">\u2190 Back to Script</button>';
-  document.getElementById('canvasViewport').appendChild(el);
-  // The page behind pans and zooms on these; the preview scrolls by itself.
-  ['pointerdown','mousedown','touchstart','wheel','dblclick','contextmenu','click'].forEach(ev=>el.addEventListener(ev, e=>e.stopPropagation(), {passive:true}));
-  el.querySelector('#mspBack').addEventListener('click', ()=>msPreviewClose());
-  return el;
+  viewport.after(pane);
+  pane.querySelector('#mspBack').addEventListener('click', ()=>msPreviewClose());
+  compareFitLeft();
+  window.addEventListener('resize', msSizePage);
 }
+function msLayoutExit(){
+  if(!_msSplit) return;
+  window.removeEventListener('resize', msSizePage);
+  const pane=document.getElementById('msPane'); if(pane) pane.remove();
+  const r=_msRestore||{};
+  _msSplit=false; _msRestore=null;
+  if(r.split){ splitPrefs.on=true; applySplitPane(); }
+  if(r.nav){ navPrefs.open=true; placeNavigator(); }
+  setPanel('left', !!r.left); setPanel('right', !!r.right);
+  // The sidebars come back with an animation: centre the script once the canvas has its final width.
+  resetViewportEdge(950);
+  setTimeout(()=>{ if(_msSplit) return; const vr=viewport.getBoundingClientRect(); pan.x=(vr.width-PAGE_W*zoom)/2; applyTransform(); resetViewportEdge(); }, 950);
+}
+function msSizePage(){
+  const sc=document.getElementById('mspScroll'), page=document.getElementById('mspPage'); if(!sc || !page) return;
+  page.style.zoom=String(Math.max(0.25, Math.min(1, (sc.clientWidth-32)/PAGE_W)));
+}
+if(window.ResizeObserver) new ResizeObserver(()=>{ if(_msSplit) msSizePage(); }).observe(document.getElementById('mainArea'));
 // Wraps every match of `term` inside `root`'s text in <mark class="ms-hit">; one group of marks per match.
 function msMarkEl(root, term, mc, out){
   const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -16704,19 +16774,28 @@ function msPreviewRender(fresh){
   if(!page || !scroll || !msPrev.parsed) return;
   const term=findTerm, mc=findOpts.matchCase, p=msPrev.parsed, keepTop=scroll.scrollTop;
   page.textContent='';
-  const groups=[]; let titleBox=null;
-  p.lines.forEach((l, i)=>{
+  const groups=[]; let titleBox=null, first=true;
+  p.lines.forEach(l=>{
     if(l.title){
+      if(!msFindTitle) return;   // the title page is shown only when it is part of the search
       if(!titleBox){ titleBox=document.createElement('div'); titleBox.className='msp-titlepage'; page.appendChild(titleBox); }
       const d=document.createElement('div'); d.className='msp-tline'; d.textContent=l.x || '\u00a0';
       titleBox.appendChild(d);
-      if(msFindTitle && term) msMarkEl(d, term, mc, groups);
+      if(term) msMarkEl(d, term, mc, groups);
       return;
     }
-    const el=createLineElement({id:'msp'+i, type:l.t, html:l.h!=='' ? l.h : undefined, text:l.x});
-    ensureBlankPlaceholder(el);
-    page.appendChild(el);
-    if(term) msMarkEl(el, term, mc, groups);
+    const spec=docElementSpec(l.t||'action');
+    const left=(PDF_TEXT_ORIGIN_IN+spec.leftIn)*96, width=Math.max(48, (DOC_TEXT_W-spec.leftIn-spec.rightIn)*96);
+    const pad=first ? 0 : Math.max(0, spec.before)*16; first=false;
+    const d=document.createElement('div');
+    d.className='cp-line'+(isNonPrintingType(l.t) ? ' cp-np' : '');
+    d.dataset.type=l.t; if(l.a) d.dataset.align=l.a;
+    d.style.cssText='margin-left:'+left.toFixed(0)+'px; width:'+width.toFixed(0)+'px; padding-top:'+pad+'px; text-align:'+(l.a || spec.align)+';'+
+      (spec.upper ? ' text-transform:uppercase;' : '')+(spec.bold ? ' font-weight:700;' : '')+(spec.italic ? ' font-style:italic;' : '')+(spec.underline ? ' text-decoration:underline;' : '');
+    d.appendChild(l.h!=='' ? htmlToFragment(l.h) : document.createTextNode(l.x));
+    if(!d.firstChild) d.appendChild(document.createTextNode('\u00a0'));
+    page.appendChild(d);
+    if(term) msMarkEl(d, term, mc, groups);
   });
   if(msFindNotes && p.notes.length){
     const h=document.createElement('div'); h.className='msp-notes-h'; h.textContent='Notes in this milestone'; page.appendChild(h);
@@ -16727,8 +16806,7 @@ function msPreviewRender(fresh){
   }
   msPrev.groups=groups;
   msPrev.idx=groups.length ? (fresh ? 0 : Math.min(msPrev.idx, groups.length-1)) : 0;
-  const w=scroll.clientWidth-32;
-  page.style.zoom=w<816 ? String(Math.max(0.3, w/816)) : '1';
+  msSizePage();
   if(fresh) msPreviewShowCur(true); else { scroll.scrollTop=keepTop; msPreviewShowCur(false); }
   updateFindCountDisplay();
 }
@@ -16736,7 +16814,6 @@ function msPreviewShowCur(jump){
   msPrev.groups.forEach((g, i)=>g.forEach(mk=>mk.classList.toggle('cur', i===msPrev.idx)));
   const g=msPrev.groups[msPrev.idx], sc=document.getElementById('mspScroll');
   if(!jump || !g || !g[0] || !sc) return;
-  // Scrolled by hand (not scrollIntoView, which could also move the hidden canvas behind).
   const r=g[0].getBoundingClientRect(), s=sc.getBoundingClientRect();
   sc.scrollTop += (r.top-s.top) - sc.clientHeight/2 + r.height/2;
 }
@@ -16755,21 +16832,40 @@ async function msPreviewOpen(id){
   const m=(_msIndexCache.get(pid)||[]).find(v=>v.id===id);
   msPrev.parsed=msParseData(d); msSearch.cur=id;
   msPrev.name=((m && m.name) || 'Automatic backup')+(m ? ' \u00B7 '+new Date(m.time).toLocaleString() : '');
-  const el=msPreviewEnsure();
-  el.hidden=false; msPrev.open=true; document.body.classList.add('msp-open');
+  msLayoutEnter();
+  msPrev.open=true;
   document.getElementById('mspTitle').textContent=msPrev.name;
   msPreviewRender(true);
   renderTimeline();
+  showToast('Milestone Opened', {ms:1000});
 }
 function msPreviewClose(){
   _mspTok++;
   const was=msPrev.open;
-  const el=document.getElementById('msPreview'); if(el) el.hidden=true;
-  const pg=document.getElementById('mspPage'); if(pg) pg.textContent='';
   msPrev.open=false; msPrev.groups=[]; msPrev.parsed=null; msSearch.cur=null;
-  document.body.classList.remove('msp-open');
+  msLayoutExit();
   if(was){ try{ renderTimeline(); }catch(err){} updateFindCountDisplay(); }
 }
+// A copy from the preview carries each line's element type and formatting, as a copy from the script does,
+// so pasting it into the script (on the left) keeps Dialogue as Dialogue, and so on.
+document.addEventListener('copy', function(e){
+  if(!msPrev.open) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || sel.isCollapsed) return;
+  const range=sel.getRangeAt(0), pane=document.getElementById('msPane');
+  if(!pane || !pane.contains(range.commonAncestorContainer)) return;
+  const lines=Array.from(pane.querySelectorAll('.cp-line[data-type]')).filter(b=>range.intersectsNode(b));
+  if(!lines.length) return;   // the title page or the notes: an ordinary text copy
+  const payload=lines.map(b=>{
+    const frag=rangeIntersectionWithinBlock(range, b).cloneContents();
+    frag.querySelectorAll('mark.ms-hit').forEach(mk=>mk.replaceWith(...Array.from(mk.childNodes)));
+    const div=document.createElement('div'); div.appendChild(frag);
+    return {type:b.dataset.type, html:div.innerHTML, align:b.dataset.align||null, text:div.textContent};
+  });
+  e.clipboardData.setData('text/plain', payload.map(q=>q.text).join('\n'));
+  e.clipboardData.setData('application/x-novel-dots-lines', JSON.stringify(payload));
+  e.preventDefault();
+});
 // Esc closes the preview (but in Find's own box Esc closes Find, and the preview with it).
 document.addEventListener('keydown', function(e){
   if(e.key!=='Escape' || !msPrev.open) return;
@@ -17105,7 +17201,8 @@ function trashNote(note){
 // The script text inside `range` (a Range of the script, taken BEFORE it is removed).
 // `run` ('back' | 'fwd') marks a deletion made without a selection (only kept when the setting asks for
 // every deletion): letters removed one after another are joined into one entry instead of one each.
-let _ptrashRun=null;
+let _ptrashRun=null, _ptrashForce=false;
+const PTRASH_MIN_WORDS=15;
 function trashScriptRange(range, run){
   try{
     if(!range || range.collapsed) return;
@@ -17131,8 +17228,15 @@ function trashScriptRange(range, run){
       }
     }
     if(!paras.some(q=>q.x.trim())) return;
-    const letters=paras.reduce((n,q)=>n+q.x.replace(/\s/g,'').length, 0);
-    if(!ptrashAll && letters<3 && paras.length<2) return;   // a stray letter or two is not worth a Trash entry (unless every deletion is wanted)
+    // What goes to the Trash by itself is a deletion worth keeping as a piece of the script: a paragraph taken
+    // in full, or PTRASH_MIN_WORDS words or more. Smaller pieces (a word changed for another while polishing)
+    // stay out, unless the writer asks for them: "Delete and Keep in Trash" (deleteSelectionToTrash), or the
+    // setting that keeps every deletion.
+    if(!ptrashAll && !_ptrashForce){
+      const words=paras.reduce((n,q)=>n+q.x.trim().split(/\s+/).filter(Boolean).length, 0);
+      const whole=paras.some(q=>q.len>0 && q.x.length>=q.len);
+      if(words<PTRASH_MIN_WORDS && !whole) return;
+    }
     const key=JSON.stringify(paras.map(q=>[q.t,q.x])), last=projectTrash.texts[0];
     if(last && JSON.stringify(last.paras.map(q=>[q.t,q.x]))===key && Date.now()-last.at<3000) return;
     const entryT={id:uid('tt'), at:Date.now(), paras};
@@ -17141,6 +17245,34 @@ function trashScriptRange(range, run){
     projectTrash.texts=projectTrash.texts.slice(0,PTRASH_MAX);
     ptrashChanged();
   }catch(err){}
+}
+/* DELETE AND KEEP IN TRASH: the writer chooses, selection by selection, what goes to the project's Trash,
+   whatever its size. Default key Cmd+Option+Backspace (Ctrl+Alt+Backspace elsewhere), also in the script's
+   right-click menu. It needs a selection; the deletion itself is the ordinary one (one undo step). */
+function deleteSelectionToTrash(){
+  if(readOnlyMode) return;
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount || sel.isCollapsed || !content.contains(sel.anchorNode)){ showToast('Select the text to delete and keep first'); return; }
+  const r0=sel.getRangeAt(0).cloneRange();
+  try{ content.focus({preventScroll:true}); }catch(err){ content.focus(); }
+  const s2=window.getSelection(); s2.removeAllRanges(); s2.addRange(r0);
+  const before=projectTrash.texts.length ? projectTrash.texts[0].id : null;
+  _ptrashForce=true;
+  try{ trashScriptRange(r0.cloneRange()); } finally { _ptrashForce=false; }
+  const kept=projectTrash.texts.length && projectTrash.texts[0].id!==before;
+  if(selectionTouchesTitlePage(s2)){ document.execCommand('delete'); showToast(kept ? 'Deleted \u2014 kept in the Trash' : 'Deleted'); return; }
+  const rng=s2.getRangeAt(0);
+  if(selectionSpansBlocks(s2)){
+    const holder=deleteAcrossBlocks(rng, true);
+    if(holder) vanishEmptyLine(holder);
+  } else {
+    const b=blockOfNode(rng.startContainer);
+    rng.deleteContents();
+    if(b){ sanitizeBlockMarkup(b); s2.removeAllRanges(); s2.addRange(rng); vanishEmptyLine(b); }
+  }
+  content.dispatchEvent(new InputEvent('input', {inputType:'deleteContentBackward', bubbles:true}));
+  scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); markSmartTypeDirty();
+  showToast(kept ? 'Deleted \u2014 kept in the Trash' : 'Deleted');
 }
 // Typing over a selection, Delete or Backspace on one: the selection goes to the Trash first.
 // (Cut is handled in handleScriptCopyOrCut; the title page's fields are never kept.)
@@ -17168,6 +17300,18 @@ content.addEventListener('beforeinput', function(e){
   const r=sel.getRangeAt(0);
   if(!content.contains(r.commonAncestorContainer)) return;
   trashScriptRange(r.cloneRange());
+  // All of one line's text selected and deleted: the line goes with it (see vanishEmptyLine).
+  if(/^delete/.test(t)){
+    const bl=blockOfNode(r.startContainer);
+    if(bl && bl===blockOfNode(r.endContainer) && !isTitlePageLine(bl) && (bl.textContent||'').length &&
+       r.toString().replace(/\u00a0/g,' ').length >= (bl.textContent||'').replace(/\u00a0/g,' ').length){
+      e.preventDefault();
+      bl.innerHTML='';
+      vanishEmptyLine(bl);
+      content.dispatchEvent(new InputEvent('input', {inputType:t, bubbles:true}));
+      scheduleReflow(); scheduleSnapshot(); scheduleAutosave(); markSmartTypeDirty();
+    }
+  }
 }, true);
 function ptvWhen(at){
   const d=new Date(at), left=Math.max(0, Math.ceil((at+TRASH_DAYS*86400000-Date.now())/86400000));
@@ -17231,6 +17375,227 @@ function renderProjectTrash(){
     nl.appendChild(it);
   });
 }
+/* =========================================================
+   RESTORING FROM THE TRASH: SHOWN WHERE IT LANDED
+   What Put Back / Restore brought back is boxed, the script moves to it, and (for script text) it is
+   already selected, so the writer can copy it at once. There is no "finish" button: the box goes away
+   by itself when
+     - a drag of the box is done (the box can be dragged to put the restored part somewhere else),
+     - anything else is clicked,
+     - a key is typed (copy, Cmd/Ctrl+C or X, counts: it ends the box too),
+   so restoring stays one natural step. Only a box on the screen: nothing of it is saved or undone.
+   ========================================================= */
+const rh={kind:null, els:[], note:null, boxes:[], raf:0, drag:null, dx:0, dy:0, drop:null};
+function rhLayer(){
+  let l=document.getElementById('restoreBoxLayer');
+  if(!l){ l=document.createElement('div'); l.id='restoreBoxLayer'; world.appendChild(l); }
+  return l;
+}
+function rhLocal(r){
+  const wr=world.getBoundingClientRect();
+  return {l:(r.left-wr.left)/zoom, t:(r.top-wr.top)/zoom, w:r.width/zoom, h:r.height/zoom};
+}
+function rhClear(){
+  if(rh.kind===null) return;
+  cancelAnimationFrame(rh.raf); rh.raf=0;
+  const l=document.getElementById('restoreBoxLayer'); if(l) l.remove();
+  rh.kind=null; rh.els=[]; rh.note=null; rh.boxes=[]; rh.drag=null; rh.dx=0; rh.dy=0; rh.drop=null;
+  document.removeEventListener('pointerdown', rhOnPointerDown, true);
+  document.removeEventListener('keydown', rhOnKey, true);
+  document.removeEventListener('copy', rhClear);
+  document.removeEventListener('cut', rhClear);
+}
+function rhOnPointerDown(e){
+  if(e.target && e.target.closest && e.target.closest('#restoreBoxLayer')) return;   // a press on the box itself is the start of a drag
+  rhClear();
+}
+function rhOnKey(e){
+  if(['Shift','Control','Alt','Meta','CapsLock','Dead'].indexOf(e.key)>=0) return;
+  if((e.metaKey || e.ctrlKey) && /^[cx]$/i.test(e.key)) return;   // the copy / cut event ends it
+  rhClear();
+}
+function rhBegin(kind){
+  rhClear();
+  rh.kind=kind; rhLayer();
+  document.addEventListener('pointerdown', rhOnPointerDown, true);
+  document.addEventListener('keydown', rhOnKey, true);
+  document.addEventListener('copy', rhClear);
+  document.addEventListener('cut', rhClear);
+  const tick=()=>{ if(rh.kind===null) return; try{ rhTick(); }catch(err){ rhClear(); return; } rh.raf=requestAnimationFrame(tick); };
+  rh.raf=requestAnimationFrame(tick);
+}
+function rhBox(i, cls){
+  const layer=rhLayer();
+  let b=rh.boxes[i];
+  if(!b){ b=document.createElement('div'); b.className='rh-box '+cls; layer.appendChild(b); rh.boxes[i]=b; }
+  return b;
+}
+function rhTrimBoxes(n){ while(rh.boxes.length>n){ const b=rh.boxes.pop(); b.remove(); } }
+function rhTick(){
+  if(rh.kind==='script'){
+    const els=rh.els.filter(b=>b.isConnected);
+    if(!els.length){ rhClear(); return; }
+    const segs=[]; let cur=null, prev=null;
+    els.forEach(b=>{
+      const r=b.getBoundingClientRect();
+      const pt=(parseFloat(getComputedStyle(b).paddingTop)||0)*zoom;   // the blank line above a paragraph is not part of its text
+      const L=rhLocal({left:r.left, top:r.top+pt, width:r.width, height:Math.max(1, r.height-pt)});
+      if(cur && b.previousElementSibling===prev){ cur.l=Math.min(cur.l, L.l); cur.r=Math.max(cur.r, L.l+L.w); cur.b=Math.max(cur.b, L.t+L.h); }
+      else { cur={l:L.l, r:L.l+L.w, t:L.t, b:L.t+L.h}; segs.push(cur); }   // a page break (a spacer between) starts another box
+      prev=b;
+    });
+    segs.forEach((s, i)=>{
+      const b=rhBox(i, 'script');
+      b.style.left=(s.l-6)+'px'; b.style.top=(s.t-4)+'px'; b.style.width=(s.r-s.l+12)+'px'; b.style.height=(s.b-s.t+8)+'px';
+      b.style.transform=(rh.dx||rh.dy) ? 'translate('+rh.dx+'px,'+rh.dy+'px)' : '';
+    });
+    rhTrimBoxes(segs.length);
+  } else if(rh.kind==='note'){
+    const w=noteEls[rh.note.id];
+    if(!w){ rhClear(); return; }
+    const card=w.card.getBoundingClientRect().width>2 ? w.card : w.dot;
+    const L=rhLocal(card.getBoundingClientRect());
+    const b=rhBox(0, 'note');
+    if(!b.firstChild){ ['t','b','l','r'].forEach(k=>{ const ed=document.createElement('div'); ed.className='rh-edge '+k; b.appendChild(ed); if(!readOnlyMode){
+      const mode=rhNoteMode(rh.note, card===w.dot);
+      if(mode==='card') rhAttachWholeNoteDrag(ed, rh.note); else attachDragReposition(ed, rh.note, mode);
+      ed.addEventListener('pointerup', ()=>{ setTimeout(rhClear, 0); }); } }); }
+    b.style.left=(L.l-8)+'px'; b.style.top=(L.t-8)+'px'; b.style.width=(L.w+16)+'px'; b.style.height=(L.h+16)+'px';
+  }
+}
+function rhNoteMode(note, dotOnly){
+  if(note.kind==='sticky') return 'sticky';
+  if(note.parentNoteId) return 'free';
+  return dotOnly ? 'dot' : 'card';
+}
+/* Dragging a restored Dot Note's box moves the WHOLE note: the card and its dot together (the dot is
+   re-anchored to the paragraph it ends up beside). This is the only drag in which the dot comes along with
+   the card; dragging a card by its header leaves the dot where it is. */
+function rhAttachWholeNoteDrag(handleEl, note){
+  let down=false, dragging=false, sx=0, sy=0, st=null;
+  handleEl.addEventListener('pointerdown', function(e){
+    if(e.button!==0 || readOnlyMode) return;
+    e.preventDefault(); e.stopPropagation();
+    down=true; dragging=false; sx=e.clientX; sy=e.clientY;
+    const g=noteCardGeom(note);
+    st={w:screenToWorld(e.clientX, e.clientY), dotX:note.dotX, dotY:note.dotY, left:g.left, width:g.width};
+    freezeExtraDots(note);
+    handleEl.setPointerCapture(e.pointerId);
+  });
+  handleEl.addEventListener('pointermove', function(e){
+    if(!down) return;
+    if(!dragging && Math.hypot(e.clientX-sx, e.clientY-sy)>6){ dragging=true; document.body.classList.add('note-dragging'); }
+    if(!dragging) return;
+    const w=screenToWorld(e.clientX, e.clientY), dx=w.x-st.w.x, dy=w.y-st.w.y;
+    const targetY=st.dotY+dy, line=nearestLineToWorldY(targetY);
+    if(!line) return;
+    const before=noteVisualAnchor(note);
+    note.dotX=st.dotX+dx; note.dotY=targetY;
+    if(!note.anchorLineIds) note.anchorLineIds=[];
+    note.anchorLineIds[0]=line.dataset.id;
+    note.dotAnchorOffsetY=targetY-lineWorldTop(line);
+    // The card keeps its place relative to the dot (cardYOffset is untouched) and moves sideways by the same step.
+    const left=st.left+dx;
+    note.side=(left+st.width/2) < PAGE_W/2 ? 'left' : 'right';
+    note.cardOffsetX=clamp(note.side==='left' ? (0-(left+st.width)) : (left-PAGE_W), 0-(PAGE_W+CARD_W_MAX), 1400);
+    noteEls[note.id].wrap.dataset.side=note.side;
+    layoutAllNotes(); updateConnectors();
+    const after=noteVisualAnchor(note), gdx=after.x-before.x, gdy=after.y-before.y;
+    if(gdx || gdy){
+      const family=dragGroupFor(note);
+      if(family.length>1){ family.forEach(o=>{ if(o.id!==note.id) moveNoteCardByDelta(o, gdx, gdy); }); layoutAllNotes(); updateConnectors(); }
+    }
+  });
+  function up(){
+    if(!down) return;
+    down=false; document.body.classList.remove('note-dragging');
+    if(dragging){
+      if(note.anchorLineIds && note.anchorLineIds.length>1){
+        const primary=note.anchorLineIds[0];
+        note.anchorLineIds=[primary].concat(note.anchorLineIds.slice(1).filter(id=>id!==primary)); updateConnectors();
+      }
+      scheduleSnapshot(); scheduleAutosave();
+    }
+  }
+  handleEl.addEventListener('pointerup', up);
+  handleEl.addEventListener('pointercancel', up);
+}
+/* ---- script text ---- */
+function rhSelectEls(els){
+  const first=els[0], last=els[els.length-1];
+  try{ content.focus({preventScroll:true}); }catch(err){ content.focus(); }
+  const r=document.createRange(); r.setStart(first, 0); r.setEnd(last, last.childNodes.length);
+  const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+}
+function rhShowScript(els){
+  els=els.filter(b=>b && b.isConnected);
+  if(!els.length) return;
+  rhBegin('script'); rh.els=els;
+  rhSelectEls(els);
+  panToWorldPointFraction(PAGE_W/2, lineWorldTop(els[0]), NAV_TOP_FRACTION);
+  // The box is dragged to put the restored paragraphs somewhere else.
+  const layer=rhLayer();
+  layer.addEventListener('pointerdown', function(e){
+    const box=e.target.closest && e.target.closest('.rh-box'); if(!box) return;
+    e.preventDefault(); e.stopPropagation();
+    if(e.button!==0) return;
+    rh.drag={x:e.clientX, y:e.clientY, moved:false, id:e.pointerId, box};
+    try{ box.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  layer.addEventListener('pointermove', function(e){
+    const d=rh.drag; if(!d || e.pointerId!==d.id) return;
+    const dx=e.clientX-d.x, dy=e.clientY-d.y;
+    if(!d.moved && Math.hypot(dx, dy)<5) return;
+    d.moved=true; rh.dx=dx/zoom; rh.dy=dy/zoom;
+    rh.boxes.forEach(b=>b.classList.add('dragging'));
+    rhShowDrop(rhDropSpot(screenToWorld(e.clientX, e.clientY).y));
+  });
+  layer.addEventListener('pointerup', function(e){
+    const d=rh.drag; if(!d || e.pointerId!==d.id) return;
+    const moved=d.moved, spot=moved ? rhDropSpot(screenToWorld(e.clientX, e.clientY).y) : null, mine=rh.els.slice();
+    rh.drag=null;
+    if(moved && spot && !readOnlyMode) rhMoveTo(mine, spot);
+    rhClear();   // one drag, or a click on the box: that is the end of it
+  });
+  layer.addEventListener('pointercancel', ()=>{ rh.drag=null; rh.dx=0; rh.dy=0; rhShowDrop(null); rh.boxes.forEach(b=>b.classList.remove('dragging')); });
+}
+// Where the dragged paragraphs would land: before or after one of the other body paragraphs.
+function rhDropSpot(worldY){
+  const others=Array.from(content.querySelectorAll('.line-block')).filter(b=>!rh.els.includes(b) && !isTitlePageLine(b));
+  if(!others.length) return null;
+  let ref=null, before=true;
+  for(const b of others){ if(lineWorldTop(b)+b.offsetHeight/2 > worldY){ ref=b; break; } }
+  if(!ref){ ref=others[others.length-1]; before=false; }
+  const y=before ? lineWorldTop(ref) : lineWorldTop(ref)+ref.offsetHeight;
+  return {ref, before, y};
+}
+function rhShowDrop(spot){
+  let el=document.getElementById('restoreDropLine');
+  if(!spot){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement('div'); el.id='restoreDropLine'; el.className='rh-drop'; rhLayer().appendChild(el); }
+  el.style.left='0px'; el.style.width=PAGE_W+'px'; el.style.top=(spot.y-1)+'px';
+}
+function rhMoveTo(els, spot){
+  const prevB=spot.before ? spot.ref.previousElementSibling : spot.ref;
+  const nextB=spot.before ? spot.ref : spot.ref.nextElementSibling;
+  const inPair=prevB && nextB && prevB.classList.contains('line-block') && nextB.classList.contains('line-block') && prevB.dataset.dual && nextB.dataset.dual;
+  if(inPair){ showToast('It can\u2019t go between the two sides of a dual dialogue'); return; }
+  const frag=document.createDocumentFragment();
+  els.forEach(b=>frag.appendChild(b));
+  if(spot.before) spot.ref.before(frag); else spot.ref.after(frag);
+  recomputePagination();
+  rhSelectEls(els);
+  scheduleSnapshot(); scheduleAutosave();
+}
+/* ---- a note ---- */
+function rhShowNote(note){
+  const w=noteEls[note.id]; if(!w) return;
+  rhBegin('note'); rh.note=note;
+  const card=w.card.getBoundingClientRect().width>2 ? w.card : w.dot;
+  const L=rhLocal(card.getBoundingClientRect());
+  panToWorldPoint(L.l+L.w/2, L.t+L.h/2);
+}
+
 function restoreTrashedNote(entryId){
   if(readOnlyMode){ showToast('Read-Only: nothing can be restored'); return; }
   const i=projectTrash.notes.findIndex(e=>e.id===entryId); if(i<0) return;
@@ -17243,6 +17608,8 @@ function restoreTrashedNote(entryId){
   layoutAllNotes(); updateConnectors(); refreshShotInputValue(note.id); refreshFilterOptions();
   projectTrash.notes.splice(i,1);
   ptrashChanged(); scheduleSnapshot(); scheduleAutosave();
+  closeProjectTrash();
+  rhShowNote(note);   // boxed and in view
   showToast('Note restored');
 }
 function putBackScriptText(entryId){
@@ -17255,18 +17622,18 @@ function putBackScriptText(entryId){
   if(target && isTitlePageLine(target)) target=null;
   if(!target) target=body[body.length-1] || null;
   if(!target){ showToast('There is nowhere to put it'); return; }
-  let cursor=target;
+  let cursor=target; const made=[];
   e.paras.forEach(q=>{
     const el=createLineElement({type:q.t, html:q.h || escapeHtml(q.x)});
-    cursor.after(el); cursor=el;
+    cursor.after(el); cursor=el; made.push(el);
   });
-  placeCaretAtStart(cursor);
-  scheduleReflow(); scheduleSnapshot(); scheduleAutosave();
+  recomputePagination(); scheduleSnapshot(); scheduleAutosave();
   projectTrash.texts.splice(i,1); ptrashChanged();
-  try{ ensureCaretVisible(); }catch(err){}
+  rhShowScript(made);   // boxed, selected (ready to copy) and in view
   showToast('Put back in the script');
 }
 function openProjectTrash(){
+  rhClear();
   const v=document.getElementById('projTrashView');
   const sel=window.getSelection();
   _ptvTargetId=null;
@@ -17288,6 +17655,9 @@ function closeProjectTrash(){
 }
 document.getElementById('btnProjectTrash').addEventListener('click', ()=>{ if(document.getElementById('projTrashView').hidden) openProjectTrash(); else closeProjectTrash(); });
 document.getElementById('ptvBack').addEventListener('click', closeProjectTrash);
+// The Trash lies inside the canvas, whose own handlers pan it on a wheel turn and take every press: the
+// Trash is not the canvas, so none of that reaches it (the scroll bar, the wheel and text selection work).
+['pointerdown','mousedown','touchstart','wheel','dblclick','contextmenu'].forEach(ev=>document.getElementById('projTrashView').addEventListener(ev, e=>e.stopPropagation(), {passive:true}));
 document.getElementById('ptvEmptyTexts').addEventListener('click', async ()=>{
   if(!projectTrash.texts.length) return;
   if(await confirmModal('Empty Deleted Script Text','Delete all '+projectTrash.texts.length+' deleted script text item(s) for good? This cannot be undone.','Delete Forever', true)){ projectTrash.texts=[]; ptrashChanged(); }
@@ -20998,7 +21368,7 @@ async function applyProjectPrefs(pid){
   return view;
 }
 function saveProjectViewState(){
-  if(!state.projectId || _viewStateLoading || (typeof _compareActive!=='undefined' && _compareActive)) return;
+  if(!state.projectId || _viewStateLoading || (typeof _compareActive!=='undefined' && _compareActive) || _msSplit) return;
   saveViewPref('novel-dots-view', {left:!!state.panelsVisible.left, right:!!state.panelsVisible.right,
     timeline:!!state.panelsVisible.timeline, continuous:!!continuousView});
 }
@@ -21463,6 +21833,8 @@ async function goHome(){
   // Home's default is the start zone, never the project you just left.
   landingSelectedId=null;
   if(typeof _compareActive!=='undefined' && _compareActive) endCompareMode();
+  if(_msSplit) msSearchStop();
+  rhClear();
   state.projectId=null;
   loadThemePref(); // My Projects wears the app-wide appearance, not the last project's
   showLandingView();
@@ -22434,6 +22806,7 @@ function shortcutGroups(){
       ['New Sticky Note on selection', K('Mod+Shift+N')],
       ['New Additional Note (a note is selected or being edited)', K('Mod+N')],
       ['Delete a note (click it first, not its text)', 'Delete / Backspace'],
+      ['Delete selected text and keep it in the Trash', K('Mod+Alt+Backspace')],
       ['Toggle Note Selection', K('Mod+J')],
       ['Finish Note Selection', 'Enter'],
       ['Delete the selected drawing (Select tool)', 'Delete / Backspace'],
@@ -23769,6 +24142,17 @@ document.addEventListener('keydown', e=>{
   e.preventDefault(); e.stopImmediatePropagation();
   imLost();
 }, true);
+document.addEventListener('keydown', e=>{
+  if(!state.projectId || !modalRoot.classList.contains('hidden')) return;
+  if(customShortcuts['edit:deletekeep']) return;
+  if(!e.target || !content.contains(e.target)) return;
+  const combo=comboFromEvent(e);
+  if(!combo) return;
+  const c=COMMANDS.find(x=>x.id==='edit:deletekeep');
+  if(!c || !c.keys.includes(combo)) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  deleteSelectionToTrash();
+}, true);
 document.querySelectorAll('#ribbonTabs .ribbon-tab').forEach(t=>{
   t.addEventListener('mousedown', e=>e.preventDefault()); // never steal a live selection
   t.addEventListener('click', ()=>setRibbonTab(t.dataset.tab));
@@ -23950,7 +24334,7 @@ function pwGeneral(body){
       pwRow('Loop toolbar tabs', pwToggle('pwRibbonLoop', ribbonLoop), 'Off: the toolbar has two ends. On: keep scrolling past the last tab and the first one comes round again.')
     ])+
     pwCard('Trash', [
-      pwRow('Put every deleted text in the Trash', pwToggle('pwTrashAll', ptrashAll), 'Off: only text you select and delete is kept (3 letters or more). On: text removed one letter at a time with Backspace or Delete, and words or lines removed with a shortcut, is kept too. Cut text is never put in the Trash \u2014 it waits on the clipboard \u2014 and neither is text you drag to move.'),
+      pwRow('Put every deleted text in the Trash', pwToggle('pwTrashAll', ptrashAll), 'Off: only a deletion worth keeping goes to the Trash by itself \u2014 selected text that is a whole paragraph or 15 words or more. For anything smaller, select it and use Delete and Keep in Trash (\u2318\u2325\u232B, or right-click). On: every deletion is kept, even one letter at a time with Backspace, and words or lines removed with a shortcut. Cut text is never put in the Trash \u2014 it waits on the clipboard \u2014 and neither is text you drag to move.'),
       pwRow('Delete Trash items after '+TRASH_DAYS+' days', pwToggle('pwTrashAuto', ptrashAutoPurge), 'Off: deleted text and notes stay in the Trash until you empty it, delete them one by one, or delete the script. On: each item is removed '+TRASH_DAYS+' days after it was deleted.')
     ])+
     pwCard('Find', [
@@ -24288,6 +24672,10 @@ function showScriptContextMenu(clientX, clientY){
     items.push({label:'Connect with a Note', icon:'link', onClick:()=>startConnectFromParagraph(connectLineIds)});
   }
   if(hasSelection){ items.push({label:'New Shot from selection', icon:'shot', onClick:createShotFromSelection}); }
+  if(hasSelection){
+    const keepRange=sel.getRangeAt(0).cloneRange();
+    items.push({label:'Delete and Keep in Trash', onClick:()=>{ const s2=window.getSelection(); s2.removeAllRanges(); s2.addRange(keepRange); deleteSelectionToTrash(); }});
+  }
   // A beat can be started from the script, at the scene being looked at --
   // but only started: seeing and changing beats is the Outline sidebar's job.
   if(targetBlock && targetBlock.dataset.type==='scene_heading'){
@@ -24640,7 +25028,7 @@ function comboFromEvent(e){
   if(/^Key[A-Z]$/.test(k)) key=k.slice(3);
   else if(/^Digit[0-9]$/.test(k)) key=k.slice(5);
   else if(/^F([1-9]|1[0-2])$/.test(k)) key=k;
-  else key={Period:'.', Comma:',', Slash:'/', Semicolon:';', Quote:"'", BracketLeft:'[', BracketRight:']', Minus:'-', Equal:'=', Backquote:'`', Backslash:'\\', Tab:'Tab'}[k]||'';
+  else key={Period:'.', Comma:',', Slash:'/', Semicolon:';', Quote:"'", BracketLeft:'[', BracketRight:']', Minus:'-', Equal:'=', Backquote:'`', Backslash:'\\', Tab:'Tab', Backspace:'Backspace'}[k]||'';
   if(!key) return '';
   // Mod is Cmd on a Mac and Ctrl elsewhere -- and Cmd/Meta wherever it is
   // pressed, as the app's own shortcuts accept either.
@@ -24691,6 +25079,7 @@ function addCommand(id, label, group, keys, run){ COMMANDS.push({id, label, grou
   addCommand('fmt:aligncenter','Align Center','Format',[],()=>applyAlign('center'));
   addCommand('fmt:alignright','Align Right','Format',[],()=>applyAlign('right'));
   addCommand('edit:undo','Undo','Edit',['Mod+Z'],()=>undo());
+  addCommand('edit:deletekeep','Delete and Keep in Trash','Edit',['Mod+Alt+Backspace'],()=>deleteSelectionToTrash());
   addCommand('edit:redo','Redo','Edit',['Mod+Shift+Z','Mod+Y'],()=>redo());
   addCommand('edit:dual','Dual Dialogue','Edit',['Mod+D','Alt+D'],()=>{ content.focus({preventScroll:true}); toggleDualDialogue(); });
   addCommand('edit:altadd','Add Alt Dialogue','Edit',['Mod+Shift+.'],()=>runOnCaretBlock(b=>{ if(altsAllowed(b)){ if(!showAltsOn) setShowAlts(true); addAlternate(b); } }));
@@ -27558,6 +27947,7 @@ let _compareActive=false, _compareRestore=null, _compareCtx=null;
 function compareLinesTagged(lines){ return (lines||[]).map((l, i)=>Object.assign({}, l, {__cmpIdx:i})); }
 function startCompareMode(otherLines, otherLabel, otherIsOlder){
   if(!state.projectId) return;
+  if(_msSplit) msSearchStop();   // the Find preview and Compare use the same room
   if(_compareActive) endCompareMode(true);
   _compareActive=true;
   _compareRestore={left:!!state.panelsVisible.left, right:!!state.panelsVisible.right, split:!!splitPrefs.on, nav:!!navPrefs.open};
