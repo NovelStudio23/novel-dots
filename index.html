@@ -1754,7 +1754,7 @@ body.ruler-h-on #canvasHint{top:32px;}
 .tl-milestone.ms-dim{opacity:.28;}
 .tl-milestone.ms-auto{background:var(--chrome-bg); border-color:var(--accent);}
 .tl-milestone.ms-cur{box-shadow:0 0 0 3px var(--chrome-bg), 0 0 0 5px var(--accent), 0 0 12px 5px color-mix(in srgb, var(--accent) 40%, transparent);}
-#msPane{position:relative; flex:1; min-width:0; display:flex; flex-direction:column; background:var(--canvas); border-left:1px solid var(--chrome-line);}
+#msPane{position:relative; flex:1; min-width:0; display:flex; flex-direction:column; background:var(--canvas); border-left:2px solid var(--chrome-line-strong);}
 #msPane .cp-head{flex:none; display:flex; align-items:baseline; gap:12px; min-height:44px; padding:8px 14px; font:600 12.5px var(--sans); color:var(--text-chrome); background:var(--chrome-bg); border-bottom:1px solid var(--chrome-line);}
 #msPane .cp-title{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
 #msPane .msp-sub{font-weight:400; font-size:11.5px; color:var(--text-chrome-dim); white-space:nowrap;}
@@ -11727,14 +11727,23 @@ function deleteNote(id){
   // notes rather than deleting them).
   // ONLY THIS NOTE GOES. Whatever hung from it stays, where it is on the canvas:
   //  - if it was an Additional Note, its children attach to ITS parent (one link shorter);
-  //  - if it was an Original Note, each of its children becomes an Original Note of its own on
-  //    the paragraph level with its card (the same as right-click > Separate Note) -- they were
-  //    left with no parent and no paragraph before, and could no longer be found or moved.
+  //  - if it was an Original Note, its dot stays and its first Additional Note takes the dot over
+  //    (the card does not move; the connector now joins that dot to that card), the other
+  //    Additional Notes hang from it; with no usable dot each child becomes an Original Note of
+  //    its own on the paragraph level with its card (as right-click > Separate Note).
   trashNote(deleted);
   const kids=state.notes.filter(n=>n.parentNoteId===id);
   state.notes.splice(idx,1);
   if(noteEls[id]){ noteEls[id].wrap.remove(); delete noteEls[id]; }
   if(deleted.parentNoteId) kids.forEach(n=>{ n.parentNoteId=deleted.parentNoteId; });
+  else if(kids.length && deleted.kind==='dot' && deleted.anchorLineIds && deleted.anchorLineIds.length){
+    // The Original Note goes, its DOT STAYS where it is, and every Additional Note keeps its card
+    // exactly where it is. The first Additional Note (the oldest) takes over the dot, so the
+    // connector now runs from that dot to its card; any others hang from it as before.
+    const heir=kids[0];
+    if(convertToOriginalNote(heir, deleted)) kids.slice(1).forEach(n=>{ n.parentNoteId=heir.id; });
+    else kids.slice(1).forEach(n=>{ convertToOriginalNote(n); });
+  }
   else kids.forEach(n=>{ convertToOriginalNote(n); });
   layoutAllNotes(); updateConnectors(); scheduleSnapshot(); scheduleAutosave(); refreshFilterOptions();
 }
@@ -11845,7 +11854,7 @@ function createAdditionalNote(parentNote){
    follows the paragraph through edits). Its text, category, shot, size and fold state are
    kept; the Additional Notes hanging from IT stay with it. It is one undo step. */
 // Makes the Additional Note `note` an Original Note in place (see above). Returns false if it could not.
-function convertToOriginalNote(note){
+function convertToOriginalNote(note, inherit){
   const w=note.width||CARD_W_DEFAULT;
   const cardLeft=note.freeX, connectY=note.freeY+CARD_CONNECT_Y;
   const line=lineForPageGap(connectY) || nearestLineToWorldY(connectY);
@@ -11861,15 +11870,24 @@ function convertToOriginalNote(note){
   }
   const side=(cardLeft+w/2) < PAGE_W/2 ? 'left' : 'right';
   const top=lineWorldTop(line), hgt=Math.max(4, line.offsetHeight);
-  const dotY=top+Math.max(2, Math.min(connectY-top, hgt-2));   // on the paragraph, as near the card's height as it allows
+  let dotY=top+Math.max(2, Math.min(connectY-top, hgt-2));   // on the paragraph, as near the card's height as it allows
+  // `inherit` = the Original Note that was just deleted: its dot is taken over exactly as it was
+  // (same paragraph(s), same place), and only the card stays where it is -- so the connector now
+  // simply runs from that dot to this card.
+  const takeDot = !!(inherit && inherit.anchorLineIds && inherit.anchorLineIds.length && isFinite(inherit.dotY) && isFinite(inherit.dotX));
+  if(takeDot) dotY=inherit.dotY;
   if(els){ els.wrap.remove(); delete noteEls[note.id]; }
   delete note.parentNoteId; delete note.freeX; delete note.freeY; delete note.fLine; delete note.fTop;
   note.kind='dot';
-  note.anchorLineIds=[line.dataset.id];
+  note.anchorLineIds = takeDot ? inherit.anchorLineIds.slice() : [line.dataset.id];
   note.side=side;
-  note.dotX = side==='left' ? -20 : PAGE_W+20;
+  note.dotX = takeDot ? inherit.dotX : (side==='left' ? -20 : PAGE_W+20);
   note.dotY=dotY;
-  note.dotAnchorOffsetY=dotY-top;
+  note.dotAnchorOffsetY = takeDot && inherit.dotAnchorOffsetY!==undefined ? inherit.dotAnchorOffsetY : dotY-top;
+  if(takeDot){
+    if(inherit.extraDots) note.extraDots=JSON.parse(JSON.stringify(inherit.extraDots)); else delete note.extraDots;
+    if(inherit.fLine!==undefined){ note.fLine=inherit.fLine; note.fTop=inherit.fTop; }   // a dot whose paragraph is gone keeps following its nearest line
+  }
   note.cardOffsetX=clamp(side==='left' ? (0-(cardLeft+w)) : (cardLeft-PAGE_W), 0-(PAGE_W+CARD_W_MAX), 1400);
   note.cardYOffset=connectY-dotY;
   note.connectedLater=false;
